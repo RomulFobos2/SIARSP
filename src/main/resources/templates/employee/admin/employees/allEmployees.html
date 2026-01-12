@@ -1,34 +1,38 @@
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Пользователи</title>
+    <title>Пользователи | СИАРСП</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="/css/bootstrap.min.css" rel="stylesheet">
     <link href="/css/style.css" rel="stylesheet">
-
     <script src="/js/bootstrap.bundle.min.js"></script>
     <script src="/js/javascript.js"></script>
 </head>
-<body class="mb-5">
+<body class="admin-page">
 <header th:insert="~{blocks/header :: header}"></header>
 
-<div class="container mt-5">
-    <div class="alert alert-info mt-2 text-center">
-        <div class="pagination justify-content-start">
-            <div class="d-flex justify-content-start flex-wrap gap-3">
-                <a th:href="'/employee/admin/administrationPanel'" class="btn btn-secondary my-auto">На административную панель</a>
-                <a th:href="'/employee/admin/employees/addEmployee'" class="btn btn-success my-auto">Добавить пользователя</a>
-            </div>
+<div class="container my-5">
+    <!-- Action Buttons -->
+    <div class="profile-card mb-4">
+        <div class="profile-actions">
+            <a th:href="'/employee/admin/administrationPanel'"
+               class="btn btn-secondary btn-profile">
+                ← Админ панель
+            </a>
+            <a th:href="'/employee/admin/employees/addEmployee'"
+               class="btn btn-success btn-profile">
+                + Добавить пользователя
+            </a>
         </div>
     </div>
 
-    <br>
+    <!-- Users Table -->
+    <div class="table-container">
+        <h2 class="h3 mb-4 fw-bold">Список пользователей</h2>
 
-    <div class="p-2 p-md-3 mb-2 pt-2 rounded fon-container text-center"
-         style="background-image: url('/images/fon_home.jpg');">
-        <h3 class="text-dark " th:text="'Пользователи'"></h3>
-        <div class="container mt-5">
-            <table class="table" id="userTable">
+        <div class="table-responsive">
+            <table class="table table-modern" id="userTable">
                 <thead>
                 <tr>
                     <th>№</th>
@@ -54,9 +58,7 @@
         </div>
     </div>
 </div>
+
 <div th:insert="~{blocks/footer :: footer}"></div>
 </body>
-<script>
-
-</script>
 </html>

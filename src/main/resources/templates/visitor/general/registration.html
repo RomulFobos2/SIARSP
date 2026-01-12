@@ -1,91 +1,119 @@
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Регистрация пользователя</title>
+    <title>Регистрация | СИАРСП</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="/css/bootstrap.min.css" rel="stylesheet">
     <link href="/css/style.css" rel="stylesheet">
-
     <script src="/js/bootstrap.bundle.min.js"></script>
     <script src="/js/javascript.js"></script>
 </head>
-<body class="text-center body-signin">
-<main class="form-signin">
-    <div class="container mt-5 mb-5">
-        <form action="/visitor/registration" method="post" id="registrationForm">
-            <img class="mb-4" src="/images/logo%20—%20копия.png" alt="" width="200" height="200">
-            <h1 class="h3 mb-3 fw-normal">Регистрация пользователя</h1>
+<body class="auth-page">
+<!-- Убрали <div class="container"> -->
+<div class="auth-container auth-container--wide">
+    <div class="auth-card">
+        <form action="/visitor/registration" method="post" id="registrationForm" class="auth-form">
 
-            <!-- Адаптивный вывод ошибок -->
+            <div class="logo-container logo-container--large">
+                <img src="/images/logo%20—%20копия.png" alt="СИАРСП Logo">
+            </div>
+
+            <h1 class="page-title">Регистрация</h1>
+            <p class="page-subtitle">Создайте аккаунт для доступа к системе</p>
+
             <div th:if="${usernameError}" class="alert alert-danger" th:text="${usernameError}"></div>
             <div th:if="${passwordError}" class="alert alert-danger" th:text="${passwordError}"></div>
             <div th:if="${birthdayError}" class="alert alert-danger" th:text="${birthdayError}"></div>
 
-            <div class="row g-3">
-                <div class="col-sm-6">
-                    <input type="text" class="form-control" name="inputLastName" id="inputLastName" required placeholder="Фамилия">
-                </div>
-                <div class="col-sm-6">
-                    <input type="text" class="form-control" name="inputFirstName" id="inputFirstName" required placeholder="Имя">
-                </div>
-                <div class="col-sm-12">
-                    <input type="text" class="form-control" name="inputPatronymicName" id="inputPatronymicName" required placeholder="Отчество">
-                </div>
-                <div class="col-sm-6">
-                    <select class="form-select" name="inputSex" id="inputSex" required>
-                        <option selected disabled value="">Пол</option>
-                        <option value="Мужской">Муж.</option>
-                        <option value="Женский">Жен.</option>
-                    </select>
-                </div>
-                <div class="col-sm-6">
-                    <input type="date" name="birthday" id="birthday" class="form-control" required th:max="${maxDate}">
-                </div>
-                <div class="col-sm-6 mx-auto">
-                    <input type="tel" name="inputMobileNumber" id="inputMobileNumber"
-                           placeholder="Номер телефона" pattern="(\+7|8)\d{10}"
-                           class="form-control"
-                           title="Введите номер телефона в формате +7XXXXXXXXXX или 8XXXXXXXXXX"
-                           required>
+            <div class="mb-4">
+                <h6 class="form-section-title">Личные данные</h6>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" name="inputLastName"
+                               id="inputLastName" required placeholder="Фамилия">
+                    </div>
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" name="inputFirstName"
+                               id="inputFirstName" required placeholder="Имя">
+                    </div>
+                    <div class="col-12">
+                        <input type="text" class="form-control" name="inputPatronymicName"
+                               id="inputPatronymicName" required placeholder="Отчество">
+                    </div>
+                    <div class="col-md-6">
+                        <select class="form-select" name="inputSex" id="inputSex" required>
+                            <option selected disabled value="">Выберите пол</option>
+                            <option value="Мужской">Мужской</option>
+                            <option value="Женский">Женский</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <input type="date" name="birthday" id="birthday"
+                               class="form-control" required th:max="${maxDate}">
+                    </div>
+                    <div class="col-12">
+                        <input type="tel" name="inputMobileNumber" id="inputMobileNumber"
+                               placeholder="Номер телефона (+7XXXXXXXXXX)"
+                               pattern="(\+7|8)\d{10}"
+                               class="form-control"
+                               title="Введите номер телефона в формате +7XXXXXXXXXX или 8XXXXXXXXXX"
+                               required>
+                    </div>
                 </div>
             </div>
 
-            <br>
+            <div class="mb-4">
+                <h6 class="form-section-title">Данные аккаунта</h6>
 
-            <input type="email" name="username" id="username"
-                   placeholder="Введите адрес электронной почты"
-                   class="form-control" required><br>
+                <div class="mb-3">
+                    <input type="email" name="username" id="username"
+                           placeholder="Адрес электронной почты"
+                           class="form-control" required>
+                    <small id="usernameFeedback" class="fw-bold"></small>
+                </div>
 
-            <input type="password" name="password" id="password"
-                   placeholder="Введите пароль" class="form-control"
-                   required><br>
+                <div class="mb-3">
+                    <input type="password" name="password" id="password"
+                           placeholder="Пароль" class="form-control" required>
+                    <div class="password-strength">
+                        <small id="strengthIndicator" class="fw-bold text-muted"></small>
+                    </div>
+                </div>
 
-            <div class="text-start mb-2">
-                <small id="strengthIndicator" class="fw-bold text-muted"></small>
+                <div class="mb-3">
+                    <input type="password" name="passwordConfirm" id="passwordConfirm"
+                           placeholder="Подтвердите пароль" class="form-control" required>
+                    <div class="password-strength">
+                        <small id="matchMessage" class="fw-bold" style="display: none;"></small>
+                    </div>
+                </div>
+
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="togglePassword">
+                    <label class="form-check-label" for="togglePassword">
+                        Показать пароли
+                    </label>
+                </div>
             </div>
 
-            <input type="password" name="passwordConfirm" id="passwordConfirm"
-                   placeholder="Подтвердите пароль" class="form-control" required><br>
+            <button type="submit" class="w-100 btn btn-auth" id="submitBtn">
+                Зарегистрироваться
+            </button>
 
-            <div class="text-start mb-3">
-                <small id="matchMessage" class="fw-bold text-danger" style="display: none;"></small>
+            <div class="divider">
+                <span>или</span>
             </div>
 
-            <div class="form-check text-start mb-3">
-                <input type="checkbox" class="form-check-input" id="togglePassword">
-                <label class="form-check-label" for="togglePassword">Показать пароли</label>
-            </div>
-
-            <button type="submit" class="w-100 btn btn-lg btn-primary" id="submitBtn">Зарегистрироваться</button>
-
-            <div class="mt-3">
-                <a class="text-dark" href="/">На главную</a>
+            <div class="link-section">
+                <p class="mb-2">Уже есть аккаунт? <a href="/visitor/login">Войти</a></p>
+                <a href="/">← Вернуться на главную</a>
             </div>
 
         </form>
     </div>
-</main>
+</div>
 
 <script>
     const form = document.getElementById('registrationForm');
@@ -98,8 +126,8 @@
     const matchMessage = document.getElementById('matchMessage');
     const submitBtn = document.getElementById('submitBtn');
     const togglePassword = document.getElementById('togglePassword');
+    const usernameFeedback = document.getElementById('usernameFeedback');
 
-    // Показать / скрыть пароли
     togglePassword.addEventListener('change', () => {
         const type = togglePassword.checked ? 'text' : 'password';
         password.type = type;
@@ -116,29 +144,23 @@
     function validateFormFields() {
         let valid = true;
 
-        // Телефон
-        if (!/^(\+7|8)\d{10}$/.test(phoneInput.value)) {
+        if (phoneInput.value && !/^(\+7|8)\d{10}$/.test(phoneInput.value)) {
             phoneInput.classList.add("is-invalid");
+            phoneInput.classList.remove("is-valid");
             valid = false;
-        } else {
+        } else if (phoneInput.value) {
             phoneInput.classList.remove("is-invalid");
             phoneInput.classList.add("is-valid");
         }
 
-        // Email
-        if (!emailInput.checkValidity()) {
+        if (emailInput.value && !emailInput.checkValidity()) {
             emailInput.classList.add("is-invalid");
+            emailInput.classList.remove("is-valid");
             valid = false;
-        } else {
-            emailInput.classList.remove("is-invalid");
-            emailInput.classList.add("is-valid");
         }
 
-        // Дата
         const birthdayVal = birthdayInput.value;
-        if (!birthdayVal) {
-            birthdayInput.classList.remove("is-valid", "is-invalid");
-        } else {
+        if (birthdayVal) {
             const maxDate = new Date(birthdayInput.getAttribute('max'));
             const birthDate = new Date(birthdayVal);
             if (birthDate > maxDate) {
@@ -151,24 +173,26 @@
             }
         }
 
-        // Пароль
         const pwd = password.value;
         const confirmPwd = passwordConfirm.value;
 
-        const strength = getPasswordStrength(pwd);
-        strengthIndicator.textContent = "Надёжность пароля: " + strength.level;
-        strengthIndicator.className = `fw-bold ${strength.class}`;
+        if (pwd) {
+            const strength = getPasswordStrength(pwd);
+            strengthIndicator.textContent = "Надёжность: " + strength.level;
+            strengthIndicator.className = `fw-bold ${strength.class}`;
+        }
 
         if (pwd && confirmPwd && pwd !== confirmPwd) {
             matchMessage.textContent = "Пароли не совпадают";
+            matchMessage.className = "fw-bold text-danger";
             matchMessage.style.display = "block";
             passwordConfirm.classList.add("is-invalid");
+            passwordConfirm.classList.remove("is-valid");
             submitBtn.disabled = true;
             valid = false;
-        } else if (pwd && confirmPwd) {
+        } else if (pwd && confirmPwd && pwd === confirmPwd) {
             matchMessage.textContent = "Пароли совпадают";
-            matchMessage.classList.remove("text-danger");
-            matchMessage.classList.add("text-success");
+            matchMessage.className = "fw-bold text-success";
             matchMessage.style.display = "block";
             passwordConfirm.classList.remove("is-invalid");
             passwordConfirm.classList.add("is-valid");
@@ -176,8 +200,9 @@
         } else {
             matchMessage.style.display = "none";
             passwordConfirm.classList.remove("is-valid", "is-invalid");
-            submitBtn.disabled = true;
-            valid = false;
+            if (!pwd || !confirmPwd) {
+                submitBtn.disabled = true;
+            }
         }
 
         return valid;
@@ -195,34 +220,27 @@
         }
     });
 
-
-    const usernameFeedback = document.createElement("small");
-    usernameFeedback.classList.add("fw-bold");
-    usernameInput = document.getElementById('username');
-    usernameInput.insertAdjacentElement("afterend", usernameFeedback);
-
     let checkTimeout = null;
-
-    usernameInput.addEventListener("input", () => {
-        const username = usernameInput.value.trim();
-        usernameInput.classList.remove("is-invalid", "is-valid");
+    emailInput.addEventListener("input", () => {
+        const username = emailInput.value.trim();
+        emailInput.classList.remove("is-invalid", "is-valid");
         usernameFeedback.textContent = "";
         usernameFeedback.classList.remove("text-success", "text-danger");
 
         clearTimeout(checkTimeout);
 
-        if (username.length < 5) return; // проверяем только если более 5 символов
+        if (username.length < 5) return;
 
         checkTimeout = setTimeout(() => {
             fetch(`/visitor/check-username?username=${encodeURIComponent(username)}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.exists) {
-                        usernameInput.classList.add("is-invalid");
+                        emailInput.classList.add("is-invalid");
                         usernameFeedback.textContent = "Этот email уже используется";
                         usernameFeedback.classList.add("text-danger");
                     } else {
-                        usernameInput.classList.add("is-valid");
+                        emailInput.classList.add("is-valid");
                         usernameFeedback.textContent = "Email доступен";
                         usernameFeedback.classList.add("text-success");
                     }
@@ -230,7 +248,7 @@
                 .catch(err => {
                     console.error("Ошибка при проверке email:", err);
                 });
-        }, 500); // отложенный запрос на 0.5 сек
+        }, 500);
     });
 </script>
 </body>

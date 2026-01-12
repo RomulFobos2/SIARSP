@@ -1,96 +1,127 @@
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Информация о пользователе</title>
+    <title>Информация о пользователе | СИАРСП</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="/css/bootstrap.min.css" rel="stylesheet">
     <link href="/css/style.css" rel="stylesheet">
-
     <script src="/js/bootstrap.bundle.min.js"></script>
     <script src="/js/javascript.js"></script>
-
 </head>
-<body class="text-center body-addPage">
-<main class="form-addPage">
-    <div class="container mt-5 mb-5">
-        <h1 class="h3 mb-3 fw-normal">Информация о пользователе</h1>
-        <p class="fs-6 text-danger" th:text="${deleteError}"></p>
-        <div class="row g-3">
-            <div class="col-sm-6">
-                <input type="text" class="form-control" name="inputLastName" id="inputLastName"
-                       placeholder="Фамилия" th:value="${employeeDTO.getLastName()}" disabled>
-            </div>
-            <div class="col-sm-6">
-                <input type="text" class="form-control" name="inputFirstName" id="inputFirstName"
-                       placeholder="Имя" th:value="${employeeDTO.getFirstName()}" disabled>
-            </div>
-            <div class="col-sm-12">
-                <input type="text" class="form-control" name="inputPatronymicName" id="inputPatronymicName"
-                       placeholder="Отчество" th:value="${employeeDTO.getPatronymicName()}" disabled>
-            </div>
+<body class="edit-page">
+<div class="edit-container">
+    <div class="edit-card">
 
-            <div class="col-sm-12">
-                <input type="text" name="inputUsername" id="inputUsername" placeholder="Логин" class="form-control"
+        <h1 class="page-title">Информация о пользователе</h1>
+        <p class="page-subtitle">Просмотр и управление данными сотрудника</p>
+
+        <div th:if="${deleteError}" class="alert alert-danger" th:text="${deleteError}"></div>
+
+        <div class="mb-4">
+            <h6 class="form-section-title">Личные данные</h6>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <input type="text" class="form-control info-display"
+                           id="inputLastName" placeholder="Фамилия"
+                           th:value="${employeeDTO.getLastName()}" disabled>
+                </div>
+                <div class="col-md-6">
+                    <input type="text" class="form-control info-display"
+                           id="inputFirstName" placeholder="Имя"
+                           th:value="${employeeDTO.getFirstName()}" disabled>
+                </div>
+                <div class="col-12">
+                    <input type="text" class="form-control info-display"
+                           id="inputPatronymicName" placeholder="Отчество"
+                           th:value="${employeeDTO.getPatronymicName()}" disabled>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <h6 class="form-section-title">Данные входа</h6>
+
+            <div class="mb-3">
+                <input type="text" class="form-control info-display"
+                       id="inputUsername" placeholder="Логин"
                        th:value="${employeeDTO.getUsername()}" disabled>
             </div>
 
-            <div class="col-sm-12">
-                <input type="text" name="inputRole" id="inputRole" placeholder="Роль" class="form-control"
+            <div class="mb-3">
+                <input type="text" class="form-control info-display"
+                       id="inputRole" placeholder="Роль"
                        th:value="${employeeDTO.getRoleDescription()}" disabled>
             </div>
-
         </div>
-        <br>
-        <div class="row">
-            <div class="col-sm-6 mx-auto">
-                <button th:onclick="'window.location.href=\'/employee/admin/employees/editEmployee/' + ${employeeDTO.getId()} + '\';'"
-                        class="btn btn-primary">Редактировать
-                </button>
-            </div>
-            <div class="col-sm-6 mx-auto">
-                <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#resetPasswordModal">Сбросить пароль</button>
-            </div>
-            <div class="col-sm-6 mx-auto mt-2">
-                <button class="btn btn-danger"
-                        th:data-username="${employeeDTO.getUsername()}"
-                        th:data-userid="${employeeDTO.getId()}"
-                        onclick="confirmDelete(this)">Удалить</button>
-            </div>
 
+        <!-- Action Buttons -->
+        <div class="action-buttons mb-4">
+            <button th:onclick="'window.location.href=\'/employee/admin/employees/editEmployee/' + ${employeeDTO.getId()} + '\';'"
+                    class="btn btn-primary btn-profile">
+                Редактировать
+            </button>
+            <button class="btn btn-warning btn-profile"
+                    data-bs-toggle="modal" data-bs-target="#resetPasswordModal">
+                Сбросить пароль
+            </button>
+            <button class="btn btn-danger btn-profile"
+                    th:data-username="${employeeDTO.getUsername()}"
+                    th:data-userid="${employeeDTO.getId()}"
+                    onclick="confirmDelete(this)">
+                Удалить
+            </button>
         </div>
-        <br>
-        <a class="p-2 text-dark" th:href="'/employee/admin/employees/allEmployees'">К списку пользователей</a>
+
+        <div class="divider">
+            <span>или</span>
+        </div>
+
+        <div class="link-section">
+            <a th:href="'/employee/admin/employees/allEmployees'">← К списку пользователей</a>
+        </div>
+
     </div>
+</div>
 
-    <!-- Модальное окно для сброса пароля -->
-    <div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-labelledby="resetPasswordModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="resetPasswordModalLabel">Сброс пароля</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="resetPasswordForm">
-                        <div class="mb-3">
-                            <label for="newPassword" class="form-label">Новый пароль</label>
-                                <input type="password" name="inputPassword" id="newPassword" placeholder="Введите пароль" autocomplete="new-password"
-                                       class="form-control" required pattern="^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$"
-                                       title="Требования к паролю: не менее 8 символов, заглавные и строчные латинские буквы, не менее 1 цифры">
+<!-- Модальное окно для сброса пароля -->
+<div class="modal fade" id="resetPasswordModal" tabindex="-1"
+     aria-labelledby="resetPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resetPasswordModalLabel">Сброс пароля</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="resetPasswordForm" class="auth-form">
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label fw-semibold">Новый пароль</label>
+                        <input type="password" id="newPassword"
+                               placeholder="Введите пароль" autocomplete="new-password"
+                               class="form-control" required
+                               pattern="^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$"
+                               title="Требования к паролю: не менее 8 символов, заглавные и строчные латинские буквы, не менее 1 цифры">
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label fw-semibold">Подтвердите пароль</label>
+                        <input type="password" class="form-control"
+                               id="confirmPassword" placeholder="Подтвердите пароль" required>
+                        <div class="password-strength">
+                            <small id="passwordError" class="fw-bold text-danger"></small>
                         </div>
-                        <div class="mb-3">
-                            <label for="confirmPassword" class="form-label">Подтвердите пароль</label>
-                            <input type="password" class="form-control" id="confirmPassword" required>
-                            <div id="passwordError" class="text-danger mt-2"></div>
-                        </div>
-                        <button type="submit" class="btn btn-primary" id="saveNewPasswordBtn" disabled>Сохранить новый пароль</button>
-                    </form>
-                </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 btn-auth"
+                            id="saveNewPasswordBtn" disabled>
+                        Сохранить новый пароль
+                    </button>
+                </form>
             </div>
         </div>
     </div>
+</div>
 
-</main>
 <script th:inline="javascript">
     document.addEventListener('DOMContentLoaded', function() {
         const newPasswordInput = document.getElementById('newPassword');
@@ -99,11 +130,25 @@
         const passwordError = document.getElementById('passwordError');
 
         function checkPasswords() {
-            if (newPasswordInput.value === confirmPasswordInput.value) {
-                passwordError.textContent = '';
-                saveNewPasswordBtn.disabled = false;
+            if (newPasswordInput.value && confirmPasswordInput.value) {
+                if (newPasswordInput.value === confirmPasswordInput.value) {
+                    passwordError.textContent = 'Пароли совпадают';
+                    passwordError.classList.remove('text-danger');
+                    passwordError.classList.add('text-success');
+                    confirmPasswordInput.classList.remove('is-invalid');
+                    confirmPasswordInput.classList.add('is-valid');
+                    saveNewPasswordBtn.disabled = false;
+                } else {
+                    passwordError.textContent = 'Пароли не совпадают';
+                    passwordError.classList.remove('text-success');
+                    passwordError.classList.add('text-danger');
+                    confirmPasswordInput.classList.add('is-invalid');
+                    confirmPasswordInput.classList.remove('is-valid');
+                    saveNewPasswordBtn.disabled = true;
+                }
             } else {
-                passwordError.textContent = 'Пароли не совпадают';
+                passwordError.textContent = '';
+                confirmPasswordInput.classList.remove('is-invalid', 'is-valid');
                 saveNewPasswordBtn.disabled = true;
             }
         }

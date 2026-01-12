@@ -8,70 +8,22 @@
     <link href="/css/style.css" rel="stylesheet">
     <script src="/js/bootstrap.bundle.min.js"></script>
     <script src="/js/javascript.js"></script>
-    <style>
-        body {
-            background-color: #f8f9fa;
-        }
-        .admin-card {
-            transition: all 0.3s ease;
-            border: none;
-            height: 100%;
-        }
-        .admin-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
-        }
-        .admin-card .card-body {
-            padding: 3rem;
-        }
-        .admin-card h3 {
-            font-weight: 600;
-            margin-bottom: 1rem;
-        }
-        .admin-card p {
-            color: #6c757d;
-            margin-bottom: 1.5rem;
-        }
-        .btn-admin {
-            border-radius: 50px;
-            padding: 0.6rem 2rem;
-            font-weight: 500;
-            text-transform: uppercase;
-            font-size: 0.875rem;
-            letter-spacing: 0.5px;
-        }
-        .page-title {
-            font-weight: 700;
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            letter-spacing: -0.5px;
-        }
-        .page-subtitle {
-            color: #6c757d;
-            font-size: 1.1rem;
-            margin-bottom: 3rem;
-        }
-    </style>
 </head>
-<body>
+<body class="admin-page">
 <header th:insert="~{blocks/header :: header}"></header>
 
-<!-- Main Content -->
 <div class="container my-5 py-5">
-    <!-- Page Header -->
-    <div class="text-center mb-5">
-        <h1 class="page-title">Панель Администрирования</h1>
-        <p class="page-subtitle">Управление системой СИАРСП</p>
+    <div class="admin-header">
+        <h1 class="admin-title">Панель Администрирования</h1>
+        <p class="admin-subtitle">Управление системой СИАРСП</p>
     </div>
 
     <div class="row g-4">
-        <!-- Card 1: Users -->
         <div class="col-lg-6">
             <div class="card admin-card shadow-sm">
                 <div class="card-body">
                     <div class="d-flex align-items-center mb-3">
-                        <div class="bg-dark text-white rounded-circle d-flex align-items-center justify-content-center"
-                             style="width: 50px; height: 50px; font-size: 1.5rem;">
+                        <div class="admin-icon bg-dark text-white">
                             👥
                         </div>
                         <h3 class="ms-3 mb-0">Пользователи</h3>
@@ -85,13 +37,11 @@
             </div>
         </div>
 
-        <!-- Card 2: Function 2 -->
         <div class="col-lg-6">
             <div class="card admin-card shadow-sm">
                 <div class="card-body">
                     <div class="d-flex align-items-center mb-3">
-                        <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center"
-                             style="width: 50px; height: 50px; font-size: 1.5rem;">
+                        <div class="admin-icon bg-secondary text-white">
                             📦
                         </div>
                         <h3 class="ms-3 mb-0">Склад</h3>
@@ -104,13 +54,11 @@
             </div>
         </div>
 
-        <!-- Card 3: Function 3 -->
         <div class="col-lg-6">
             <div class="card admin-card shadow-sm">
                 <div class="card-body">
                     <div class="d-flex align-items-center mb-3">
-                        <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center"
-                             style="width: 50px; height: 50px; font-size: 1.5rem;">
+                        <div class="admin-icon bg-secondary text-white">
                             📊
                         </div>
                         <h3 class="ms-3 mb-0">Отчёты</h3>
@@ -123,13 +71,11 @@
             </div>
         </div>
 
-        <!-- Card 4: Function 4 -->
         <div class="col-lg-6">
             <div class="card admin-card shadow-sm">
                 <div class="card-body">
                     <div class="d-flex align-items-center mb-3">
-                        <div class="bg-dark text-white rounded-circle d-flex align-items-center justify-content-center"
-                             style="width: 50px; height: 50px; font-size: 1.5rem;">
+                        <div class="admin-icon bg-dark text-white">
                             ⚙️
                         </div>
                         <h3 class="ms-3 mb-0">Настройки</h3>
