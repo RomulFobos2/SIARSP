@@ -1,0 +1,62 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Пользователи</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/javascript.js"></script>
+</head>
+<body class="mb-5">
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container mt-5">
+    <div class="alert alert-info mt-2 text-center">
+        <div class="pagination justify-content-start">
+            <div class="d-flex justify-content-start flex-wrap gap-3">
+                <a th:href="'/employee/admin/administrationPanel'" class="btn btn-secondary my-auto">На административную панель</a>
+                <a th:href="'/employee/admin/employees/addEmployee'" class="btn btn-success my-auto">Добавить пользователя</a>
+            </div>
+        </div>
+    </div>
+
+    <br>
+
+    <div class="p-2 p-md-3 mb-2 pt-2 rounded fon-container text-center"
+         style="background-image: url('/images/fon_home.jpg');">
+        <h3 class="text-dark " th:text="'Пользователи'"></h3>
+        <div class="container mt-5">
+            <table class="table" id="userTable">
+                <thead>
+                <tr>
+                    <th>№</th>
+                    <th>ФИО</th>
+                    <th>Роль</th>
+                    <th>Логин</th>
+                    <th>Дата регистрации</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="employee, index : ${allEmployees}">
+                    <td th:text="${index.index+1}"></td>
+                    <td>
+                        <a th:text="${employee.getFullName()}"
+                           th:href="'/employee/admin/employees/detailsEmployee/' + ${employee.getId()}"></a>
+                    </td>
+                    <td th:text="${employee.getRoleDescription()}"></td>
+                    <td th:text="${employee.getUsername()}"></td>
+                    <td th:text="${#temporals.format(employee.getDateOfRegistration(), 'dd.MM.yyyy')}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+<script>
+
+</script>
+</html>

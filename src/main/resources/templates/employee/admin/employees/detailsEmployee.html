@@ -1,0 +1,154 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Информация о пользователе</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/javascript.js"></script>
+
+</head>
+<body class="text-center body-addPage">
+<main class="form-addPage">
+    <div class="container mt-5 mb-5">
+        <h1 class="h3 mb-3 fw-normal">Информация о пользователе</h1>
+        <p class="fs-6 text-danger" th:text="${deleteError}"></p>
+        <div class="row g-3">
+            <div class="col-sm-6">
+                <input type="text" class="form-control" name="inputLastName" id="inputLastName"
+                       placeholder="Фамилия" th:value="${employeeDTO.getLastName()}" disabled>
+            </div>
+            <div class="col-sm-6">
+                <input type="text" class="form-control" name="inputFirstName" id="inputFirstName"
+                       placeholder="Имя" th:value="${employeeDTO.getFirstName()}" disabled>
+            </div>
+            <div class="col-sm-12">
+                <input type="text" class="form-control" name="inputPatronymicName" id="inputPatronymicName"
+                       placeholder="Отчество" th:value="${employeeDTO.getPatronymicName()}" disabled>
+            </div>
+
+            <div class="col-sm-12">
+                <input type="text" name="inputUsername" id="inputUsername" placeholder="Логин" class="form-control"
+                       th:value="${employeeDTO.getUsername()}" disabled>
+            </div>
+
+            <div class="col-sm-12">
+                <input type="text" name="inputRole" id="inputRole" placeholder="Роль" class="form-control"
+                       th:value="${employeeDTO.getRoleDescription()}" disabled>
+            </div>
+
+        </div>
+        <br>
+        <div class="row">
+            <div class="col-sm-6 mx-auto">
+                <button th:onclick="'window.location.href=\'/employee/admin/employees/editEmployee/' + ${employeeDTO.getId()} + '\';'"
+                        class="btn btn-primary">Редактировать
+                </button>
+            </div>
+            <div class="col-sm-6 mx-auto">
+                <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#resetPasswordModal">Сбросить пароль</button>
+            </div>
+            <div class="col-sm-6 mx-auto mt-2">
+                <button class="btn btn-danger"
+                        th:data-username="${employeeDTO.getUsername()}"
+                        th:data-userid="${employeeDTO.getId()}"
+                        onclick="confirmDelete(this)">Удалить</button>
+            </div>
+
+        </div>
+        <br>
+        <a class="p-2 text-dark" th:href="'/employee/admin/employees/allEmployees'">К списку пользователей</a>
+    </div>
+
+    <!-- Модальное окно для сброса пароля -->
+    <div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-labelledby="resetPasswordModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="resetPasswordModalLabel">Сброс пароля</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="resetPasswordForm">
+                        <div class="mb-3">
+                            <label for="newPassword" class="form-label">Новый пароль</label>
+                                <input type="password" name="inputPassword" id="newPassword" placeholder="Введите пароль" autocomplete="new-password"
+                                       class="form-control" required pattern="^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$"
+                                       title="Требования к паролю: не менее 8 символов, заглавные и строчные латинские буквы, не менее 1 цифры">
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Подтвердите пароль</label>
+                            <input type="password" class="form-control" id="confirmPassword" required>
+                            <div id="passwordError" class="text-danger mt-2"></div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="saveNewPasswordBtn" disabled>Сохранить новый пароль</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+<script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        const newPasswordInput = document.getElementById('newPassword');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const saveNewPasswordBtn = document.getElementById('saveNewPasswordBtn');
+        const passwordError = document.getElementById('passwordError');
+
+        function checkPasswords() {
+            if (newPasswordInput.value === confirmPasswordInput.value) {
+                passwordError.textContent = '';
+                saveNewPasswordBtn.disabled = false;
+            } else {
+                passwordError.textContent = 'Пароли не совпадают';
+                saveNewPasswordBtn.disabled = true;
+            }
+        }
+
+        newPasswordInput.addEventListener('input', checkPasswords);
+        confirmPasswordInput.addEventListener('input', checkPasswords);
+
+        document.getElementById('resetPasswordForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const userId = (/*[[${employeeDTO.getId()}]]*/);
+
+            fetch(`/employee/admin/employees/resetPassword/${userId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    newPassword: newPasswordInput.value
+                })
+            })
+                .then(response => {
+                    if (response.ok) {
+                        alert('Пароль сброшен. Новый пароль сохранен.');
+                        const resetPasswordModal = document.getElementById('resetPasswordModal');
+                        const modalInstance = bootstrap.Modal.getInstance(resetPasswordModal);
+                        modalInstance.hide();
+                    } else {
+                        alert('Ошибка при сбросе пароля.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка:', error);
+                });
+        });
+    });
+
+    function confirmDelete(button) {
+        const username = button.getAttribute('data-username');
+        const userId = button.getAttribute('data-userid');
+
+        if (confirm("Вы точно хотите удалить пользователя " + username + "?")) {
+            window.location.href = '/employee/admin/employees/deleteEmployee/' + userId;
+        }
+    }
+</script>
+</body>
+</html>

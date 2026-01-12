@@ -1,0 +1,56 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Подтверждение действия</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/javascript.js"></script>
+</head>
+
+<body class="text-center">
+<main class="form-signin">
+    <form th:action="${formAction}" method="post">
+        <img class="mb-4" src="https://getbootstrap.com/docs/5.0/assets/brand/bootstrap-logo.svg" alt="" width="72" height="57">
+        <h1 class="h3 mb-3 fw-normal" th:text="${formTitle}">Введите код</h1>
+
+        <p th:text="${visitor.username}">user@example.com</p>
+        <p class="fs-6 text-danger" th:text="${codeError}"></p>
+
+        <input type="text" id="code" name="code" placeholder="Код" class="form-control" autofocus required><br>
+
+        <button type="submit" class="w-100 btn btn-lg btn-primary">Подтвердить</button>
+    </form>
+
+    <!-- Форма для повторной отправки кода -->
+    <form action="/visitor/verify-code/resend-code" method="post" class="mt-3">
+        <input type="hidden" name="mode" th:value="${param.mode}">
+        <button type="submit" class="btn btn-outline-secondary w-100" id="resendBtn" disabled>
+            Отправить код повторно <span id="timer">(60 сек)</span>
+        </button>
+    </form>
+
+
+</main>
+
+<script>
+    // Таймер для кнопки "Отправить код повторно"
+    let countdown = 3;
+    const timerElement = document.getElementById('timer');
+    const resendButton = document.getElementById('resendBtn');
+
+    const interval = setInterval(() => {
+        countdown--;
+        timerElement.textContent = `(${countdown} сек)`;
+        if (countdown <= 0) {
+            clearInterval(interval);
+            resendButton.disabled = false;
+            timerElement.textContent = '';
+        }
+    }, 1000);
+</script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Заказы</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/javascript.js"></script>
+    <style>
+        .blue {
+            background-color: #4682B4;
+        }
+    </style>
+</head>
+<body>
+<header th:insert="blocks/header :: header"></header>
+
+<div class="container mt-5">
+    <h1 class="text-center">Выберите услугу</h1>
+    <div class="row align-items-md-stretch">
+
+        <div class="col-md-6">
+            <div class="h-100 p-5 text-white blue rounded-3 mt-2">
+                <h2>Меню</h2>
+                <a th:href="'/'" class="btn btn-outline-light mt-1" type="button">Просмотреть меню</a>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="h-100 p-5 alert-info border rounded-3 mt-2">
+                <h2>Мои заказы</h2>
+                <th:block th:if="${countOrdersWithoutComment} != 0">
+<!--                    <a th:href="'/visitor/orders/allOrders'" class="btn btn-outline-dark position-relative mt-1" type="button">Просмотреть заказы-->
+<!--                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"-->
+<!--                              th:text="${countOrdersWithoutComment}"></span>-->
+<!--                    </a>-->
+                </th:block>
+                <th:block th:if="${countOrdersWithoutComment} == 0">
+                    <a th:href="'/'" class="btn btn-outline-dark position-relative mt-1" type="button">Просмотреть заказы
+                    </a>
+                </th:block>
+                <a th:href="'/'" class="btn btn-outline-dark mt-1" type="button">Просмотреть заявки на бронирование</a>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="h-100 p-5 alert-info border rounded-3 mt-2">
+                <h2>Бронирование</h2>
+                <a th:href="'/'" class="btn btn-outline-dark mt-1" type="button">Отправить
+                    заявку на бронь</a>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="h-100 p-5 text-white blue rounded-3 mt-2">
+                <h2>Самовывоз</h2>
+                <a th:href="'/'" class="btn btn-outline-light" type="button">Отправить
+                    заявку на самовывоз</a>
+            </div>
+        </div>
+
+    </div>
+</div>
+<div th:insert="blocks/footer :: footer"></div>
+</body>
+</html>

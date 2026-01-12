@@ -1,0 +1,36 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org"   xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+<head>
+    <title>Профиль</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/javascript.js"></script>
+</head>
+<body class="mb-5">
+<header th:insert="blocks/header :: header"></header>
+
+<div class="container mt-5">
+    <div class="alert alert-info mt-2">
+        <h1 th:text="${strRoleName + ': ' + currentEmployee.lastName + ' ' + currentEmployee.firstName + ' ' + currentEmployee.patronymicName}"/>
+        <a>Логин пользователя: </a> <a th:text="${currentEmployee.username}"/>
+        <br>
+    </div>
+    <div class="d-flex justify-content-start flex-wrap">
+        <form class="form-row">
+            <a th:href="'/'" class="btn btn-secondary mx-auto">Назад</a>
+            <a th:href="'/employee/change-password'" class="btn btn-warning mx-auto">Сменить пароль</a>
+            <a sec:authorize="hasRole('ROLE_EMPLOYEE_ADMIN')" th:href="'/employee/admin/employees/editAdmin/' + ${currentEmployee.id}" class="btn btn-primary">
+                Редактировать данные
+            </a>
+        </form>
+    </div>
+
+
+</div>
+<div th:insert="blocks/footer :: footer"></div>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title>Профиль</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/javascript.js"></script>
+</head>
+<body>
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container mt-5">
+    <div class="alert alert-info mt-2">
+        <h1 th:text="${currentVisitor.fullName}"></h1>
+        <p>Логин пользователя: <span th:text="${currentVisitor.username}"></span></p>
+        <p>Дата рождения: <span th:text="${#temporals.format(currentVisitor.dateBirthday, 'dd.MM.yyyy')}"></span></p>
+        <p>Дата регистрации: <span th:text="${#temporals.format(currentVisitor.dateRegistration, 'dd.MM.yyyy')}"></span></p>
+        <p>Номер телефона: <span th:text="${currentVisitor.mobileNumber}"></span></p>
+    </div>
+
+    <div class="d-flex justify-content-start flex-wrap">
+        <form class="form-row">
+            <a th:href="'/'" class="btn btn-secondary mx-auto">Назад</a>
+            <a th:href="'/visitor/change-password'" class="btn btn-warning mx-auto">Сменить пароль</a>
+            <a th:href="'/visitor/editProfile'" class="btn btn-primary">Редактировать данные</a>
+        </form>
+    </div>
+</div>
+
+<footer th:insert="~{blocks/footer :: footer}"></footer>
+</body>
+</html>
