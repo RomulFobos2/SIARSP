@@ -14,7 +14,7 @@ import java.util.Optional;
 @Slf4j
 public class RoleRunner implements CommandLineRunner {
     private static final String ROLE_EMPLOYEE_ADMIN = "ROLE_EMPLOYEE_ADMIN";
-    private static final String ROLE_EMPLOYEE__MANAGER = "ROLE_EMPLOYEE_MANAGER";
+    private static final String ROLE_EMPLOYEE_MANAGER = "ROLE_EMPLOYEE_MANAGER";
     private static final String ROLE_EMPLOYEE_WAREHOUSE_MANAGER = "ROLE_EMPLOYEE_WAREHOUSE_MANAGER";
     private static final String ROLE_EMPLOYEE_WAREHOUSE_WORKER = "ROLE_EMPLOYEE_WAREHOUSE_WORKER";
     private static final String ROLE_EMPLOYEE_COURIER = "ROLE_EMPLOYEE_COURIER";
@@ -30,7 +30,7 @@ public class RoleRunner implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         createRoleIfNotFound(ROLE_EMPLOYEE_ADMIN, "Администратор");
-        createRoleIfNotFound(ROLE_EMPLOYEE__MANAGER, "Руководитель");
+        createRoleIfNotFound(ROLE_EMPLOYEE_MANAGER, "Руководитель");
         createRoleIfNotFound(ROLE_EMPLOYEE_WAREHOUSE_MANAGER, "Заведующий складом");
         createRoleIfNotFound(ROLE_EMPLOYEE_WAREHOUSE_WORKER, "Складской работник");
         createRoleIfNotFound(ROLE_EMPLOYEE_COURIER, "Водитель экспедитор");

@@ -40,9 +40,7 @@ public class EmployeeController {
 
     @GetMapping("/employee/admin/employees/allEmployees")
     public String allEmployees(Model model) {
-        Optional<? extends UserDetails> currentUser = employeeService.getEmployeeRepository().findByUsername(SecurityContextHolder.getContext().getAuthentication().getName());
         model.addAttribute("allEmployees", employeeService.getAllEmployees().stream()
-                .filter(employeeDTO -> !employeeDTO.getUsername().equals(currentUser.get().getUsername()))
                 .sorted(Comparator.comparing(EmployeeDTO::getRoleDescription))
                 .toList());
         return "/employee/admin/employees/allEmployees";
@@ -99,7 +97,7 @@ public class EmployeeController {
                                @RequestParam String inputPatronymicName, @RequestParam String inputUsername,
                                @RequestParam String inputRole,
                                Model model, RedirectAttributes redirectAttributes) {
-        if (!employeeService.editEmployee(id, inputFirstName, inputLastName, inputPatronymicName, inputUsername, inputRole)) {
+        if (!employeeService.editEmployee(id, inputLastName, inputFirstName, inputPatronymicName, inputUsername, inputRole)) {
             redirectAttributes.addFlashAttribute("usernameError", "Ошибка при сохранении изменений.");
             return "redirect:/employee/admin/employees/editEmployee/" + id;
         } else {

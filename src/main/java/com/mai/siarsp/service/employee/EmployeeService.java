@@ -104,9 +104,9 @@ public class EmployeeService implements UserDetailsService {
         log.info("Начинаем сохранять изменения для сотрудника с username = {}...", employee.getUsername());
 
         employee.setRole(role);
-        employee.setFirstName(inputLastName);
-        employee.setLastName(inputFirstName);
-        employee.setPatronymicName(inputPatronymicName);
+        employee.setFirstName(inputFirstName);
+        employee.setLastName(inputLastName);
+        employee.setPatronymicName(inputPatronymicName.isEmpty() ? inputPatronymicName : "");
         employee.setUsername(inputUsername);
 
         try {

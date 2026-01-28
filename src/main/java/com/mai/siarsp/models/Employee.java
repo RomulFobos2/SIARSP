@@ -78,7 +78,6 @@ public class Employee implements UserDetails {
         return isActive;
     }
 
-    private String fullName;
     public String getFullName() {
         return lastName + " " + firstName + " " + patronymicName;
     }

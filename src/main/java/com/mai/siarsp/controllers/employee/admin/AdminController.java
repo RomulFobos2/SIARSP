@@ -33,7 +33,7 @@ public class AdminController {
                                    @RequestParam String inputLastName, @RequestParam String inputFirstName,
                                    @RequestParam String inputPatronymicName, @RequestParam String inputUsername,
                                    Model model, RedirectAttributes redirectAttributes) {
-        if (!employeeService.editEmployee(id, inputFirstName, inputLastName, inputPatronymicName, inputUsername, "ROLE_EMPLOYEE_ADMIN")) {
+        if (!employeeService.editEmployee(id, inputLastName, inputFirstName, inputPatronymicName, inputUsername, "ROLE_EMPLOYEE_ADMIN")) {
             redirectAttributes.addFlashAttribute("usernameError", "Ошибка при сохранении изменений.");
             return "redirect:/employee/admin/editAdmin/" + id;
         } else {

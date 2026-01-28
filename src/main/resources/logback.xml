@@ -6,7 +6,8 @@
     </appender>
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/arlanSupply.log</file>
+        <file>logs/siarsp.log</file>
+        <fileNamePattern>logs/siarsp-%d{yyyy-MM-dd_HH}.log</fileNamePattern>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- Формат имени файла для архивирования -->
