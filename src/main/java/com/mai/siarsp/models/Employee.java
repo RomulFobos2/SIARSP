@@ -39,8 +39,9 @@ public class Employee implements UserDetails {
     private String username;
 
     @NotNull
-    @Column(unique = true, length = 200)
+    @Column(length = 200)
     private String password;
+
 
     private boolean needChangePass = true;
 

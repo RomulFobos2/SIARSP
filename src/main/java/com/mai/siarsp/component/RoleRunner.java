@@ -18,6 +18,7 @@ public class RoleRunner implements CommandLineRunner {
     private static final String ROLE_EMPLOYEE_WAREHOUSE_MANAGER = "ROLE_EMPLOYEE_WAREHOUSE_MANAGER";
     private static final String ROLE_EMPLOYEE_WAREHOUSE_WORKER = "ROLE_EMPLOYEE_WAREHOUSE_WORKER";
     private static final String ROLE_EMPLOYEE_COURIER = "ROLE_EMPLOYEE_COURIER";
+    private static final String ROLE_EMPLOYEE_ACCOUNTER = "ROLE_EMPLOYEE_ACCOUNTER";
 
     private final RoleRepository roleRepository;
     private final EmployeeService employeeService;
@@ -34,6 +35,7 @@ public class RoleRunner implements CommandLineRunner {
         createRoleIfNotFound(ROLE_EMPLOYEE_WAREHOUSE_MANAGER, "Заведующий складом");
         createRoleIfNotFound(ROLE_EMPLOYEE_WAREHOUSE_WORKER, "Складской работник");
         createRoleIfNotFound(ROLE_EMPLOYEE_COURIER, "Водитель экспедитор");
+        createRoleIfNotFound(ROLE_EMPLOYEE_ACCOUNTER, "Бухгалтер");
         createAdminIfNotFound();
     }
 
