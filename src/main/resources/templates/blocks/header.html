@@ -1,16 +1,20 @@
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <div th:fragment="header">
-    <!-- Top Bar (темная полоса сверху) -->
     <div class="bg-dark text-white py-2">
         <div class="container">
             <div class="d-flex justify-content-between align-items-center small">
                 <div>
-                    <span sec:authorize="isAuthenticated()">
-                        Добро пожаловать, <span sec:authentication="principal.fullName" class="fw-semibold"></span>
-                    </span>
+                <span sec:authorize="isAuthenticated()">
+                    Добро пожаловать,
+                    <a th:href="@{/employee/profile}"
+                       class="text-white fw-semibold text-decoration-none border-bottom border-white border-opacity-50"
+                       style="cursor: pointer;">
+                        <span sec:authentication="principal.fullName"></span>
+                    </a>
+                </span>
                     <span sec:authorize="!isAuthenticated()">
-                        Добро пожаловать в систему СИАРСП
-                    </span>
+                    Добро пожаловать в систему СИАРСП
+                </span>
                 </div>
                 <div>
                     <span class="me-3">📞 +7 (XXX) XXX-XX-XX</span>
@@ -20,52 +24,30 @@
         </div>
     </div>
 
-    <!-- Main Header -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm">
         <div class="container py-2">
-            <!-- Logo/Brand -->
-            <a class="navbar-brand fw-bold fs-4" href="/"
-               th:onclick="${#authorization.expression('isAuthenticated()')} ?
-                          (${#authorization.expression('hasRole(''ROLE_VISITOR'')')} ?
-                          'window.location.href=\'/visitor/profile\'' :
-                          'window.location.href=\'/employee/profile\'') :
-                          'window.location.href=\'/\''"
-               style="cursor: pointer; letter-spacing: 1px;">
+            <a class="navbar-brand fw-bold fs-4" th:href="@{/}" style="letter-spacing: 1px;">
                 СИАРСП
             </a>
 
-            <!-- Mobile Toggle -->
             <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse"
                     data-bs-target="#navbarNav" aria-controls="navbarNav"
                     aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
-            <!-- Navigation -->
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-lg-center">
-                    <!-- Admin Link -->
                     <li class="nav-item" sec:authorize="hasRole('ROLE_EMPLOYEE_ADMIN')">
                         <a class="nav-link px-3" href="/employee/admin/administrationPanel">
                             Администрирование
                         </a>
                     </li>
 
-                    <!-- Guest Links -->
                     <li class="nav-item" sec:authorize="!isAuthenticated()">
-                        <a class="nav-link px-3" href="/visitor/login">Вход</a>
-                    </li>
-                    <li class="nav-item" sec:authorize="!isAuthenticated()">
-                        <a class="nav-link px-3" href="/employee/login">Вход сотрудника</a>
-                    </li>
-                    <li class="nav-item" sec:authorize="!isAuthenticated()">
-                        <a class="btn btn-dark rounded-pill px-4 ms-lg-2 mt-2 mt-lg-0"
-                           href="/visitor/registration">
-                            Зарегистрироваться
-                        </a>
+                        <a class="nav-link px-3" href="/employee/login">Вход</a>
                     </li>
 
-                    <!-- Logout -->
                     <li class="nav-item" sec:authorize="isAuthenticated()">
                         <form th:action="@{/logout}" method="post" class="d-inline">
                             <button type="submit" class="btn btn-outline-dark rounded-pill px-4 ms-lg-2 mt-2 mt-lg-0">
