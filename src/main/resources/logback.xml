@@ -9,11 +9,8 @@
         <file>logs/siarsp.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <!-- Формат имени файла для архивирования -->
             <fileNamePattern>logs/siarsp-%d{yyyy-MM-dd_HH}.log</fileNamePattern>
-            <!-- Максимальное количество файлов (по желанию, можно убрать) -->
             <maxHistory>24</maxHistory>
-            <!-- Максимальный размер архива (по желанию, можно убрать) -->
             <totalSizeCap>1GB</totalSizeCap>
         </rollingPolicy>
         <encoder>
