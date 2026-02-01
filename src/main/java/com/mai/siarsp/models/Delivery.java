@@ -34,6 +34,10 @@ public class Delivery {
     @OneToMany(mappedBy = "delivery", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Supply> supplies = new ArrayList<>();
 
+    @ToString.Exclude
+    @OneToOne(mappedBy = "delivery")
+    private RequestForDelivery request;
+
     public Delivery(Supplier supplier, LocalDate deliveryDate) {
         this.supplier = supplier;
         this.deliveryDate = deliveryDate;
