@@ -1,10 +1,15 @@
 package com.mai.siarsp.enumeration;
 
 public enum RequestStatus {
-    PENDING ("Не отправлено"),
-    SENT("Отправлено"),      // отправлено поставщику
-    RECEIVED("Выполнено"),  // получен ответ/товар
-    CANCELLED ("Отменено"); // отменён
+    DRAFT("Черновик"),
+    PENDING_DIRECTOR("На согласовании у директора"),
+    REJECTED_BY_DIRECTOR("Отклонено директором"),
+    PENDING_ACCOUNTANT("На согласовании у бухгалтера"),
+    REJECTED_BY_ACCOUNTANT("Отклонено бухгалтером"),
+    APPROVED("Согласовано"),
+    PARTIALLY_RECEIVED("Частично получено"),
+    RECEIVED("Получено"),
+    CANCELLED("Отменено");
 
     private final String displayName;
 

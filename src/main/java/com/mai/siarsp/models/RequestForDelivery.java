@@ -31,7 +31,7 @@ public class RequestForDelivery {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private RequestStatus status = RequestStatus.PENDING;
+    private RequestStatus status = RequestStatus.DRAFT;
 
     @ToString.Exclude
     @ManyToOne
@@ -51,7 +51,7 @@ public class RequestForDelivery {
     public RequestForDelivery(Supplier supplier) {
         this.supplier = supplier;
         this.requestDate = LocalDate.now();
-        this.status = RequestStatus.PENDING;
+        this.status = RequestStatus.DRAFT;
         this.requestedProducts = new ArrayList<>();
     }
 
@@ -61,20 +61,6 @@ public class RequestForDelivery {
         requestedProduct.setRequest(this);
     }
 
-    public boolean isPending() {
-        return status == RequestStatus.PENDING;
-    }
 
-    public boolean isSent() {
-        return status == RequestStatus.SENT;
-    }
-
-    public boolean isReceived() {
-        return status == RequestStatus.RECEIVED;
-    }
-
-    public boolean isCancelled() {
-        return status == RequestStatus.CANCELLED;
-    }
 
 }
