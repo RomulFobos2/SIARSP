@@ -18,42 +18,56 @@ import java.util.Collections;
 @Entity
 @Table(name = "t_employee")
 public class Employee implements UserDetails {
+
+    // ========== ПОЛЯ ==========
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotNull
     @Column(length = 50)
-    private String lastName; //Фамилия
+    private String lastName;
 
     @NotNull
     @Column(length = 50)
-    private String firstName; //Имя
+    private String firstName;
 
-    @Column(length = 50)
     @NotNull
-    private String patronymicName; //Отчество
+    @Column(length = 50)
+    private String patronymicName;
 
+    @NotNull
     @Column(unique = true, length = 50)
-    @NotNull
     private String username;
 
     @NotNull
     @Column(length = 200)
     private String password;
 
-
+    @Column(nullable = false)
     private boolean needChangePass = true;
 
+    @Column(nullable = false)
     private boolean isActive = true;
+
+    @DateTimeFormat(pattern = "dd.MM.yyyy")
+    private LocalDate dateOfRegistration;
 
     @ManyToOne
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
 
-    @DateTimeFormat(pattern = "dd.MM.yyyy")
-    private LocalDate dateOfRegistration;
+    // ========== КОНСТРУКТОРЫ ==========
+    public Employee(String lastName, String firstName, String patronymicName, String username, String password) {
+        this.lastName = lastName;
+        this.firstName = firstName;
+        this.patronymicName = patronymicName;
+        this.username = username;
+        this.password = password;
+        this.dateOfRegistration = LocalDate.now();
+    }
 
+    // ========== МЕТОДЫ ==========
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.singletonList(new SimpleGrantedAuthority(role.getName()));
@@ -79,17 +93,9 @@ public class Employee implements UserDetails {
         return isActive;
     }
 
+    @Transient
     public String getFullName() {
         return lastName + " " + firstName + " " + patronymicName;
-    }
-
-    public Employee(String lastName, String firstName, String patronymicName, String username, String password) {
-        this.lastName = lastName;
-        this.firstName = firstName;
-        this.patronymicName = patronymicName;
-        this.username = username;
-        this.password = password;
-        this.dateOfRegistration = LocalDate.now();
     }
 
     @Override

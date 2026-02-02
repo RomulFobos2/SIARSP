@@ -19,12 +19,19 @@ import java.util.List;
 @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 //Категория товара
 public class ProductCategory {
+
+    // ========== ПОЛЯ ==========
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
-    private String name; // например "Ноутбук", "Мини-ПК"
+    private String name;
+
+    @ToString.Exclude
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(nullable = false)
+    private GlobalProductCategory globalProductCategory;
 
     @ToString.Exclude
     @ManyToMany
@@ -35,15 +42,16 @@ public class ProductCategory {
     )
     private List<ProductAttribute> attributes = new ArrayList<>();
 
-    @ToString.Exclude
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(nullable = false)
-    private GlobalProductCategory globalProductCategory;
+    // ========== КОНСТРУКТОРЫ ==========
 
+
+    // ========== МЕТОДЫ ==========
+    @Transient
     public String getGlobalProductCategoryName() {
         return globalProductCategory.getName();
     }
 
+    @Transient
     public String getDisplayName() {
         return name + " (" + getGlobalProductCategoryName() + ")";
     }

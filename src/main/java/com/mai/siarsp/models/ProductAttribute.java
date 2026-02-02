@@ -20,17 +20,18 @@ import java.util.List;
 @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 //Описание возможной характеристики категории
 public class ProductAttribute {
+
+    // ========== ПОЛЯ ==========
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
-    private String name; // например "RAM", "SSD", "Процессор"
+    private String name;
 
     @Column(nullable = true)
-    private String unit; // например "ГБ", "МГц", "дюймов"
+    private String unit;
 
-    //Тип данных атрибута
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private AttributeType dataType;
@@ -39,6 +40,7 @@ public class ProductAttribute {
     @ManyToMany(mappedBy = "attributes")
     private List<ProductCategory> categories = new ArrayList<>();
 
+    // ========== КОНСТРУКТОРЫ ==========
     public ProductAttribute(String name, String unit, AttributeType dataType, List<ProductCategory> categories) {
         this.name = name;
         this.unit = unit;

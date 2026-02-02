@@ -11,10 +11,18 @@ import lombok.NoArgsConstructor;
 @Table(name = "t_globalProductCategory")
 @EqualsAndHashCode(of = "id")
 public class GlobalProductCategory {
+
+    // ========== ПОЛЯ ==========
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false, unique = true)
     private String name;
+
+    // ========== КОНСТРУКТОРЫ ==========
+
+
+    // ========== МЕТОДЫ ==========
+
 }

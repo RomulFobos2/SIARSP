@@ -19,6 +19,7 @@ import java.util.List;
 //Запрос поставщику на Поставку (приход)
 public class RequestForDelivery {
 
+    // ========== ПОЛЯ ==========
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -30,7 +31,7 @@ public class RequestForDelivery {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private RequestStatus status = RequestStatus.PENDING; // PENDING, SENT, RECEIVED, CANCELLED
+    private RequestStatus status = RequestStatus.PENDING;
 
     @ToString.Exclude
     @ManyToOne
@@ -38,14 +39,15 @@ public class RequestForDelivery {
     private Supplier supplier;
 
     @ToString.Exclude
-    @OneToMany(mappedBy = "request", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "request", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RequestedProduct> requestedProducts = new ArrayList<>();
 
     @ToString.Exclude
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "delivery_id")
-    private Delivery delivery;  // Поставка, которая выполнила этот запрос
+    private Delivery delivery;
 
+    // ========== КОНСТРУКТОРЫ ==========
     public RequestForDelivery(Supplier supplier) {
         this.supplier = supplier;
         this.requestDate = LocalDate.now();
@@ -53,6 +55,7 @@ public class RequestForDelivery {
         this.requestedProducts = new ArrayList<>();
     }
 
+    // ========== МЕТОДЫ ==========
     public void addRequestedProduct(RequestedProduct requestedProduct) {
         this.requestedProducts.add(requestedProduct);
         requestedProduct.setRequest(this);

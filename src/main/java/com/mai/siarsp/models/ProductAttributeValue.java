@@ -16,9 +16,14 @@ import java.time.LocalDate;
 @EqualsAndHashCode(of = "id")
 //Значение конкретной характеристики для товара
 public class ProductAttributeValue {
+
+    // ========== ПОЛЯ ==========
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(length = 500, nullable = false)
+    private String value;
 
     @ToString.Exclude
     @ManyToOne
@@ -29,22 +34,23 @@ public class ProductAttributeValue {
     @JoinColumn(nullable = false)
     private ProductAttribute attribute;
 
-    @Column(length = 500, nullable = false)
-    private String value;
-
+    // ========== КОНСТРУКТОРЫ ==========
     public ProductAttributeValue(Product product, ProductAttribute attribute, String value) {
         this.product = product;
         this.attribute = attribute;
         this.value = value;
     }
 
-    /*Использовать
-    LocalDate date = attrValue.getValue(LocalDate.class);
-    Double number = attrValue.getValue(Double.class);
-    String text = attrValue.getValue(String.class);
-
-    //Если типы не совпадают - вернет null (не упадет!)
-    String wrong = attrValue.getValue(String.class); // для DATE вернет null
+    // ========== МЕТОДЫ ==========
+    /**
+     * Типобезопасное получение значения атрибута
+     *
+     * Использование:
+     * LocalDate date = attrValue.getValue(LocalDate.class);
+     * Double number = attrValue.getValue(Double.class);
+     * String text = attrValue.getValue(String.class);
+     *
+     * Если типы не совпадают - вернет null (не упадет!)
      */
     public <T> T getValue(Class<T> type) {
         if (attribute == null) return null;

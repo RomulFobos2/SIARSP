@@ -1,13 +1,18 @@
 package com.mai.siarsp.component;
 
 import com.mai.siarsp.models.Employee;
+import com.mai.siarsp.models.ProductAttribute;
+import com.mai.siarsp.models.ProductCategory;
 import com.mai.siarsp.repo.RoleRepository;
 import com.mai.siarsp.models.Role;
 import com.mai.siarsp.service.employee.EmployeeService;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -57,5 +62,43 @@ public class RoleRunner implements CommandLineRunner {
             Employee admin = new Employee("Техническая", "учетная", "запись", "admin", "admin");
             employeeService.saveEmployee(admin, ROLE_EMPLOYEE_ADMIN);
         }
+    }
+
+    @Transactional
+    public void createProductAttributeGabarite() {
+        List<ProductCategory> categories = productCategoryRepo.findAll();
+        log.info("🔧 Загружено {} категорий из БД", categories.size());
+
+        addAttributeIfNotExists("Длина упаковки", "см", categories);
+        addAttributeIfNotExists("Ширина упаковки", "см", categories);
+        addAttributeIfNotExists("Высота упаковки", "см", categories);
+
+        productCategoryRepo.saveAll(categories);
+        log.info("✅ Атрибуты добавлены и категории сохранены.");
+    }
+
+    private void addAttributeIfNotExists(String name, String unit, List<ProductCategory> categories) {
+        List<ProductAttribute> existing = productAttributeRepo.findByNameAndUnit(name, unit);
+
+        ProductAttribute attribute;
+        if (existing.isEmpty()) {
+            attribute = new ProductAttribute(name, unit, new ArrayList<>());
+            productAttributeRepo.save(attribute);
+            log.info("➕ Создан новый атрибут: '{}' ({})", name, unit);
+        } else {
+            attribute = existing.get(0);
+            log.info("📦 Найден существующий атрибут: '{}' ({}) [id={}]", name, unit, attribute.getId());
+        }
+
+        int addedCount = 0;
+        for (ProductCategory category : categories) {
+            if (!category.getAttributes().contains(attribute)) {
+                category.getAttributes().add(attribute);
+                addedCount++;
+                log.debug("➡️ Добавлен атрибут '{}' к категории '{}'", name, category.getName());
+            }
+        }
+
+        log.info("📊 Атрибут '{}' добавлен в {} категорий", name, addedCount);
     }
 }

@@ -6,12 +6,16 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @Entity
-@Table(name = "t_requestedProduct")
+@Table(name = "t_shelf")
 @EqualsAndHashCode(of = "id")
-public class RequestedProduct {
+// --- 2. Сущность стеллажа
+public class Shelf {
 
     // ========== ПОЛЯ ==========
     @Id
@@ -19,22 +23,22 @@ public class RequestedProduct {
     private Long id;
 
     @Column(nullable = false)
-    private int quantity;
+    private String code;
 
     @ToString.Exclude
     @ManyToOne
     @JoinColumn(nullable = false)
-    private Product product;
+    private Warehouse warehouse;
 
     @ToString.Exclude
-    @ManyToOne
-    @JoinColumn(nullable = false)
-    private RequestForDelivery request;
+    @OneToMany(mappedBy = "shelf", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<StorageZone> storageZones = new ArrayList<>();
 
     // ========== КОНСТРУКТОРЫ ==========
-    public RequestedProduct(Product product, int quantity) {
-        this.product = product;
-        this.quantity = quantity;
+    public Shelf(String code, Warehouse warehouse) {
+        this.code = code;
+        this.warehouse = warehouse;
     }
 
+    // ========== МЕТОДЫ ==========
 }
