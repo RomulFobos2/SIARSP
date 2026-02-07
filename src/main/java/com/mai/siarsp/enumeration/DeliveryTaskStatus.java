@@ -1,5 +1,8 @@
 package com.mai.siarsp.enumeration;
 
+import lombok.Getter;
+
+@Getter
 public enum DeliveryTaskStatus {
     PENDING("Ожидает выполнения"),
     LOADING("Идет погрузка"),
@@ -13,7 +16,4 @@ public enum DeliveryTaskStatus {
         this.displayName = displayName;
     }
 
-    public String getDisplayName() {
-        return displayName;
-    }
 }

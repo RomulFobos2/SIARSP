@@ -3,6 +3,7 @@ package com.mai.siarsp.repo;
 import com.mai.siarsp.models.ProductAttribute;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface ProductAttributeRepository extends JpaRepository<ProductAttribute, Long> {
@@ -10,4 +11,6 @@ public interface ProductAttributeRepository extends JpaRepository<ProductAttribu
     boolean existsByName(String name);
 
     Optional<ProductAttribute> findByName(String name);
+
+    List<ProductAttribute> findByNameAndUnit(String name, String unit);
 }

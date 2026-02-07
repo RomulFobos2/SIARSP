@@ -1,5 +1,8 @@
 package com.mai.siarsp.enumeration;
 
+import lombok.Getter;
+
+@Getter
 public enum WarehouseType {
     REGULAR("Обычный склад"),
     REFRIGERATOR("Холодильная камера");
@@ -10,7 +13,4 @@ public enum WarehouseType {
         this.displayName = displayName;
     }
 
-    public String getDisplayName() {
-        return displayName;
-    }
 }

@@ -1,5 +1,8 @@
 package com.mai.siarsp.enumeration;
 
+import lombok.Getter;
+
+@Getter
 public enum WriteOffReason {
     DEFECT("Брак"),
     EXPIRED("Истек срок годности"),
@@ -13,7 +16,4 @@ public enum WriteOffReason {
         this.displayName = displayName;
     }
 
-    public String getDisplayName() {
-        return displayName;
-    }
 }

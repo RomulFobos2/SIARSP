@@ -1,5 +1,8 @@
 package com.mai.siarsp.enumeration;
 
+import lombok.Getter;
+
+@Getter
 public enum ClientOrderStatus {
     NEW("Новый"),
     CONFIRMED("Подтвержден"),
@@ -16,7 +19,4 @@ public enum ClientOrderStatus {
         this.displayName = displayName;
     }
 
-    public String getDisplayName() {
-        return displayName;
-    }
 }

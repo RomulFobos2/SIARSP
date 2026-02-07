@@ -1,5 +1,8 @@
 package com.mai.siarsp.enumeration;
 
+import lombok.Getter;
+
+@Getter
 public enum VehicleStatus {
     AVAILABLE("Готов к работе"),
     IN_USE("В работе"),
@@ -13,7 +16,4 @@ public enum VehicleStatus {
         this.displayName = displayName;
     }
 
-    public String getDisplayName() {
-        return displayName;
-    }
 }

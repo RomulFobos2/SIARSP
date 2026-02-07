@@ -1,5 +1,8 @@
 package com.mai.siarsp.enumeration;
 
+import lombok.Getter;
+
+@Getter
 public enum OrderStatus {
     NEW("Новый заказ"),                          // Пользователь оформил заказ
     WAITING_FOR_DELIVERY("Ожидается поставка"),  // Менеджер ждёт поступления товаров
@@ -15,8 +18,5 @@ public enum OrderStatus {
         this.displayName = displayName;
     }
 
-    public String getDisplayName() {
-        return displayName;
-    }
 }
 

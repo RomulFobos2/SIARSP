@@ -1,5 +1,8 @@
 package com.mai.siarsp.enumeration;
 
+import lombok.Getter;
+
+@Getter
 public enum RoutePointType {
     WAREHOUSE("Склад"),
     DELIVERY_ADDRESS("Адрес доставки"),
@@ -11,7 +14,4 @@ public enum RoutePointType {
         this.displayName = displayName;
     }
 
-    public String getDisplayName() {
-        return displayName;
-    }
 }

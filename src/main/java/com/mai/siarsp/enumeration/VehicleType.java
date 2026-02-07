@@ -1,5 +1,8 @@
 package com.mai.siarsp.enumeration;
 
+import lombok.Getter;
+
+@Getter
 public enum VehicleType {
     STANDARD("Обычный"),
     REFRIGERATED("Рефрижератор");
@@ -10,7 +13,4 @@ public enum VehicleType {
         this.displayName = displayName;
     }
 
-    public String getDisplayName() {
-        return displayName;
-    }
 }

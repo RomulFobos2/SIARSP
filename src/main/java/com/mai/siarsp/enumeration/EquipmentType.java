@@ -1,5 +1,8 @@
 package com.mai.siarsp.enumeration;
 
+import lombok.Getter;
+
+@Getter
 public enum EquipmentType {
     RACK("Стеллаж"),
     FRIDGE("Холодильная камера"),
@@ -14,7 +17,4 @@ public enum EquipmentType {
         this.displayName = displayName;
     }
 
-    public String getDisplayName() {
-        return displayName;
-    }
 }

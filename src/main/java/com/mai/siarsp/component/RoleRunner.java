@@ -1,8 +1,11 @@
 package com.mai.siarsp.component;
 
+import com.mai.siarsp.enumeration.AttributeType;
 import com.mai.siarsp.models.Employee;
 import com.mai.siarsp.models.ProductAttribute;
 import com.mai.siarsp.models.ProductCategory;
+import com.mai.siarsp.repo.ProductAttributeRepository;
+import com.mai.siarsp.repo.ProductCategoryRepository;
 import com.mai.siarsp.repo.RoleRepository;
 import com.mai.siarsp.models.Role;
 import com.mai.siarsp.service.employee.EmployeeService;
@@ -27,10 +30,14 @@ public class RoleRunner implements CommandLineRunner {
 
     private final RoleRepository roleRepository;
     private final EmployeeService employeeService;
+    private final ProductCategoryRepository productCategoryRepository;
+    private final ProductAttributeRepository productAttributeRepository;
 
-    public RoleRunner(RoleRepository roleRepository, EmployeeService employeeService) {
+    public RoleRunner(RoleRepository roleRepository, EmployeeService employeeService, ProductCategoryRepository productCategoryRepository, ProductAttributeRepository productAttributeRepository) {
         this.roleRepository = roleRepository;
         this.employeeService = employeeService;
+        this.productCategoryRepository = productCategoryRepository;
+        this.productAttributeRepository = productAttributeRepository;
     }
 
     @Override
@@ -66,28 +73,29 @@ public class RoleRunner implements CommandLineRunner {
 
     @Transactional
     public void createProductAttributeGabarite() {
-        List<ProductCategory> categories = productCategoryRepo.findAll();
+        List<ProductCategory> categories = productCategoryRepository.findAll();
         log.info("🔧 Загружено {} категорий из БД", categories.size());
 
-        addAttributeIfNotExists("Длина упаковки", "см", categories);
-        addAttributeIfNotExists("Ширина упаковки", "см", categories);
-        addAttributeIfNotExists("Высота упаковки", "см", categories);
+        addAttributeIfNotExists("Длина упаковки", "см", AttributeType.NUMBER, categories);
+        addAttributeIfNotExists("Ширина упаковки", "см", AttributeType.NUMBER, categories);
+        addAttributeIfNotExists("Высота упаковки", "см", AttributeType.NUMBER, categories);
 
-        productCategoryRepo.saveAll(categories);
+        productCategoryRepository.saveAll(categories);
         log.info("✅ Атрибуты добавлены и категории сохранены.");
     }
 
-    private void addAttributeIfNotExists(String name, String unit, List<ProductCategory> categories) {
-        List<ProductAttribute> existing = productAttributeRepo.findByNameAndUnit(name, unit);
+    private void addAttributeIfNotExists(String name, String unit, AttributeType dataType, List<ProductCategory> categories) {
+        List<ProductAttribute> existing = productAttributeRepository.findByNameAndUnit(name, unit);
 
         ProductAttribute attribute;
         if (existing.isEmpty()) {
-            attribute = new ProductAttribute(name, unit, new ArrayList<>());
-            productAttributeRepo.save(attribute);
-            log.info("➕ Создан новый атрибут: '{}' ({})", name, unit);
+            attribute = new ProductAttribute(name, unit, dataType, new ArrayList<>());
+            productAttributeRepository.save(attribute);
+            log.info("➕ Создан новый атрибут: '{}' ({}) [тип: {}]", name, unit, dataType);
         } else {
             attribute = existing.get(0);
-            log.info("📦 Найден существующий атрибут: '{}' ({}) [id={}]", name, unit, attribute.getId());
+            log.info("📦 Найден существующий атрибут: '{}' ({}) [id={}, тип={}]",
+                    name, unit, attribute.getId(), attribute.getDataType());
         }
 
         int addedCount = 0;
