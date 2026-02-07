@@ -18,7 +18,8 @@ import java.time.LocalDate;
 @Data
 @NoArgsConstructor
 @Entity
-@Table(name = "t_productAttributeValue")
+@Table(name = "t_productAttributeValue",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"product_id", "attribute_id"}))
 @EqualsAndHashCode(of = "id")
 public class ProductAttributeValue {
 

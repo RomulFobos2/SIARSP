@@ -46,7 +46,8 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @Entity
-@Table(name = "t_storageZone")
+@Table(name = "t_storageZone",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"shelf_id", "label"}))
 @EqualsAndHashCode(of = "id")
 public class StorageZone {
 

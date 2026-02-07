@@ -51,7 +51,8 @@ import java.math.BigDecimal;
 @Data
 @NoArgsConstructor
 @Entity
-@Table(name = "t_supply")
+@Table(name = "t_supply",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"delivery_id", "product_id"}))
 @EqualsAndHashCode(of = "id")
 public class Supply {
 

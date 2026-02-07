@@ -50,7 +50,8 @@ import java.util.ArrayList;
 @Data
 @NoArgsConstructor
 @Entity
-@Table(name = "t_routePoint")
+@Table(name = "t_routePoint",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"delivery_task_id", "order_index"}))
 @EqualsAndHashCode(of = "id")
 public class RoutePoint {
 

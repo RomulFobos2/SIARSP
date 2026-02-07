@@ -43,7 +43,8 @@ import lombok.ToString;
 @Data
 @NoArgsConstructor
 @Entity
-@Table(name = "t_requestedProduct")
+@Table(name = "t_requestedProduct",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"request_id", "product_id"}))
 @EqualsAndHashCode(of = "id")
 public class RequestedProduct {
 

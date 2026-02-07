@@ -42,7 +42,8 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @Entity
-@Table(name = "t_shelf")
+@Table(name = "t_shelf",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"warehouse_id", "code"}))
 @EqualsAndHashCode(of = "id")
 public class Shelf {
 

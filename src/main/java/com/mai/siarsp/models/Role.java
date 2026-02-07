@@ -104,7 +104,7 @@ public class Role implements GrantedAuthority {
      * - @Secured({"ROLE_ADMIN", "ROLE_WAREHOUSE_MANAGER"})
      */
     @NotNull
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String name;
 
     /**

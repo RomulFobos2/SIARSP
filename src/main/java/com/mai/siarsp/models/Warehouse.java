@@ -70,7 +70,7 @@ public class Warehouse {
      * - "Основной склад"
      * - "Холодильный склад №1"
      */
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String name;
 
     /**

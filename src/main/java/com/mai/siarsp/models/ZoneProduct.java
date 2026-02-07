@@ -76,7 +76,8 @@ import java.util.Map;
 @Data
 @NoArgsConstructor
 @Entity
-@Table(name = "t_zoneProduct")
+@Table(name = "t_zoneProduct",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"zone_id", "product_id"}))
 @EqualsAndHashCode(of = "id")
 public class ZoneProduct {
 

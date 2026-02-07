@@ -69,7 +69,7 @@ public class ProductAttribute {
      * - Формах ввода данных о товаре
      * - Фильтрах и поиске по характеристикам
      */
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String name;
 
     /**
