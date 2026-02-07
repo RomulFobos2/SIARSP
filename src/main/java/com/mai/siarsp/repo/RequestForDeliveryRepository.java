@@ -1,0 +1,15 @@
+package com.mai.siarsp.repo;
+
+import com.mai.siarsp.enumeration.RequestStatus;
+import com.mai.siarsp.models.RequestForDelivery;
+import com.mai.siarsp.models.Supplier;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
+
+public interface RequestForDeliveryRepository extends JpaRepository<RequestForDelivery, Long> {
+
+    boolean existsBySupplierAndStatus(Supplier supplier, RequestStatus status);
+
+    Optional<RequestForDelivery> findBySupplierAndStatus(Supplier supplier, RequestStatus status);
+}
