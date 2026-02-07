@@ -36,7 +36,8 @@ import java.util.ArrayList;
 @Data
 @NoArgsConstructor
 @Entity
-@Table(name = "t_orderedProduct")
+@Table(name = "t_orderedProduct",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"client_order_id", "product_id"}))
 @EqualsAndHashCode(of = "id")
 public class OrderedProduct {
 

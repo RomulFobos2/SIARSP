@@ -39,7 +39,8 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @Entity
-@Table(name = "t_productCategory")
+@Table(name = "t_productCategory",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"global_product_category_id", "name"}))
 @EqualsAndHashCode(of = "id")
 @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class ProductCategory {
