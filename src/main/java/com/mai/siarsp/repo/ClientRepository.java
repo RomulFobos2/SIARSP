@@ -9,5 +9,7 @@ public interface ClientRepository extends JpaRepository<Client, Long> {
 
     boolean existsByInn(String inn);
 
+    boolean existsByInnAndIdNot(String inn, Long id);
+
     Optional<Client> findByInn(String inn);
 }

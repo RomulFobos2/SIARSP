@@ -1,0 +1,62 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Клиенты | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/javascript.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container my-5">
+    <div class="profile-card mb-4">
+        <div class="profile-actions">
+            <a th:href="'/'"
+               class="btn btn-secondary btn-profile">
+                ← Главная
+            </a>
+            <a th:href="'/employee/manager/clients/addClient'"
+               class="btn btn-success btn-profile">
+                + Добавить клиента
+            </a>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <h2 class="h3 mb-4 fw-bold">Список клиентов</h2>
+
+        <div class="table-responsive">
+            <table class="table table-modern">
+                <thead>
+                <tr>
+                    <th>№</th>
+                    <th>Наименование</th>
+                    <th>Тип организации</th>
+                    <th>ИНН</th>
+                    <th>Адрес доставки</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="client, index : ${allClients}">
+                    <td th:text="${index.index+1}"></td>
+                    <td>
+                        <a th:text="${client.getOrganizationName()}"
+                           th:href="'/employee/manager/clients/detailsClient/' + ${client.getId()}"></a>
+                    </td>
+                    <td th:text="${client.getOrganizationType()}"></td>
+                    <td th:text="${client.getInn()}"></td>
+                    <td th:text="${client.getDeliveryAddress()}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>
