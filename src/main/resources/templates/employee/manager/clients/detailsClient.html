@@ -1,0 +1,130 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Информация о клиенте | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/javascript.js"></script>
+</head>
+<body class="edit-page">
+<div class="edit-container">
+    <div class="edit-card">
+
+        <h1 class="page-title">Информация о клиенте</h1>
+        <p class="page-subtitle">Просмотр данных клиента</p>
+
+        <div th:if="${deleteError}" class="alert alert-danger" th:text="${deleteError}"></div>
+
+        <div class="mb-4">
+            <h6 class="form-section-title">Организация</h6>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <input type="text" class="form-control info-display"
+                           placeholder="Тип организации"
+                           th:value="${clientDTO.getOrganizationType()}" disabled>
+                </div>
+                <div class="col-md-6">
+                    <input type="text" class="form-control info-display"
+                           placeholder="Наименование"
+                           th:value="${clientDTO.getOrganizationName()}" disabled>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <h6 class="form-section-title">Реквизиты</h6>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control info-display"
+                           placeholder="ИНН"
+                           th:value="${clientDTO.getInn()}" disabled>
+                </div>
+                <div class="col-md-4">
+                    <input type="text" class="form-control info-display"
+                           placeholder="КПП"
+                           th:value="${clientDTO.getKpp()}" disabled>
+                </div>
+                <div class="col-md-4">
+                    <input type="text" class="form-control info-display"
+                           placeholder="ОГРН"
+                           th:value="${clientDTO.getOgrn()}" disabled>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <h6 class="form-section-title">Адреса</h6>
+            <div class="row g-3">
+                <div class="col-12">
+                    <input type="text" class="form-control info-display"
+                           placeholder="Юридический адрес"
+                           th:value="${clientDTO.getLegalAddress()}" disabled>
+                </div>
+                <div class="col-12">
+                    <input type="text" class="form-control info-display"
+                           placeholder="Адрес доставки"
+                           th:value="${clientDTO.getDeliveryAddress()}" disabled>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <h6 class="form-section-title">Контакты</h6>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <input type="text" class="form-control info-display"
+                           placeholder="Контактное лицо"
+                           th:value="${clientDTO.getContactPerson()}" disabled>
+                </div>
+                <div class="col-md-6">
+                    <input type="text" class="form-control info-display"
+                           placeholder="Телефон"
+                           th:value="${clientDTO.getPhoneNumber()}" disabled>
+                </div>
+                <div class="col-12">
+                    <input type="text" class="form-control info-display"
+                           placeholder="Email"
+                           th:value="${clientDTO.getEmail()}" disabled>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-buttons mb-4">
+            <button th:onclick="'window.location.href=\'/employee/manager/clients/editClient/' + ${clientDTO.getId()} + '\';'"
+                    class="btn btn-primary btn-profile">
+                Редактировать
+            </button>
+            <button class="btn btn-danger btn-profile"
+                    th:data-name="${clientDTO.getOrganizationName()}"
+                    th:data-clientid="${clientDTO.getId()}"
+                    onclick="confirmDelete(this)">
+                Удалить
+            </button>
+        </div>
+
+        <div class="divider">
+            <span>или</span>
+        </div>
+
+        <div class="link-section">
+            <a th:href="'/employee/manager/clients/allClients'">← К списку клиентов</a>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function confirmDelete(button) {
+        const name = button.getAttribute('data-name');
+        const clientId = button.getAttribute('data-clientid');
+
+        if (confirm("Вы точно хотите удалить клиента " + name + "?")) {
+            window.location.href = '/employee/manager/clients/deleteClient/' + clientId;
+        }
+    }
+</script>
+</body>
+</html>

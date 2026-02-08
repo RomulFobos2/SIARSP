@@ -1,0 +1,151 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Добавить клиента | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/javascript.js"></script>
+</head>
+<body class="edit-page">
+<div class="edit-container">
+    <div class="edit-card">
+        <form action="/employee/manager/clients/addClient" method="post" class="auth-form">
+
+            <h1 class="page-title">Добавление клиента</h1>
+            <p class="page-subtitle">Создайте нового клиента системы</p>
+
+            <div th:if="${clientError}" class="alert alert-danger" th:text="${clientError}"></div>
+
+            <div class="mb-4">
+                <h6 class="form-section-title">Организация</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" name="inputOrganizationType"
+                               id="inputOrganizationType" required placeholder="Тип организации" maxlength="300">
+                    </div>
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" name="inputOrganizationName"
+                               id="inputOrganizationName" required placeholder="Наименование" maxlength="300">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h6 class="form-section-title">Реквизиты</h6>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="inputInn"
+                               id="inputInn" placeholder="ИНН" maxlength="12">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="inputKpp"
+                               id="inputKpp" placeholder="КПП" maxlength="20">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="inputOgrn"
+                               id="inputOgrn" placeholder="ОГРН" maxlength="20">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h6 class="form-section-title">Адреса</h6>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <input type="text" class="form-control" name="inputLegalAddress"
+                               id="inputLegalAddress" placeholder="Юридический адрес" maxlength="500">
+                    </div>
+                    <div class="col-12">
+                        <input type="text" class="form-control" name="inputDeliveryAddress"
+                               id="inputDeliveryAddress" required placeholder="Адрес доставки" maxlength="500">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h6 class="form-section-title">Контакты</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" name="inputContactPerson"
+                               id="inputContactPerson" placeholder="Контактное лицо" maxlength="200">
+                    </div>
+                    <div class="col-md-6">
+                        <input type="tel" class="form-control" name="inputPhoneNumber"
+                               id="inputPhoneNumber" placeholder="Телефон" maxlength="20">
+                    </div>
+                    <div class="col-12">
+                        <input type="email" class="form-control" name="inputEmail"
+                               id="inputEmail" placeholder="Email" maxlength="100">
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="w-100 btn btn-auth" id="submitBtn">
+                Добавить клиента
+            </button>
+
+            <div class="divider">
+                <span>или</span>
+            </div>
+
+            <div class="link-section">
+                <a th:href="'/employee/manager/clients/allClients'">← К списку клиентов</a>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const innInput = document.getElementById('inputInn');
+        const submitButton = document.getElementById('submitBtn');
+
+        const innErrorDiv = document.createElement('div');
+        innErrorDiv.className = 'alert alert-danger mt-2';
+        innErrorDiv.style.display = 'none';
+        innInput.parentNode.appendChild(innErrorDiv);
+
+        let isInnValid = true;
+
+        function checkFormValidity() {
+            submitButton.disabled = !isInnValid;
+        }
+
+        innInput.addEventListener('input', function() {
+            const inn = innInput.value.trim();
+
+            if (inn.length > 0) {
+                fetch(`/employee/manager/clients/check-inn?inn=${inn}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.exists) {
+                            innErrorDiv.textContent = 'Клиент с таким ИНН уже существует';
+                            innErrorDiv.style.display = 'block';
+                            innInput.classList.add('is-invalid');
+                            isInnValid = false;
+                        } else {
+                            innErrorDiv.style.display = 'none';
+                            innInput.classList.remove('is-invalid');
+                            innInput.classList.add('is-valid');
+                            isInnValid = true;
+                        }
+                        checkFormValidity();
+                    })
+                    .catch(error => {
+                        console.error('Ошибка:', error);
+                    });
+            } else {
+                innErrorDiv.style.display = 'none';
+                innInput.classList.remove('is-invalid', 'is-valid');
+                isInnValid = true;
+                checkFormValidity();
+            }
+        });
+    });
+</script>
+</body>
+</html>
