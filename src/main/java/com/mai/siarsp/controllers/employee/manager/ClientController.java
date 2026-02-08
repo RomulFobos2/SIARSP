@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -35,6 +36,7 @@ public class ClientController {
         return ResponseEntity.ok(response);
     }
 
+    @Transactional
     @GetMapping("/employee/manager/clients/allClients")
     public String allClients(Model model) {
         model.addAttribute("allClients", clientService.getAllClients().stream()
@@ -77,6 +79,7 @@ public class ClientController {
         return "redirect:/employee/manager/clients/detailsClient/" + client.getId();
     }
 
+    @Transactional
     @GetMapping("/employee/manager/clients/detailsClient/{id}")
     public String detailsClient(@PathVariable(value = "id") long id, Model model) {
         if (!clientService.getClientRepository().existsById(id)) {
@@ -89,6 +92,7 @@ public class ClientController {
         return "employee/manager/clients/detailsClient";
     }
 
+    @Transactional
     @GetMapping("/employee/manager/clients/editClient/{id}")
     public String editClient(@PathVariable(value = "id") long id, Model model) {
         if (!clientService.getClientRepository().existsById(id)) {
