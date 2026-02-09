@@ -10,6 +10,8 @@ public interface ProductAttributeRepository extends JpaRepository<ProductAttribu
 
     boolean existsByName(String name);
 
+    boolean existsByNameAndIdNot(String name, Long id);
+
     Optional<ProductAttribute> findByName(String name);
 
     List<ProductAttribute> findByNameAndUnit(String name, String unit);
