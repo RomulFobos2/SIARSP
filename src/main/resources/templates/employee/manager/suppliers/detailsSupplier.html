@@ -1,0 +1,146 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Информация о поставщике | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/javascript.js"></script>
+</head>
+<body class="edit-page">
+<div class="edit-container">
+    <div class="edit-card">
+
+        <h1 class="page-title">Информация о поставщике</h1>
+        <p class="page-subtitle">Просмотр данных поставщика</p>
+
+        <div th:if="${deleteError}" class="alert alert-danger" th:text="${deleteError}"></div>
+
+        <div class="mb-4">
+            <h6 class="form-section-title">Организация</h6>
+            <div class="row g-3">
+                <div class="col-12">
+                    <input type="text" class="form-control info-display"
+                           placeholder="Наименование организации"
+                           th:value="${supplierDTO.getName()}" disabled>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <h6 class="form-section-title">Реквизиты</h6>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control info-display"
+                           placeholder="ИНН"
+                           th:value="${supplierDTO.getInn()}" disabled>
+                </div>
+                <div class="col-md-4">
+                    <input type="text" class="form-control info-display"
+                           placeholder="КПП"
+                           th:value="${supplierDTO.getKpp()}" disabled>
+                </div>
+                <div class="col-md-4">
+                    <input type="text" class="form-control info-display"
+                           placeholder="ОГРН"
+                           th:value="${supplierDTO.getOgrn()}" disabled>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <h6 class="form-section-title">Банковские реквизиты</h6>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control info-display"
+                           placeholder="Расчётный счёт"
+                           th:value="${supplierDTO.getPaymentAccount()}" disabled>
+                </div>
+                <div class="col-md-4">
+                    <input type="text" class="form-control info-display"
+                           placeholder="БИК"
+                           th:value="${supplierDTO.getBik()}" disabled>
+                </div>
+                <div class="col-md-4">
+                    <input type="text" class="form-control info-display"
+                           placeholder="Банк"
+                           th:value="${supplierDTO.getBank()}" disabled>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <h6 class="form-section-title">Директор</h6>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control info-display"
+                           placeholder="Фамилия"
+                           th:value="${supplierDTO.getDirectorLastName()}" disabled>
+                </div>
+                <div class="col-md-4">
+                    <input type="text" class="form-control info-display"
+                           placeholder="Имя"
+                           th:value="${supplierDTO.getDirectorFirstName()}" disabled>
+                </div>
+                <div class="col-md-4">
+                    <input type="text" class="form-control info-display"
+                           placeholder="Отчество"
+                           th:value="${supplierDTO.getDirectorPatronymicName()}" disabled>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <h6 class="form-section-title">Контакты</h6>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <input type="text" class="form-control info-display"
+                           placeholder="Телефон / Email"
+                           th:value="${supplierDTO.getContactInfo()}" disabled>
+                </div>
+                <div class="col-md-6">
+                    <input type="text" class="form-control info-display"
+                           placeholder="Адрес"
+                           th:value="${supplierDTO.getAddress()}" disabled>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-buttons mb-4">
+            <button th:onclick="'window.location.href=\'/employee/manager/suppliers/editSupplier/' + ${supplierDTO.getId()} + '\';'"
+                    class="btn btn-primary btn-profile">
+                Редактировать
+            </button>
+            <button class="btn btn-danger btn-profile"
+                    th:data-name="${supplierDTO.getName()}"
+                    th:data-supplierid="${supplierDTO.getId()}"
+                    onclick="confirmDelete(this)">
+                Удалить
+            </button>
+        </div>
+
+        <div class="divider">
+            <span>или</span>
+        </div>
+
+        <div class="link-section">
+            <a th:href="'/employee/manager/suppliers/allSuppliers'">← К списку поставщиков</a>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function confirmDelete(button) {
+        const name = button.getAttribute('data-name');
+        const supplierId = button.getAttribute('data-supplierid');
+
+        if (confirm("Вы точно хотите удалить поставщика " + name + "?")) {
+            window.location.href = '/employee/manager/suppliers/deleteSupplier/' + supplierId;
+        }
+    }
+</script>
+</body>
+</html>

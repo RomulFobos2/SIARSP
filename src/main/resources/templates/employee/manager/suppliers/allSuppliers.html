@@ -1,0 +1,62 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Поставщики | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/javascript.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container my-5">
+    <div class="profile-card mb-4">
+        <div class="profile-actions">
+            <a th:href="'/'"
+               class="btn btn-secondary btn-profile">
+                ← Главная
+            </a>
+            <a th:href="'/employee/manager/suppliers/addSupplier'"
+               class="btn btn-success btn-profile">
+                + Добавить поставщика
+            </a>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <h2 class="h3 mb-4 fw-bold">Список поставщиков</h2>
+
+        <div class="table-responsive">
+            <table class="table table-modern">
+                <thead>
+                <tr>
+                    <th>№</th>
+                    <th>Наименование</th>
+                    <th>ИНН</th>
+                    <th>Директор</th>
+                    <th>Контакт</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="supplier, index : ${allSuppliers}">
+                    <td th:text="${index.index+1}"></td>
+                    <td>
+                        <a th:text="${supplier.getName()}"
+                           th:href="'/employee/manager/suppliers/detailsSupplier/' + ${supplier.getId()}"></a>
+                    </td>
+                    <td th:text="${supplier.getInn()}"></td>
+                    <td th:text="${supplier.getDirectorShortName()}"></td>
+                    <td th:text="${supplier.getContactInfo()}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>
