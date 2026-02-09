@@ -1,0 +1,94 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Атрибут товара | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/javascript.js"></script>
+</head>
+<body class="edit-page">
+<div class="edit-container">
+    <div class="edit-card">
+
+        <h1 class="page-title">Информация об атрибуте товара</h1>
+        <p class="page-subtitle">Просмотр данных атрибута</p>
+
+        <div th:if="${deleteError}" class="alert alert-danger" th:text="${deleteError}"></div>
+
+        <div class="mb-4">
+            <h6 class="form-section-title">Основные данные</h6>
+            <div class="row g-3">
+                <div class="col-12">
+                    <input type="text" class="form-control info-display"
+                           placeholder="Название атрибута"
+                           th:value="${attributeDTO.getName()}" disabled>
+                </div>
+                <div class="col-12">
+                    <input type="text" class="form-control info-display"
+                           placeholder="Единица измерения"
+                           th:value="${attributeDTO.getUnit() != null && !attributeDTO.getUnit().isEmpty() ? attributeDTO.getUnit() : '—'}" disabled>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <h6 class="form-section-title">Тип данных</h6>
+            <div class="row g-3">
+                <div class="col-12">
+                    <input type="text" class="form-control info-display"
+                           placeholder="Тип данных"
+                           th:value="${attributeDTO.getDataType().getDisplayName()}" disabled>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-4" th:if="${!linkedCategories.isEmpty()}">
+            <h6 class="form-section-title">Связанные категории</h6>
+            <div class="row g-2">
+                <div class="col-md-6" th:each="category : ${linkedCategories}">
+                    <input type="text" class="form-control info-display"
+                           th:value="${category.getName()}" disabled>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-buttons mb-4">
+            <button th:onclick="'window.location.href=\'/employee/warehouseManager/productAttributes/editProductAttribute/' + ${attributeDTO.getId()} + '\';'"
+                    class="btn btn-primary btn-profile">
+                Редактировать
+            </button>
+            <button class="btn btn-danger btn-profile"
+                    th:data-name="${attributeDTO.getName()}"
+                    th:data-attributeid="${attributeDTO.getId()}"
+                    onclick="confirmDelete(this)">
+                Удалить
+            </button>
+        </div>
+
+        <div class="divider">
+            <span>или</span>
+        </div>
+
+        <div class="link-section">
+            <a th:href="'/employee/warehouseManager/productAttributes/allProductAttributes'">
+                ← К списку атрибутов
+            </a>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function confirmDelete(button) {
+        const name = button.getAttribute('data-name');
+        const attributeId = button.getAttribute('data-attributeid');
+        if (confirm('Вы уверены, что хотите удалить атрибут "' + name + '"?')) {
+            window.location.href = '/employee/warehouseManager/productAttributes/deleteProductAttribute/' + attributeId;
+        }
+    }
+</script>
+</body>
+</html>

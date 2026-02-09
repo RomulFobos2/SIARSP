@@ -11,5 +11,7 @@ public interface ProductAttributeValueRepository extends JpaRepository<ProductAt
 
     boolean existsByProductAndAttribute(Product product, ProductAttribute attribute);
 
+    boolean existsByAttribute(ProductAttribute attribute);
+
     Optional<ProductAttributeValue> findByProductAndAttribute(Product product, ProductAttribute attribute);
 }

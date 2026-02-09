@@ -1,0 +1,137 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Добавить атрибут товара | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/javascript.js"></script>
+</head>
+<body class="edit-page">
+<div class="edit-container">
+    <div class="edit-card">
+        <form action="/employee/warehouseManager/productAttributes/addProductAttribute"
+              method="post" class="auth-form">
+
+            <h1 class="page-title">Добавление атрибута товара</h1>
+            <p class="page-subtitle">Создайте новый атрибут (характеристику) товара</p>
+
+            <div th:if="${attributeError}" class="alert alert-danger" th:text="${attributeError}"></div>
+
+            <div class="mb-4">
+                <h6 class="form-section-title">Основные данные</h6>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <input type="text" class="form-control" name="inputName"
+                               id="inputName" required placeholder="Название атрибута" maxlength="255">
+                    </div>
+                    <div class="col-12">
+                        <input type="text" class="form-control" name="inputUnit"
+                               id="inputUnit" placeholder="Единица измерения (необязательно)" maxlength="50">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h6 class="form-section-title">Тип данных</h6>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <select class="form-select" name="inputDataType"
+                                id="inputDataType" required>
+                            <option value="" disabled selected>Выберите тип данных</option>
+                            <option th:each="type : ${attributeTypes}"
+                                    th:value="${type}"
+                                    th:text="${type.getDisplayName()}"></option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4" th:if="${!allProductCategories.isEmpty()}">
+                <h6 class="form-section-title">Категории товаров</h6>
+                <div class="row g-2">
+                    <div class="col-md-6" th:each="category : ${allProductCategories}">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox"
+                                   name="inputCategoryIds"
+                                   th:value="${category.getId()}"
+                                   th:id="'cat_' + ${category.getId()}">
+                            <label class="form-check-label" th:for="'cat_' + ${category.getId()}"
+                                   th:text="${category.getName()}"></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="w-100 btn btn-auth" id="submitBtn">
+                Добавить атрибут
+            </button>
+
+            <div class="divider">
+                <span>или</span>
+            </div>
+
+            <div class="link-section">
+                <a th:href="'/employee/warehouseManager/productAttributes/allProductAttributes'">
+                    ← К списку атрибутов
+                </a>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const nameInput = document.getElementById('inputName');
+        const submitButton = document.getElementById('submitBtn');
+
+        const nameErrorDiv = document.createElement('div');
+        nameErrorDiv.className = 'alert alert-danger mt-2';
+        nameErrorDiv.style.display = 'none';
+        nameInput.parentNode.appendChild(nameErrorDiv);
+
+        let isNameValid = true;
+
+        function checkFormValidity() {
+            submitButton.disabled = !isNameValid;
+        }
+
+        function validateName() {
+            const name = nameInput.value.trim();
+
+            if (name.length > 0) {
+                fetch(`/employee/warehouseManager/productAttributes/check-name?name=${encodeURIComponent(name)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.exists) {
+                            nameErrorDiv.textContent = 'Атрибут с таким названием уже существует';
+                            nameErrorDiv.style.display = 'block';
+                            nameInput.classList.add('is-invalid');
+                            isNameValid = false;
+                        } else {
+                            nameErrorDiv.style.display = 'none';
+                            nameInput.classList.remove('is-invalid');
+                            nameInput.classList.add('is-valid');
+                            isNameValid = true;
+                        }
+                        checkFormValidity();
+                    })
+                    .catch(error => {
+                        console.error('Ошибка:', error);
+                    });
+            } else {
+                nameErrorDiv.style.display = 'none';
+                nameInput.classList.remove('is-invalid', 'is-valid');
+                isNameValid = true;
+                checkFormValidity();
+            }
+        }
+
+        nameInput.addEventListener('input', validateName);
+    });
+</script>
+</body>
+</html>
