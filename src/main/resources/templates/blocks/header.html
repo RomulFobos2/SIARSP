@@ -56,6 +56,12 @@
                         </a>
                     </li>
 
+                    <li class="nav-item" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
+                        <a class="nav-link px-3" href="/employee/manager/vehicles/allVehicles">
+                            Транспорт
+                        </a>
+                    </li>
+
                     <li class="nav-item" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
                         <a class="nav-link px-3" href="/employee/warehouseManager/globalProductCategories/allGlobalProductCategories">
                             Глобальные категории
