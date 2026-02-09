@@ -1,0 +1,1091 @@
+# ПОДХОД К РАЗРАБОТКЕ ПРОЕКТА SIARSP
+## Анализ архитектуры и методологии разработки
+
+---
+
+## 1. ОБЩАЯ АРХИТЕКТУРА ПРОЕКТА
+
+### 1.1 Структура пакетов
+
+```
+com.mai.siarsp/
+├── models/                    # Сущности JPA (Entity classes)
+├── repo/                      # Репозитории Spring Data JPA
+├── dto/                       # Data Transfer Objects
+├── mapper/                    # Мапперы (Entity ↔ DTO)
+├── service/                   # Бизнес-логика
+│   ├── general/              # Общие сервисы
+│   └── employee/
+│       ├── admin/            # Сервисы для администратора
+│       ├── manager/          # Сервисы для менеджера
+│       └── warehouseManager/ # Сервисы для заведующего складом
+├── controllers/              # MVC контроллеры
+│   ├── employee/
+│   │   ├── admin/           # Контроллеры администратора
+│   │   ├── manager/         # Контроллеры менеджера
+│   │   ├── warehouseManager/# Контроллеры заведующего складом
+│   │   └── general/         # Общие контроллеры
+│   └── visitor/             # Контроллеры для посетителей
+├── security/                 # Конфигурация Spring Security
+├── component/                # Компоненты (RoleRunner, ScheduleTask, RandomPasswordGenerator)
+└── enumeration/              # Перечисления (Enums)
+
+templates/                     # Thymeleaf шаблоны
+└── employee/
+    ├── admin/                # Страницы администратора
+    ├── manager/              # Страницы менеджера
+    │   ├── clients/
+    │   ├── suppliers/
+    │   └── ...
+    ├── warehouseManager/     # Страницы заведующего складом
+    │   ├── globalProductCategories/
+    │   ├── productCategories/
+    │   └── ...
+    └── general/              # Общие страницы
+```
+
+### 1.2 Технологический стек
+
+- **Java 21**, **Spring Boot 4.0.1**
+- **Spring Security 6** — аутентификация и авторизация (BCrypt)
+- **Spring Data JPA** / Hibernate — ORM, MySQL
+- **Thymeleaf** — серверный рендеринг HTML (+ Bootstrap)
+- **MapStruct 1.6.2** — маппинг Entity ↔ DTO
+- **Lombok 1.18.36** — @Data, @Slf4j, @NoArgsConstructor, @EqualsAndHashCode
+- **Apache POI 5.2.3** — генерация Excel
+- **Maven** — сборка (есть Maven Wrapper)
+
+---
+
+## 2. РОЛИ БЕЗОПАСНОСТИ
+
+| Роль | Описание | URL-префикс |
+|------|----------|-------------|
+| ROLE_EMPLOYEE_ADMIN | Администратор | /employee/admin/** |
+| ROLE_EMPLOYEE_MANAGER | Руководитель | /employee/manager/** |
+| ROLE_EMPLOYEE_WAREHOUSE_MANAGER | Заведующий складом | /employee/warehouseManager/** |
+| ROLE_EMPLOYEE_WAREHOUSE_WORKER | Складской работник | — |
+| ROLE_EMPLOYEE_COURIER | Водитель-экспедитор | — |
+| ROLE_EMPLOYEE_ACCOUNTER | Бухгалтер | — |
+
+Конфигурация безопасности (SecurityConfigEmployee.java):
+```java
+.requestMatchers("/employee/admin/**").hasRole("EMPLOYEE_ADMIN")
+.requestMatchers("/employee/manager/**").hasRole("EMPLOYEE_MANAGER")
+.requestMatchers("/employee/warehouseManager/**").hasRole("EMPLOYEE_WAREHOUSE_MANAGER")
+.requestMatchers("/employee/**").hasAnyRole("EMPLOYEE_ADMIN", "EMPLOYEE_MANAGER", "EMPLOYEE_WAREHOUSE_MANAGER", "EMPLOYEE_WORKER")
+```
+
+**Важно:** Конкретные URL-маппинги (admin/**, manager/**, warehouseManager/**) должны идти ПЕРЕД общим catch-all (/employee/**).
+
+---
+
+## 3. ПОДХОД К РАЗРАБОТКЕ СУЩНОСТЕЙ
+
+### 3.1 Единая структура для каждой сущности
+
+Для каждой сущности создается:
+
+#### **Java-компоненты:**
+
+1. **Model (Entity)** — `models/EntityName.java`
+2. **Repository** — `repo/EntityNameRepository.java`
+3. **DTO** — `dto/EntityNameDTO.java`
+4. **Mapper** — `mapper/EntityNameMapper.java`
+5. **Service** — `service/employee/{role}/EntityNameService.java`
+6. **Controller** — `controllers/employee/{role}/EntityNameController.java`
+
+Где `{role}` — это `admin`, `manager` или `warehouseManager` в зависимости от того, какая роль управляет данной сущностью.
+
+#### **HTML-страницы:**
+
+Для каждой сущности создается **стандартный набор из 4 страниц**:
+
+1. **all{Entity}.html** — список всех записей
+2. **add{Entity}.html** — форма создания новой записи
+3. **details{Entity}.html** — детальный просмотр записи
+4. **edit{Entity}.html** — форма редактирования записи
+
+**Удаление** реализуется через GET-endpoint в контроллере (без отдельной страницы).
+
+---
+
+## 4. ДЕТАЛЬНЫЙ РАЗБОР КОМПОНЕНТОВ
+
+### 4.1 Controller (Контроллер)
+
+#### **Структура контроллера (пример для ProductCategory, роль warehouseManager):**
+
+```java
+@Controller
+@Slf4j
+public class ProductCategoryController {
+
+    private final ProductCategoryService productCategoryService;
+
+    // Внедрение зависимостей через конструктор
+    public ProductCategoryController(ProductCategoryService productCategoryService) {
+        this.productCategoryService = productCategoryService;
+    }
+
+    // 1. AJAX-валидация (REST endpoint)
+    @GetMapping("/employee/warehouseManager/productCategories/check-name")
+    public ResponseEntity<Map<String, Boolean>> checkProductCategoryName(
+            @RequestParam String name,
+            @RequestParam Long globalProductCategoryId,
+            @RequestParam(required = false) Long id) {
+        boolean exists = productCategoryService.checkName(name, globalProductCategoryId, id);
+        Map<String, Boolean> response = new HashMap<>();
+        response.put("exists", exists);
+        return ResponseEntity.ok(response);
+    }
+
+    // 2. Страница списка всех категорий
+    // ВАЖНО: @Transactional нужен для lazy-loaded коллекций (@ManyToMany, @OneToMany)
+    @Transactional
+    @GetMapping("/employee/warehouseManager/productCategories/allProductCategories")
+    public String allProductCategories(Model model) {
+        List<ProductCategoryDTO> categories = productCategoryService.getAllProductCategories();
+        model.addAttribute("allProductCategories", categories);
+        return "employee/warehouseManager/productCategories/allProductCategories";
+    }
+
+    // 3. Страница добавления (GET)
+    @GetMapping("/employee/warehouseManager/productCategories/addProductCategory")
+    public String addProductCategory(Model model) {
+        populateDropdowns(model);
+        return "employee/warehouseManager/productCategories/addProductCategory";
+    }
+
+    // 4. Обработка формы добавления (POST)
+    @PostMapping("/employee/warehouseManager/productCategories/addProductCategory")
+    public String addProductCategory(@RequestParam String inputName,
+                                     @RequestParam Long inputGlobalProductCategoryId,
+                                     @RequestParam(required = false) List<Long> inputAttributeIds,
+                                     Model model) {
+        ProductCategory category = new ProductCategory();
+        category.setName(inputName);
+
+        if (!productCategoryService.saveProductCategory(category)) {
+            model.addAttribute("categoryError", "Ошибка при сохранении.");
+            populateDropdowns(model); // Важно: заново заполнить справочники
+            return "employee/warehouseManager/productCategories/addProductCategory";
+        }
+
+        return "redirect:/employee/warehouseManager/productCategories/detailsProductCategory/" + category.getId();
+    }
+
+    // 5. Страница деталей (GET)
+    @Transactional
+    @GetMapping("/employee/warehouseManager/productCategories/detailsProductCategory/{id}")
+    public String detailsProductCategory(@PathVariable(value = "id") long id, Model model) {
+        if (!productCategoryService.getProductCategoryRepository().existsById(id)) {
+            return "redirect:/employee/warehouseManager/productCategories/allProductCategories";
+        }
+
+        ProductCategory category = productCategoryService.getProductCategoryRepository().findById(id).get();
+        ProductCategoryDTO categoryDTO = ProductCategoryMapper.INSTANCE.toDTO(category);
+        model.addAttribute("categoryDTO", categoryDTO);
+        return "employee/warehouseManager/productCategories/detailsProductCategory";
+    }
+
+    // 6. Страница редактирования (GET)
+    @Transactional
+    @GetMapping("/employee/warehouseManager/productCategories/editProductCategory/{id}")
+    public String editProductCategory(@PathVariable(value = "id") long id, Model model) {
+        if (!productCategoryService.getProductCategoryRepository().existsById(id)) {
+            return "redirect:/employee/warehouseManager/productCategories/allProductCategories";
+        }
+
+        ProductCategory category = productCategoryService.getProductCategoryRepository().findById(id).get();
+        ProductCategoryDTO categoryDTO = ProductCategoryMapper.INSTANCE.toDTO(category);
+        model.addAttribute("categoryDTO", categoryDTO);
+        populateDropdowns(model);
+        return "employee/warehouseManager/productCategories/editProductCategory";
+    }
+
+    // 7. Обработка формы редактирования (POST)
+    @PostMapping("/employee/warehouseManager/productCategories/editProductCategory/{id}")
+    public String editProductCategory(@PathVariable(value = "id") long id,
+                                      @RequestParam String inputName,
+                                      @RequestParam Long inputGlobalProductCategoryId,
+                                      @RequestParam(required = false) List<Long> inputAttributeIds,
+                                      RedirectAttributes redirectAttributes) {
+        if (!productCategoryService.editProductCategory(id, inputName, inputGlobalProductCategoryId, inputAttributeIds)) {
+            redirectAttributes.addFlashAttribute("categoryError", "Ошибка при сохранении изменений.");
+            return "redirect:/employee/warehouseManager/productCategories/editProductCategory/" + id;
+        }
+
+        return "redirect:/employee/warehouseManager/productCategories/detailsProductCategory/" + id;
+    }
+
+    // 8. Удаление (GET endpoint)
+    @GetMapping("/employee/warehouseManager/productCategories/deleteProductCategory/{id}")
+    public String deleteProductCategory(@PathVariable(value = "id") long id, RedirectAttributes redirectAttributes) {
+        if (!productCategoryService.deleteProductCategory(id)) {
+            redirectAttributes.addFlashAttribute("deleteError",
+                "Невозможно удалить категорию, пока на неё ссылаются товары.");
+            return "redirect:/employee/warehouseManager/productCategories/detailsProductCategory/" + id;
+        }
+
+        return "redirect:/employee/warehouseManager/productCategories/allProductCategories";
+    }
+
+    // Вспомогательный метод для заполнения справочников в model
+    private void populateDropdowns(Model model) {
+        List<GlobalProductCategoryDTO> globalCategories = GlobalProductCategoryMapper.INSTANCE
+                .toDTOList(productCategoryService.getGlobalProductCategoryRepository().findAll());
+        List<ProductAttributeDTO> productAttributes = ProductAttributeMapper.INSTANCE
+                .toDTOList(productCategoryService.getProductAttributeRepository().findAll());
+        model.addAttribute("allGlobalProductCategories", globalCategories.stream()
+                .sorted(Comparator.comparing(GlobalProductCategoryDTO::getName)).toList());
+        model.addAttribute("allProductAttributes", productAttributes.stream()
+                .sorted(Comparator.comparing(ProductAttributeDTO::getName)).toList());
+    }
+}
+```
+
+#### **Ключевые паттерны Controller:**
+
+1. **Dependency Injection**: Все сервисы внедряются через конструктор
+2. **Логирование**: Используется @Slf4j (Lombok)
+3. **@Transactional на GET-методах**: КРИТИЧЕСКИ ВАЖНЫЙ паттерн — нужен когда сущность содержит lazy-loaded коллекции (@ManyToMany, @OneToMany). Без него — LazyInitializationException. Ставится на GET-методы allEntities, detailsEntity, editEntity (GET)
+4. **AJAX-валидация**:
+   - REST endpoint для проверки на дубликаты
+   - Возвращает JSON: `{"exists": true/false}`
+   - Используется `encodeURIComponent()` для кириллицы
+5. **Обработка ошибок**:
+   - При ошибке сохранения — возврат на форму с сообщением об ошибке
+   - `model.addAttribute("categoryError", "...")` для отображения ошибки
+   - `redirectAttributes.addFlashAttribute(...)` для передачи ошибок через редирект
+   - **Важно**: При ошибке POST add — нужно заново вызвать `populateDropdowns(model)` перед возвратом шаблона
+6. **Навигация**:
+   - После успешного создания → redirect на страницу деталей
+   - После успешного редактирования → redirect на страницу деталей
+   - После успешного удаления → redirect на список всех записей
+   - При ошибке → возврат на текущую форму или redirect с flash-атрибутом
+7. **Доступ к репозиториям**: Через геттеры сервиса — `productCategoryService.getProductCategoryRepository()`
+8. **Проверка существования**:
+   - `existsById(id)` + `findById(id).get()` для безопасного получения сущности
+   - Редирект на список при отсутствии записи
+
+---
+
+### 4.2 Service (Сервисный слой)
+
+#### **Структура сервиса (пример для ProductCategory):**
+
+```java
+@Service
+@Getter
+@Slf4j
+public class ProductCategoryService {
+
+    private final ProductCategoryRepository productCategoryRepository;
+    private final GlobalProductCategoryRepository globalProductCategoryRepository;
+    private final ProductAttributeRepository productAttributeRepository;
+    private final ProductRepository productRepository;
+
+    public ProductCategoryService(ProductCategoryRepository productCategoryRepository,
+                                   GlobalProductCategoryRepository globalProductCategoryRepository,
+                                   ProductAttributeRepository productAttributeRepository,
+                                   ProductRepository productRepository) {
+        this.productCategoryRepository = productCategoryRepository;
+        this.globalProductCategoryRepository = globalProductCategoryRepository;
+        this.productAttributeRepository = productAttributeRepository;
+        this.productRepository = productRepository;
+    }
+
+    // 1. Валидация: проверка существования (составная уникальность)
+    public boolean checkName(String name, Long globalProductCategoryId, Long id) {
+        if (name == null || name.isBlank() || globalProductCategoryId == null) return false;
+
+        Optional<GlobalProductCategory> globalCategoryOptional =
+            globalProductCategoryRepository.findById(globalProductCategoryId);
+        if (globalCategoryOptional.isEmpty()) return false;
+
+        GlobalProductCategory globalCategory = globalCategoryOptional.get();
+
+        if (id != null) {
+            // При редактировании: исключаем текущую запись из проверки
+            return productCategoryRepository.existsByGlobalProductCategoryAndNameAndIdNot(
+                globalCategory, name, id
+            );
+        } else {
+            // При создании: простая проверка существования
+            return productCategoryRepository.existsByGlobalProductCategoryAndName(
+                globalCategory, name
+            );
+        }
+    }
+
+    // 2. Создание новой записи
+    @Transactional
+    public boolean saveProductCategory(ProductCategory category) {
+        log.info("Начинаем сохранение категории товара с названием = {}...", category.getName());
+
+        // Валидация: проверка дубликатов
+        if (checkName(category.getName(), /* globalProductCategoryId */, null)) {
+            log.error("Категория с названием = {} уже существует.", category.getName());
+            return false;
+        }
+
+        try {
+            productCategoryRepository.save(category);
+        } catch (Exception e) {
+            log.error("Ошибка при сохранении категории {}: {}", category.getName(), e.getMessage(), e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return false;
+        }
+
+        log.info("Категория товара {} успешно сохранена.", category.getName());
+        return true;
+    }
+
+    // 3. Редактирование существующей записи
+    @Transactional
+    public boolean editProductCategory(Long id, String inputName, Long globalProductCategoryId, List<Long> attributeIds) {
+        log.info("Начинаем редактирование категории с id = {}...", id);
+
+        Optional<ProductCategory> categoryOptional = productCategoryRepository.findById(id);
+        if (categoryOptional.isEmpty()) {
+            log.error("Не найдена категория с id = {}", id);
+            return false;
+        }
+
+        if (checkName(inputName, globalProductCategoryId, id)) {
+            log.error("Категория с названием = {} уже существует.", inputName);
+            return false;
+        }
+
+        ProductCategory category = categoryOptional.get();
+        category.setName(inputName);
+        // ... установка связей ...
+
+        try {
+            productCategoryRepository.save(category);
+        } catch (Exception e) {
+            log.error("Ошибка при сохранении изменений: {}", e.getMessage(), e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return false;
+        }
+
+        log.info("Изменения успешно сохранены.");
+        return true;
+    }
+
+    // 4. Удаление записи (с защитой от удаления при наличии связей)
+    @Transactional
+    public boolean deleteProductCategory(Long id) {
+        Optional<ProductCategory> categoryOptional = productCategoryRepository.findById(id);
+
+        if (categoryOptional.isEmpty()) {
+            log.error("Не найдена категория с id = {}...", id);
+            return false;
+        }
+
+        ProductCategory category = categoryOptional.get();
+        log.info("Начинаем удаление категории с названием = {}...", category.getName());
+
+        // Защита от удаления: проверка связанных сущностей
+        if (productRepository.existsByCategory(category)) {
+            log.error("Невозможно удалить — на категорию ссылаются товары.");
+            return false;
+        }
+
+        try {
+            productCategoryRepository.delete(category);
+            productCategoryRepository.flush();
+        } catch (Exception e) {
+            log.error("Ошибка при удалении категории: {}", e.getMessage(), e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return false;
+        }
+
+        log.info("Категория успешно удалена.");
+        return true;
+    }
+
+    // 5. Получение всех записей (с маппингом в DTO)
+    @Transactional  // Нужен для lazy-loaded коллекций при маппинге через MapStruct
+    public List<ProductCategoryDTO> getAllProductCategories() {
+        return ProductCategoryMapper.INSTANCE.toDTOList(productCategoryRepository.findAll());
+    }
+}
+```
+
+#### **Ключевые паттерны Service:**
+
+1. **Аннотации класса**: `@Service`, `@Getter` (для доступа к репозиториям из контроллера), `@Slf4j`
+2. **Транзакционность**: `@Transactional` на всех методах изменения данных + на методах чтения с lazy-коллекциями
+3. **Детальное логирование**:
+   - Начало операции: "Начинаем сохранение..."
+   - Ошибки: "Ошибка при сохранении..."
+   - Успех: "Категория успешно сохранена."
+4. **Обработка ошибок**:
+   - Try-catch блоки вокруг операций с БД
+   - Откат транзакции: `TransactionAspectSupport.currentTransactionStatus().setRollbackOnly()`
+   - Возврат `boolean` для индикации успеха/неудачи
+5. **Защита удаления**: Перед удалением проверяется, нет ли связанных сущностей (например, `productRepository.existsByCategory()`)
+6. **Геттеры репозиториев**: `@Getter` на уровне класса даёт контроллерам доступ к репозиториям через `service.getXxxRepository()`
+
+---
+
+### 4.3 Repository (Репозиторий)
+
+```java
+public interface ProductCategoryRepository extends JpaRepository<ProductCategory, Long> {
+    // Проверка уникальности (простая)
+    boolean existsByGlobalProductCategoryAndName(GlobalProductCategory globalProductCategory, String name);
+
+    // Проверка уникальности (с исключением текущей записи — для редактирования)
+    boolean existsByGlobalProductCategoryAndNameAndIdNot(GlobalProductCategory globalProductCategory, String name, Long id);
+
+    // Проверка наличия дочерних записей (для защиты удаления)
+    boolean existsByGlobalProductCategory(GlobalProductCategory globalProductCategory);
+}
+```
+
+#### **Ключевые паттерны Repository:**
+
+1. **Наследование**: `JpaRepository<Entity, Long>`
+2. **Derived Query Methods**: Spring Data автоматически генерирует запросы из имени метода
+3. **Составная уникальность**: `existsByFieldAAndFieldBAndIdNot(...)` — исключает текущую запись при редактировании
+4. **Защита удаления**: `existsByParentEntity(...)` — проверяет наличие дочерних записей
+
+---
+
+### 4.4 DTO и Mapper
+
+#### **DTO:**
+```java
+@Data
+public class ProductCategoryDTO {
+    private Long id;
+    private String name;
+    private Long globalProductCategoryId;
+    private String globalProductCategoryName;
+    private String displayName;
+    private List<ProductAttributeDTO> attributes;
+}
+```
+
+#### **Mapper (MapStruct):**
+```java
+@Mapper(uses = {ProductAttributeMapper.class})
+public interface ProductCategoryMapper {
+    ProductCategoryMapper INSTANCE = Mappers.getMapper(ProductCategoryMapper.class);
+
+    @Mapping(source = "globalProductCategory.id", target = "globalProductCategoryId")
+    @Mapping(source = "globalProductCategory.name", target = "globalProductCategoryName")
+    ProductCategoryDTO toDTO(ProductCategory productCategory);
+
+    List<ProductCategoryDTO> toDTOList(List<ProductCategory> productCategories);
+}
+```
+
+#### **Ключевые паттерны:**
+- **INSTANCE**: Статическое поле для доступа к маппер-инстансу — `ProductCategoryMapper.INSTANCE.toDTO(entity)`
+- **@Mapping**: Маппинг вложенных полей — `source = "globalProductCategory.id", target = "globalProductCategoryId"`
+- **uses**: Подключение вложенных мапперов — `@Mapper(uses = {ProductAttributeMapper.class})`
+
+---
+
+### 4.5 HTML-страницы (структура и назначение)
+
+#### **1. all{Entity}.html — Список всех записей**
+
+**Назначение:** Отображение всех записей в таблице с навигацией.
+
+**Структура:**
+```html
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Категории товаров | СИАРСП</title>
+    <!-- CSS, JS -->
+</head>
+<body>
+    <header th:insert="~{blocks/header :: header}"></header>
+
+    <div class="container">
+        <!-- Кнопки действий -->
+        <div class="action-buttons mb-4">
+            <a th:href="'/'"
+               class="btn btn-secondary btn-profile">
+                ← Главная
+            </a>
+            <a th:href="'/employee/warehouseManager/productCategories/addProductCategory'"
+               class="btn btn-success btn-profile">
+                + Добавить категорию
+            </a>
+        </div>
+
+        <!-- Таблица данных -->
+        <div class="table-responsive">
+            <h2 class="table-title">Список категорий товаров</h2>
+
+            <table class="table table-modern">
+                <thead>
+                <tr>
+                    <th style="width: 60px;">№</th>
+                    <th>Название</th>
+                    <th>Глобальная категория</th>
+                    <th>Кол-во атрибутов</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="category, index : ${allProductCategories}">
+                    <td th:text="${index.index+1}"></td>
+                    <td>
+                        <a th:href="'/employee/warehouseManager/productCategories/detailsProductCategory/' + ${category.getId()}"
+                           th:text="${category.getName()}"></a>
+                    </td>
+                    <td th:text="${category.getGlobalProductCategoryName()}"></td>
+                    <td th:text="${category.getAttributes() != null ? category.getAttributes().size() : 0}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <footer th:insert="~{blocks/footer :: footer}"></footer>
+</body>
+</html>
+```
+
+**Особенности:**
+- Кнопки: `btn btn-secondary btn-profile` (← Главная), `btn btn-success btn-profile` (+ Добавить)
+- Таблица: `table table-modern`, обёрнута в `table-responsive`
+- Индексация строк: `${index.index+1}`
+- Кликабельные названия — ссылки на страницу деталей
+
+---
+
+#### **2. add{Entity}.html — Форма создания**
+
+**Назначение:** Форма для ввода данных + AJAX-валидация в реальном времени.
+
+**Ключевые элементы:**
+```html
+<!-- Отображение серверных ошибок -->
+<div th:if="${categoryError}" class="alert alert-danger">
+    <span th:text="${categoryError}"></span>
+</div>
+
+<form method="post" th:action="@{/employee/warehouseManager/productCategories/addProductCategory}">
+
+    <!-- Выбор из справочника (dropdown) -->
+    <select id="inputGlobalProductCategoryId" name="inputGlobalProductCategoryId"
+            class="form-select" required>
+        <option value="" disabled selected>Выберите глобальную категорию</option>
+        <option th:each="globalCategory : ${allGlobalProductCategories}"
+                th:value="${globalCategory.getId()}"
+                th:text="${globalCategory.getName()}">
+        </option>
+    </select>
+
+    <!-- Текстовое поле с AJAX-валидацией -->
+    <input type="text" id="inputName" name="inputName" class="form-control" required>
+
+    <!-- Чекбоксы (множественный выбор) -->
+    <div th:each="attr : ${allProductAttributes}">
+        <input type="checkbox" th:id="'attr_' + ${attr.getId()}"
+               name="inputAttributeIds" th:value="${attr.getId()}">
+        <label th:for="'attr_' + ${attr.getId()}"
+               th:text="${attr.getName() + ' (' + attr.getUnit() + ')'}"></label>
+    </div>
+
+    <!-- Кнопка отправки (заблокирована до прохождения валидации) -->
+    <button type="submit" id="submitBtn" class="btn btn-success btn-profile" disabled>
+        Сохранить
+    </button>
+</form>
+```
+
+**AJAX-валидация:**
+```javascript
+document.addEventListener('DOMContentLoaded', function() {
+    const nameInput = document.getElementById('inputName');
+    const globalCategorySelect = document.getElementById('inputGlobalProductCategoryId');
+    const submitButton = document.getElementById('submitBtn');
+    let isNameValid = true;
+
+    function validateName() {
+        const name = nameInput.value.trim();
+        const globalProductCategoryId = globalCategorySelect.value;
+
+        if (name.length > 0 && globalProductCategoryId) {
+            fetch(`/employee/warehouseManager/productCategories/check-name?name=${encodeURIComponent(name)}&globalProductCategoryId=${globalProductCategoryId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.exists) {
+                        // Показать ошибку, заблокировать кнопку
+                        nameInput.classList.add('is-invalid');
+                        isNameValid = false;
+                    } else {
+                        // Убрать ошибку, разблокировать кнопку
+                        nameInput.classList.remove('is-invalid');
+                        nameInput.classList.add('is-valid');
+                        isNameValid = true;
+                    }
+                    submitButton.disabled = !isNameValid;
+                });
+        }
+    }
+
+    // Слушаем ОБА события — ввод текста и смену dropdown
+    nameInput.addEventListener('input', validateName);
+    globalCategorySelect.addEventListener('change', validateName);
+});
+```
+
+**Особенности:**
+- `encodeURIComponent()` — обязателен для кириллицы в URL
+- Кнопка "Сохранить" заблокирована (`disabled`) до прохождения валидации
+- Визуальная обратная связь: классы Bootstrap `.is-invalid`, `.is-valid`
+- Два события: `input` на текстовом поле + `change` на dropdown
+
+---
+
+#### **3. details{Entity}.html — Просмотр деталей**
+
+**Назначение:** Отображение всех данных + кнопки действий.
+
+**Ключевые элементы:**
+```html
+<!-- Сообщения об ошибках удаления (flash-атрибут) -->
+<div th:if="${deleteError}" class="alert alert-danger">
+    <span th:text="${deleteError}"></span>
+</div>
+
+<!-- Отображение полей (disabled для readonly) -->
+<input type="text" class="form-control" th:value="${categoryDTO.getName()}" disabled>
+
+<!-- Кнопки действий -->
+<div class="action-buttons mb-4">
+    <a th:href="'/employee/warehouseManager/productCategories/allProductCategories'"
+       class="btn btn-secondary btn-profile">
+        ← Назад к списку
+    </a>
+    <button th:onclick="'window.location.href=\'/employee/warehouseManager/productCategories/editProductCategory/' + ${categoryDTO.getId()} + '\';'"
+            class="btn btn-primary btn-profile">
+        Редактировать
+    </button>
+    <button class="btn btn-danger btn-profile"
+            th:data-name="${categoryDTO.getName()}"
+            th:data-categoryid="${categoryDTO.getId()}"
+            onclick="confirmDelete(this)">
+        Удалить
+    </button>
+</div>
+
+<!-- Подтверждение удаления через JavaScript -->
+<script>
+    function confirmDelete(button) {
+        const name = button.getAttribute('data-name');
+        const categoryId = button.getAttribute('data-categoryid');
+        if (confirm('Вы уверены, что хотите удалить категорию "' + name + '"?')) {
+            window.location.href = '/employee/warehouseManager/productCategories/deleteProductCategory/' + categoryId;
+        }
+    }
+</script>
+```
+
+**Стандартные классы кнопок:**
+- `btn btn-secondary btn-profile` — Назад / Главная
+- `btn btn-primary btn-profile` — Редактировать
+- `btn btn-danger btn-profile` — Удалить
+
+---
+
+#### **4. edit{Entity}.html — Форма редактирования**
+
+**Назначение:** Форма с предзаполненными полями + AJAX с исключением текущей записи.
+
+**Предзаполнение полей:**
+```html
+<!-- Текстовое поле — предзаполнено текущим значением -->
+<input type="text" name="inputName" id="inputName"
+       th:value="${categoryDTO.getName()}" required>
+
+<!-- Dropdown — предвыбрано текущее значение -->
+<select name="inputGlobalProductCategoryId" id="inputGlobalProductCategoryId" required>
+    <option th:each="globalCategory : ${allGlobalProductCategories}"
+            th:value="${globalCategory.getId()}"
+            th:text="${globalCategory.getName()}"
+            th:selected="${globalCategory.getId() == categoryDTO.getGlobalProductCategoryId()}">
+    </option>
+</select>
+```
+
+**Предустановка чекбоксов через JavaScript:**
+```javascript
+// Thymeleaf передаёт массив ID выбранных атрибутов в JavaScript
+const selectedAttributeIds = (/*[[${categoryDTO.getAttributes().![id]}]]*/);
+if (selectedAttributeIds) {
+    selectedAttributeIds.forEach(function(attrId) {
+        const checkbox = document.getElementById('attr_' + attrId);
+        if (checkbox) {
+            checkbox.checked = true;
+        }
+    });
+}
+```
+
+**AJAX-валидация с исключением текущей записи:**
+```javascript
+const originalName = nameInput.value;
+const originalGlobalCategoryId = globalCategorySelect.value;
+const currentId = (/*[[${categoryDTO.getId()}]]*/);
+
+function validateName() {
+    const name = nameInput.value.trim();
+    const globalProductCategoryId = globalCategorySelect.value;
+
+    // Пропускаем проверку, если значения не изменились
+    if (name === originalName && globalProductCategoryId === originalGlobalCategoryId) {
+        nameInput.classList.remove('is-invalid');
+        isNameValid = true;
+        return;
+    }
+
+    // Передаём id текущей записи для исключения из проверки
+    fetch(`/employee/warehouseManager/productCategories/check-name?name=${encodeURIComponent(name)}&globalProductCategoryId=${globalProductCategoryId}&id=${currentId}`)
+        .then(response => response.json())
+        .then(data => {
+            // ... обработка результата ...
+        });
+}
+```
+
+**Отличия от add-формы:**
+- Передаётся `&id=${currentId}` — для исключения текущей записи из проверки уникальности
+- Сохраняются оригинальные значения (`originalName`, `originalGlobalCategoryId`) для пропуска проверки при неизменённых данных
+- Используется `th:inline="javascript"` и синтаксис `/*[[...]]*/` для передачи данных из Thymeleaf в JS
+
+---
+
+## 5. NAMING CONVENTIONS (Соглашения об именовании)
+
+### 5.1 Классы Java
+
+```
+Entity:           ProductCategory
+Repository:       ProductCategoryRepository
+Service:          ProductCategoryService
+Controller:       ProductCategoryController
+DTO:              ProductCategoryDTO
+Mapper:           ProductCategoryMapper
+```
+
+### 5.2 HTML-страницы
+
+```
+Список:          allProductCategories.html
+Добавление:      addProductCategory.html
+Детали:          detailsProductCategory.html
+Редактирование:  editProductCategory.html
+```
+
+### 5.3 URL-маппинги
+
+URL-путь зависит от роли, управляющей сущностью:
+- manager → `/employee/manager/{entities}/...`
+- warehouseManager → `/employee/warehouseManager/{entities}/...`
+- admin → `/employee/admin/{entities}/...`
+
+Пример для ProductCategory (роль warehouseManager):
+```
+Список:                GET  /employee/warehouseManager/productCategories/allProductCategories
+Добавление (форма):    GET  /employee/warehouseManager/productCategories/addProductCategory
+Добавление (сохранение): POST /employee/warehouseManager/productCategories/addProductCategory
+Детали:                GET  /employee/warehouseManager/productCategories/detailsProductCategory/{id}
+Редактирование (форма):  GET  /employee/warehouseManager/productCategories/editProductCategory/{id}
+Редактирование (сохранение): POST /employee/warehouseManager/productCategories/editProductCategory/{id}
+Удаление:              GET  /employee/warehouseManager/productCategories/deleteProductCategory/{id}
+Валидация (AJAX):      GET  /employee/warehouseManager/productCategories/check-name
+```
+
+### 5.4 Параметры и атрибуты
+
+```java
+// Request Parameters (форма)
+@RequestParam String inputName
+@RequestParam Long inputGlobalProductCategoryId
+@RequestParam(required = false) List<Long> inputAttributeIds   // для чекбоксов (опционально)
+@RequestParam(required = false) String inputDirectorPatronymicName  // для необязательных полей
+
+// Path Variables
+@PathVariable(value = "id") long id
+
+// Model Attributes
+model.addAttribute("categoryDTO", categoryDTO);
+model.addAttribute("allProductCategories", categories);
+model.addAttribute("categoryError", "...");
+model.addAttribute("allGlobalProductCategories", globalCategories);  // справочники для dropdown
+
+// Flash Attributes (для редиректов)
+redirectAttributes.addFlashAttribute("categoryError", "...");
+redirectAttributes.addFlashAttribute("deleteError", "...");
+```
+
+### 5.5 Таблицы БД
+
+```
+Префикс: t_
+Примеры: t_employee, t_clientOrder, t_productCategory
+```
+
+### 5.6 CSS-классы (единый стиль)
+
+```
+Кнопки:
+  btn btn-success btn-profile   — Добавить / Сохранить
+  btn btn-secondary btn-profile — Назад / Главная / Отмена
+  btn btn-primary btn-profile   — Редактировать
+  btn btn-danger btn-profile    — Удалить
+
+Таблица:
+  table table-modern            — класс таблицы
+  table-responsive              — обёртка для адаптивности
+  table-title                   — заголовок таблицы
+
+Контейнеры:
+  action-buttons mb-4           — блок кнопок действий
+  profile-card                  — карточка с информацией
+```
+
+---
+
+## 6. НАВИГАЦИЯ (header.html)
+
+Навигационные ссылки добавляются в header.html с проверкой роли:
+
+```html
+<!-- Для администратора -->
+<li class="nav-item" sec:authorize="hasRole('ROLE_EMPLOYEE_ADMIN')">
+    <a class="nav-link px-3" href="/employee/admin/allEmployees">Администрирование</a>
+</li>
+
+<!-- Для менеджера -->
+<li class="nav-item" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
+    <a class="nav-link px-3" href="/employee/manager/clients/allClients">Клиенты</a>
+</li>
+<li class="nav-item" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
+    <a class="nav-link px-3" href="/employee/manager/suppliers/allSuppliers">Поставщики</a>
+</li>
+
+<!-- Для заведующего складом -->
+<li class="nav-item" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
+    <a class="nav-link px-3" href="/employee/warehouseManager/globalProductCategories/allGlobalProductCategories">
+        Глобальные категории
+    </a>
+</li>
+<li class="nav-item" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
+    <a class="nav-link px-3" href="/employee/warehouseManager/productCategories/allProductCategories">
+        Категории товаров
+    </a>
+</li>
+```
+
+**Важно:** Используется `sec:authorize="hasRole('ROLE_EMPLOYEE_...')"` (с полным префиксом ROLE_).
+
+---
+
+## 7. ЛОГИЧЕСКИЙ ПОРЯДОК РАЗРАБОТКИ СУЩНОСТЕЙ
+
+### 7.1 Принципы определения порядка
+
+**От простых к сложным:**
+1. **Независимые справочники** (без внешних связей)
+2. **Справочники с одной связью**
+3. **Сущности с множественными связями**
+4. **Транзакционные сущности** (документы, операции)
+
+### 7.2 Рекомендуемый порядок (26 сущностей)
+
+#### **Уровень 1: Базовые справочники (независимые)**
+1. **Role** — Роли пользователей
+2. **GlobalProductCategory** — Глобальные категории товаров
+
+#### **Уровень 2: Справочники с одной зависимостью**
+3. **Employee** — Сотрудники (зависит от Role)
+4. **ProductCategory** — Категории товаров (зависит от GlobalProductCategory)
+5. **Client** — Клиенты (независимая сущность)
+6. **Supplier** — Поставщики (независимая сущность)
+7. **Vehicle** — Транспортные средства (независимая сущность)
+8. **Warehouse** — Склады (независимая; WarehouseType — это enum)
+
+#### **Уровень 3: Сущности с зависимостями от уровня 2**
+9. **ProductAttribute** — Атрибуты товаров (связан с ProductCategory через many-to-many)
+10. **Shelf** — Стеллажи на складе (зависит от Warehouse)
+
+#### **Уровень 4: Основные бизнес-сущности**
+11. **Product** — Товары (зависит от ProductCategory)
+12. **StorageZone** — Зоны хранения на стеллаже (зависит от Shelf)
+13. **Delivery** — Поставки от поставщика (зависит от Supplier)
+14. **RequestForDelivery** — Заявки на поставку (зависит от Supplier)
+15. **ClientOrder** — Заказы клиентов (зависит от Client, Employee)
+
+#### **Уровень 5: Связующие и детальные сущности**
+16. **ProductAttributeValue** — Значения атрибутов для товаров (зависит от Product, ProductAttribute)
+17. **Supply** — Позиции товаров в поставке (зависит от Delivery, Product)
+18. **RequestedProduct** — Товары в заявке (зависит от RequestForDelivery, Product)
+19. **ZoneProduct** — Размещение товаров в зонах хранения (зависит от StorageZone, Product)
+20. **OrderedProduct** — Товары в заказе (зависит от ClientOrder, Product)
+21. **DeliveryTask** — Задачи доставки (зависит от Vehicle, ClientOrder)
+
+#### **Уровень 6: Документы и маршруты**
+22. **RoutePoint** — Точки маршрута доставки (зависит от DeliveryTask)
+23. **TTN** — Товарно-транспортная накладная (зависит от Delivery, Vehicle, Employee)
+24. **AcceptanceAct** — Акт приема-передачи (зависит от Delivery, Employee)
+25. **WriteOffAct** — Акт списания товара (зависит от Product, Employee)
+26. **WarehouseEquipment** — Оборудование склада (зависит от Warehouse)
+
+---
+
+## 8. CHECKLIST ДЛЯ РАЗРАБОТКИ НОВОЙ СУЩНОСТИ
+
+### Java-компоненты
+
+- [ ] **Entity** создан в `models/`
+- [ ] **Repository** создан в `repo/` (наследует JpaRepository)
+  - [ ] Методы проверки уникальности (existsBy...)
+  - [ ] Метод проверки уникальности с исключением (existsBy...AndIdNot)
+- [ ] **DTO** создан в `dto/` (@Data)
+- [ ] **Mapper** создан в `mapper/` (MapStruct, INSTANCE pattern)
+- [ ] **Service** создан в `service/employee/{role}/`
+  - [ ] @Service, @Getter, @Slf4j
+  - [ ] Метод checkName() — валидация уникальности
+  - [ ] Метод save{Entity}() — @Transactional, проверка + сохранение
+  - [ ] Метод edit{Entity}() — @Transactional, проверка + обновление
+  - [ ] Метод delete{Entity}() — @Transactional, защита от удаления + удаление
+  - [ ] Метод getAll{Entities}() — @Transactional (если lazy-коллекции)
+- [ ] **Controller** создан в `controllers/employee/{role}/`
+  - [ ] GET check-name — AJAX-валидация
+  - [ ] GET all{Entities} — список (@Transactional если lazy-коллекции)
+  - [ ] GET add{Entity} — форма добавления (populateDropdowns)
+  - [ ] POST add{Entity} — обработка добавления
+  - [ ] GET details{Entity}/{id} — детали (@Transactional если lazy-коллекции)
+  - [ ] GET edit{Entity}/{id} — форма редактирования (@Transactional + populateDropdowns)
+  - [ ] POST edit{Entity}/{id} — обработка редактирования
+  - [ ] GET delete{Entity}/{id} — удаление
+
+### HTML-страницы
+
+- [ ] **all{Entity}.html** — таблица, кнопки Главная + Добавить
+- [ ] **add{Entity}.html** — форма + AJAX + disabled submit
+- [ ] **details{Entity}.html** — readonly + кнопки Назад/Редактировать/Удалить
+- [ ] **edit{Entity}.html** — предзаполненная форма + AJAX с исключением
+
+### Интеграция
+
+- [ ] **header.html** — добавить навигационную ссылку с sec:authorize
+- [ ] **SecurityConfigEmployee.java** — добавить URL-маппинг если нужна новая роль
+
+### Тестирование
+
+- [ ] Создание записи работает
+- [ ] AJAX-валидация работает на создании
+- [ ] Редактирование записи работает
+- [ ] AJAX-валидация работает на редактировании (исключает текущую запись)
+- [ ] Удаление запрещено при наличии связей
+- [ ] Удаление без связей — успех
+- [ ] Навигация между страницами работает
+- [ ] Нет LazyInitializationException
+
+---
+
+## 9. ДОПОЛНИТЕЛЬНЫЕ ПАТТЕРНЫ
+
+### 9.1 Необязательные поля
+
+Если поле может быть пустым (например, отчество):
+```java
+// Controller: @RequestParam(required = false)
+@RequestParam(required = false) String inputDirectorPatronymicName
+
+// Controller: null → "" (хранить пустую строку, не null)
+if (inputDirectorPatronymicName == null) {
+    inputDirectorPatronymicName = "";
+}
+```
+
+```html
+<!-- HTML: убрать атрибут required -->
+<input type="text" name="inputDirectorPatronymicName" class="form-control"
+       placeholder="Отчество руководителя">
+<!-- НЕТ атрибута required -->
+```
+
+### 9.2 Составная уникальность
+
+Когда уникальность определяется комбинацией полей (например, name + globalProductCategory):
+```java
+// Entity: @UniqueConstraint
+@Table(name = "t_productCategory", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"global_product_category_id", "name"})
+})
+
+// Repository: составной метод
+boolean existsByGlobalProductCategoryAndNameAndIdNot(GlobalProductCategory gc, String name, Long id);
+
+// AJAX: передавать ОБА параметра
+fetch(`/check-name?name=${encodeURIComponent(name)}&globalProductCategoryId=${globalProductCategoryId}&id=${currentId}`)
+
+// HTML: слушать ОБА поля
+nameInput.addEventListener('input', validateName);
+globalCategorySelect.addEventListener('change', validateName);
+```
+
+### 9.3 Entity-паттерн
+
+```java
+@Entity
+@Table(name = "t_entityName")
+@Data
+@NoArgsConstructor
+@EqualsAndHashCode(of = "id")
+public class EntityName {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private String name;
+
+    @ManyToOne
+    @JoinColumn(nullable = false)
+    private RelatedEntity related;
+
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    private List<ChildEntity> children = new ArrayList<>();
+
+    @ManyToMany
+    @JoinTable(name = "t_entity_attribute",
+        joinColumns = @JoinColumn(name = "entity_id"),
+        inverseJoinColumns = @JoinColumn(name = "attribute_id"))
+    @ToString.Exclude
+    private List<Attribute> attributes = new ArrayList<>();
+}
+```
+
+---
+
+## 10. ЗАКЛЮЧЕНИЕ
+
+Данный подход обеспечивает:
+- **Единообразие кода** — все сущности разрабатываются по одному шаблону
+- **Простоту поддержки** — легко найти нужный компонент
+- **Масштабируемость** — добавление новых сущностей не требует изменения архитектуры
+- **Надежность** — транзакции, валидация, обработка ошибок, защита удаления
+- **UX** — AJAX-валидация в реальном времени, информативные сообщения об ошибках
+
+**Следование этому подходу позволит быстро и качественно разработать веб-уровень для всех 26 сущностей проекта SIARSP.**
+
+---
+
+*Документ создан на основе анализа проекта SIARSP*
+*Дата: 2026-02-09*
