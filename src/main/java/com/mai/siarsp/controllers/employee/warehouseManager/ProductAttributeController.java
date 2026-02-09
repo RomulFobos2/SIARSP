@@ -4,7 +4,6 @@ import com.mai.siarsp.dto.ProductAttributeDTO;
 import com.mai.siarsp.dto.ProductCategoryDTO;
 import com.mai.siarsp.enumeration.AttributeType;
 import com.mai.siarsp.mapper.ProductAttributeMapper;
-import com.mai.siarsp.mapper.ProductCategoryMapper;
 import com.mai.siarsp.models.ProductAttribute;
 import com.mai.siarsp.service.employee.warehouseManager.ProductAttributeService;
 import lombok.extern.slf4j.Slf4j;
@@ -123,13 +122,19 @@ public class ProductAttributeController {
         ProductAttributeDTO attributeDTO = ProductAttributeMapper.INSTANCE.toDTO(attribute);
 
         // Передаём список связанных категорий отдельно (DTO не содержит categories)
-        List<ProductCategoryDTO> linkedCategories = ProductCategoryMapper.INSTANCE
-                .toDTOList(attribute.getCategories());
+        // Ручной маппинг — избегаем ProductCategoryMapper, который тянет lazy attributes
+        List<ProductCategoryDTO> linkedCategories = attribute.getCategories().stream()
+                .map(cat -> {
+                    ProductCategoryDTO dto = new ProductCategoryDTO();
+                    dto.setId(cat.getId());
+                    dto.setName(cat.getName());
+                    return dto;
+                })
+                .sorted(Comparator.comparing(ProductCategoryDTO::getName))
+                .toList();
 
         model.addAttribute("attributeDTO", attributeDTO);
-        model.addAttribute("linkedCategories", linkedCategories.stream()
-                .sorted(Comparator.comparing(ProductCategoryDTO::getName))
-                .toList());
+        model.addAttribute("linkedCategories", linkedCategories);
         return "employee/warehouseManager/productAttributes/detailsProductAttribute";
     }
 
@@ -192,11 +197,17 @@ public class ProductAttributeController {
      * Заполняет справочники для dropdown и чекбоксов
      */
     private void populateDropdowns(Model model) {
-        List<ProductCategoryDTO> allCategories = ProductCategoryMapper.INSTANCE
-                .toDTOList(productAttributeService.getProductCategoryRepository().findAll());
-        model.addAttribute("allProductCategories", allCategories.stream()
+        List<ProductCategoryDTO> allCategories = productAttributeService.getProductCategoryRepository().findAll()
+                .stream()
+                .map(cat -> {
+                    ProductCategoryDTO dto = new ProductCategoryDTO();
+                    dto.setId(cat.getId());
+                    dto.setName(cat.getName());
+                    return dto;
+                })
                 .sorted(Comparator.comparing(ProductCategoryDTO::getName))
-                .toList());
+                .toList();
+        model.addAttribute("allProductCategories", allCategories);
         model.addAttribute("attributeTypes", AttributeType.values());
     }
 }
