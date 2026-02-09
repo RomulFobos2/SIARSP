@@ -13,27 +13,33 @@
 <div th:insert="~{blocks/header :: header}"></div>
 
 <div class="container py-4">
-    <div class="profile-card">
-        <h1 class="page-title">Глобальные категории товаров</h1>
-        <p class="page-subtitle">Верхний уровень классификации товаров</p>
-
-        <div class="profile-actions mb-4">
-            <a href="/" class="btn btn-profile">Главная</a>
-            <a href="/employee/warehouseManager/globalProductCategories/addGlobalProductCategory"
-               class="btn btn-profile">Добавить глобальную категорию</a>
+    <div class="profile-card mb-4">
+        <div class="profile-actions">
+            <a th:href="'/'"
+               class="btn btn-secondary btn-profile">
+                ← Главная
+            </a>
+            <a th:href="'/employee/warehouseManager/globalProductCategories/addGlobalProductCategory'"
+               class="btn btn-success btn-profile">
+                + Добавить глобальную категорию
+            </a>
         </div>
+    </div>
 
-        <div class="table-container">
-            <table class="table-modern">
+    <div class="table-container">
+        <h2 class="h3 mb-4 fw-bold">Список глобальных категорий</h2>
+
+        <div class="table-responsive">
+            <table class="table table-modern" style="width: 100%;">
                 <thead>
                 <tr>
-                    <th>№</th>
+                    <th style="width: 60px;">№</th>
                     <th>Название</th>
                 </tr>
                 </thead>
                 <tbody>
                 <tr th:each="category, index : ${allGlobalProductCategories}">
-                    <td th:text="${index.count}"></td>
+                    <td th:text="${index.index+1}"></td>
                     <td>
                         <a th:href="'/employee/warehouseManager/globalProductCategories/detailsGlobalProductCategory/' + ${category.getId()}"
                            th:text="${category.getName()}"></a>
