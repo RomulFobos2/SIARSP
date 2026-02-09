@@ -1,0 +1,111 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Редактировать глобальную категорию | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/javascript.js"></script>
+</head>
+<body class="edit-page">
+<div class="edit-container">
+    <div class="edit-card">
+        <form th:action="'/employee/warehouseManager/globalProductCategories/editGlobalProductCategory/' + ${categoryDTO.getId()}"
+              method="post" class="auth-form">
+
+            <h1 class="page-title">Редактирование глобальной категории</h1>
+            <p class="page-subtitle">Обновите данные глобальной категории</p>
+
+            <div th:if="${categoryError}" class="alert alert-danger" th:text="${categoryError}"></div>
+
+            <div class="mb-4">
+                <h6 class="form-section-title">Название</h6>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <input type="text" class="form-control" name="inputName"
+                               id="inputName" required placeholder="Название категории"
+                               maxlength="255" th:value="${categoryDTO.getName()}">
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="w-100 btn btn-auth" id="submitBtn">
+                Сохранить изменения
+            </button>
+
+            <div class="divider">
+                <span>или</span>
+            </div>
+
+            <div class="link-section">
+                <a th:href="'/employee/warehouseManager/globalProductCategories/detailsGlobalProductCategory/' + ${categoryDTO.getId()}">
+                    ← Назад
+                </a>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        const nameInput = document.getElementById('inputName');
+        const originalName = nameInput.value;
+        const submitButton = document.getElementById('submitBtn');
+        const currentId = (/*[[${categoryDTO.getId()}]]*/);
+
+        const nameErrorDiv = document.createElement('div');
+        nameErrorDiv.className = 'alert alert-danger mt-2';
+        nameErrorDiv.style.display = 'none';
+        nameInput.parentNode.appendChild(nameErrorDiv);
+
+        let isNameValid = true;
+
+        function checkFormValidity() {
+            submitButton.disabled = !isNameValid;
+        }
+
+        nameInput.addEventListener('input', function() {
+            const name = nameInput.value.trim();
+
+            if (name === originalName) {
+                nameErrorDiv.style.display = 'none';
+                nameInput.classList.remove('is-invalid');
+                isNameValid = true;
+                checkFormValidity();
+                return;
+            }
+
+            if (name.length > 0) {
+                fetch(`/employee/warehouseManager/globalProductCategories/check-name?name=${encodeURIComponent(name)}&id=${currentId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.exists) {
+                            nameErrorDiv.textContent = 'Глобальная категория с таким названием уже существует';
+                            nameErrorDiv.style.display = 'block';
+                            nameInput.classList.add('is-invalid');
+                            isNameValid = false;
+                        } else {
+                            nameErrorDiv.style.display = 'none';
+                            nameInput.classList.remove('is-invalid');
+                            nameInput.classList.add('is-valid');
+                            isNameValid = true;
+                        }
+                        checkFormValidity();
+                    })
+                    .catch(error => {
+                        console.error('Ошибка:', error);
+                    });
+            } else {
+                nameErrorDiv.style.display = 'none';
+                nameInput.classList.remove('is-invalid', 'is-valid');
+                isNameValid = true;
+                checkFormValidity();
+            }
+        });
+    });
+</script>
+</body>
+</html>

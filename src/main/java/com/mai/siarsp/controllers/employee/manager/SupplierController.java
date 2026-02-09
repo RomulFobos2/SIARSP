@@ -62,8 +62,11 @@ public class SupplierController {
                               @RequestParam(required = false) String inputBank,
                               @RequestParam String inputDirectorLastName,
                               @RequestParam String inputDirectorFirstName,
-                              @RequestParam String inputDirectorPatronymicName,
+                              @RequestParam(required = false) String inputDirectorPatronymicName,
                               Model model) {
+        if (inputDirectorPatronymicName == null) {
+            inputDirectorPatronymicName = "";
+        }
         Supplier supplier = new Supplier(inputName, inputContactInfo, inputAddress,
                 inputInn, inputKpp, inputOgrn,
                 inputPaymentAccount, inputBik, inputBank,
@@ -116,8 +119,11 @@ public class SupplierController {
                                @RequestParam(required = false) String inputBank,
                                @RequestParam String inputDirectorLastName,
                                @RequestParam String inputDirectorFirstName,
-                               @RequestParam String inputDirectorPatronymicName,
+                               @RequestParam(required = false) String inputDirectorPatronymicName,
                                RedirectAttributes redirectAttributes) {
+        if (inputDirectorPatronymicName == null) {
+            inputDirectorPatronymicName = "";
+        }
         if (!supplierService.editSupplier(id, inputName, inputContactInfo, inputAddress,
                 inputInn, inputKpp, inputOgrn, inputPaymentAccount, inputBik, inputBank,
                 inputDirectorLastName, inputDirectorFirstName, inputDirectorPatronymicName)) {

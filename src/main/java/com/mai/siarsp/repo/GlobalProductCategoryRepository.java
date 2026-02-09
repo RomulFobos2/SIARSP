@@ -9,5 +9,7 @@ public interface GlobalProductCategoryRepository extends JpaRepository<GlobalPro
 
     boolean existsByName(String name);
 
+    boolean existsByNameAndIdNot(String name, Long id);
+
     Optional<GlobalProductCategory> findByName(String name);
 }

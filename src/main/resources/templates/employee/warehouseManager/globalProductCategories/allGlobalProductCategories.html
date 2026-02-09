@@ -1,0 +1,50 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Глобальные категории | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/javascript.js"></script>
+</head>
+<body class="admin-page">
+<div th:insert="~{blocks/header :: header}"></div>
+
+<div class="container py-4">
+    <div class="profile-card">
+        <h1 class="page-title">Глобальные категории товаров</h1>
+        <p class="page-subtitle">Верхний уровень классификации товаров</p>
+
+        <div class="profile-actions mb-4">
+            <a href="/" class="btn btn-profile">Главная</a>
+            <a href="/employee/warehouseManager/globalProductCategories/addGlobalProductCategory"
+               class="btn btn-profile">Добавить глобальную категорию</a>
+        </div>
+
+        <div class="table-container">
+            <table class="table-modern">
+                <thead>
+                <tr>
+                    <th>№</th>
+                    <th>Название</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="category, index : ${allGlobalProductCategories}">
+                    <td th:text="${index.count}"></td>
+                    <td>
+                        <a th:href="'/employee/warehouseManager/globalProductCategories/detailsGlobalProductCategory/' + ${category.getId()}"
+                           th:text="${category.getName()}"></a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>
