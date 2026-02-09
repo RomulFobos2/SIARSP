@@ -1,0 +1,190 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Редактировать поставщика | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/javascript.js"></script>
+</head>
+<body class="edit-page">
+<div class="edit-container">
+    <div class="edit-card">
+        <form th:action="'/employee/manager/suppliers/editSupplier/' + ${supplierDTO.getId()}"
+              method="post" class="auth-form">
+
+            <h1 class="page-title">Редактирование поставщика</h1>
+            <p class="page-subtitle">Обновите данные поставщика</p>
+
+            <div th:if="${supplierError}" class="alert alert-danger" th:text="${supplierError}"></div>
+
+            <div class="mb-4">
+                <h6 class="form-section-title">Организация</h6>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <input type="text" class="form-control" name="inputName"
+                               id="inputName" required placeholder="Наименование организации"
+                               maxlength="200" th:value="${supplierDTO.getName()}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h6 class="form-section-title">Реквизиты</h6>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="inputInn"
+                               id="inputInn" placeholder="ИНН"
+                               maxlength="12" th:value="${supplierDTO.getInn()}">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="inputKpp"
+                               id="inputKpp" placeholder="КПП"
+                               maxlength="20" th:value="${supplierDTO.getKpp()}">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="inputOgrn"
+                               id="inputOgrn" placeholder="ОГРН"
+                               maxlength="20" th:value="${supplierDTO.getOgrn()}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h6 class="form-section-title">Банковские реквизиты</h6>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="inputPaymentAccount"
+                               id="inputPaymentAccount" placeholder="Расчётный счёт"
+                               maxlength="20" th:value="${supplierDTO.getPaymentAccount()}">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="inputBik"
+                               id="inputBik" placeholder="БИК"
+                               maxlength="9" th:value="${supplierDTO.getBik()}">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="inputBank"
+                               id="inputBank" placeholder="Банк"
+                               maxlength="50" th:value="${supplierDTO.getBank()}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h6 class="form-section-title">Директор</h6>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="inputDirectorLastName"
+                               id="inputDirectorLastName" required placeholder="Фамилия"
+                               maxlength="100" th:value="${supplierDTO.getDirectorLastName()}">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="inputDirectorFirstName"
+                               id="inputDirectorFirstName" required placeholder="Имя"
+                               maxlength="100" th:value="${supplierDTO.getDirectorFirstName()}">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="inputDirectorPatronymicName"
+                               id="inputDirectorPatronymicName" required placeholder="Отчество"
+                               maxlength="100" th:value="${supplierDTO.getDirectorPatronymicName()}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h6 class="form-section-title">Контакты</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" name="inputContactInfo"
+                               id="inputContactInfo" placeholder="Телефон / Email"
+                               maxlength="100" th:value="${supplierDTO.getContactInfo()}">
+                    </div>
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" name="inputAddress"
+                               id="inputAddress" placeholder="Адрес"
+                               maxlength="300" th:value="${supplierDTO.getAddress()}">
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="w-100 btn btn-auth" id="submitBtn">
+                Сохранить изменения
+            </button>
+
+            <div class="divider">
+                <span>или</span>
+            </div>
+
+            <div class="link-section">
+                <a th:href="'/employee/manager/suppliers/detailsSupplier/' + ${supplierDTO.getId()}">
+                    ← Назад
+                </a>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        const innInput = document.getElementById('inputInn');
+        const originalInn = innInput.value;
+        const submitButton = document.getElementById('submitBtn');
+        const currentId = (/*[[${supplierDTO.getId()}]]*/);
+
+        const innErrorDiv = document.createElement('div');
+        innErrorDiv.className = 'alert alert-danger mt-2';
+        innErrorDiv.style.display = 'none';
+        innInput.parentNode.appendChild(innErrorDiv);
+
+        let isInnValid = true;
+
+        function checkFormValidity() {
+            submitButton.disabled = !isInnValid;
+        }
+
+        innInput.addEventListener('input', function() {
+            const inn = innInput.value.trim();
+
+            if (inn === originalInn) {
+                innErrorDiv.style.display = 'none';
+                innInput.classList.remove('is-invalid');
+                isInnValid = true;
+                checkFormValidity();
+                return;
+            }
+
+            if (inn.length > 0) {
+                fetch(`/employee/manager/suppliers/check-inn?inn=${inn}&id=${currentId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.exists) {
+                            innErrorDiv.textContent = 'Поставщик с таким ИНН уже существует';
+                            innErrorDiv.style.display = 'block';
+                            innInput.classList.add('is-invalid');
+                            isInnValid = false;
+                        } else {
+                            innErrorDiv.style.display = 'none';
+                            innInput.classList.remove('is-invalid');
+                            innInput.classList.add('is-valid');
+                            isInnValid = true;
+                        }
+                        checkFormValidity();
+                    })
+                    .catch(error => {
+                        console.error('Ошибка:', error);
+                    });
+            } else {
+                innErrorDiv.style.display = 'none';
+                innInput.classList.remove('is-invalid', 'is-valid');
+                isInnValid = true;
+                checkFormValidity();
+            }
+        });
+    });
+</script>
+</body>
+</html>
