@@ -1,0 +1,90 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Категория товара | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/javascript.js"></script>
+</head>
+<body class="edit-page">
+<div class="edit-container">
+    <div class="edit-card">
+
+        <h1 class="page-title">Информация о категории товара</h1>
+        <p class="page-subtitle">Просмотр данных категории</p>
+
+        <div th:if="${deleteError}" class="alert alert-danger" th:text="${deleteError}"></div>
+
+        <div class="mb-4">
+            <h6 class="form-section-title">Глобальная категория</h6>
+            <div class="row g-3">
+                <div class="col-12">
+                    <input type="text" class="form-control info-display"
+                           placeholder="Глобальная категория"
+                           th:value="${categoryDTO.getGlobalProductCategoryName()}" disabled>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <h6 class="form-section-title">Название</h6>
+            <div class="row g-3">
+                <div class="col-12">
+                    <input type="text" class="form-control info-display"
+                           placeholder="Название категории"
+                           th:value="${categoryDTO.getName()}" disabled>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-4" th:if="${categoryDTO.getAttributes() != null && !categoryDTO.getAttributes().isEmpty()}">
+            <h6 class="form-section-title">Атрибуты</h6>
+            <div class="row g-2">
+                <div class="col-md-6" th:each="attr : ${categoryDTO.getAttributes()}">
+                    <input type="text" class="form-control info-display"
+                           th:value="${attr.getName() + (attr.getUnit() != null && !attr.getUnit().isEmpty() ? ' (' + attr.getUnit() + ')' : '')}"
+                           disabled>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-buttons mb-4">
+            <button th:onclick="'window.location.href=\'/employee/warehouseManager/productCategories/editProductCategory/' + ${categoryDTO.getId()} + '\';'"
+                    class="btn btn-primary btn-profile">
+                Редактировать
+            </button>
+            <button class="btn btn-danger btn-profile"
+                    th:data-name="${categoryDTO.getName()}"
+                    th:data-categoryid="${categoryDTO.getId()}"
+                    onclick="confirmDelete(this)">
+                Удалить
+            </button>
+        </div>
+
+        <div class="divider">
+            <span>или</span>
+        </div>
+
+        <div class="link-section">
+            <a th:href="'/employee/warehouseManager/productCategories/allProductCategories'">
+                ← К списку категорий
+            </a>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function confirmDelete(button) {
+        const name = button.getAttribute('data-name');
+        const categoryId = button.getAttribute('data-categoryid');
+        if (confirm('Вы уверены, что хотите удалить категорию "' + name + '"?')) {
+            window.location.href = '/employee/warehouseManager/productCategories/deleteProductCategory/' + categoryId;
+        }
+    }
+</script>
+</body>
+</html>

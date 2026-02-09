@@ -1,0 +1,159 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Редактировать категорию товара | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/javascript.js"></script>
+</head>
+<body class="edit-page">
+<div class="edit-container">
+    <div class="edit-card">
+        <form th:action="'/employee/warehouseManager/productCategories/editProductCategory/' + ${categoryDTO.getId()}"
+              method="post" class="auth-form">
+
+            <h1 class="page-title">Редактирование категории товара</h1>
+            <p class="page-subtitle">Обновите данные категории</p>
+
+            <div th:if="${categoryError}" class="alert alert-danger" th:text="${categoryError}"></div>
+
+            <div class="mb-4">
+                <h6 class="form-section-title">Глобальная категория</h6>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <select class="form-select" name="inputGlobalProductCategoryId"
+                                id="inputGlobalProductCategoryId" required>
+                            <option th:each="globalCategory : ${allGlobalProductCategories}"
+                                    th:value="${globalCategory.getId()}"
+                                    th:text="${globalCategory.getName()}"
+                                    th:selected="${globalCategory.getId() == categoryDTO.getGlobalProductCategoryId()}"></option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h6 class="form-section-title">Название</h6>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <input type="text" class="form-control" name="inputName"
+                               id="inputName" required placeholder="Название категории"
+                               maxlength="255" th:value="${categoryDTO.getName()}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4" th:if="${!allProductAttributes.isEmpty()}">
+                <h6 class="form-section-title">Атрибуты</h6>
+                <div class="row g-2">
+                    <div class="col-md-6" th:each="attr : ${allProductAttributes}">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox"
+                                   name="inputAttributeIds"
+                                   th:value="${attr.getId()}"
+                                   th:id="'attr_' + ${attr.getId()}">
+                            <label class="form-check-label" th:for="'attr_' + ${attr.getId()}"
+                                   th:text="${attr.getName() + (attr.getUnit() != null && !attr.getUnit().isEmpty() ? ' (' + attr.getUnit() + ')' : '')}"></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="w-100 btn btn-auth" id="submitBtn">
+                Сохранить изменения
+            </button>
+
+            <div class="divider">
+                <span>или</span>
+            </div>
+
+            <div class="link-section">
+                <a th:href="'/employee/warehouseManager/productCategories/detailsProductCategory/' + ${categoryDTO.getId()}">
+                    ← Назад
+                </a>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        const nameInput = document.getElementById('inputName');
+        const globalCategorySelect = document.getElementById('inputGlobalProductCategoryId');
+        const originalName = nameInput.value;
+        const originalGlobalCategoryId = globalCategorySelect.value;
+        const submitButton = document.getElementById('submitBtn');
+        const currentId = (/*[[${categoryDTO.getId()}]]*/);
+
+        // Отметить ранее выбранные атрибуты
+        const selectedAttributeIds = (/*[[${categoryDTO.getAttributes().![id]}]]*/);
+        if (selectedAttributeIds) {
+            selectedAttributeIds.forEach(function(attrId) {
+                const checkbox = document.getElementById('attr_' + attrId);
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
+            });
+        }
+
+        const nameErrorDiv = document.createElement('div');
+        nameErrorDiv.className = 'alert alert-danger mt-2';
+        nameErrorDiv.style.display = 'none';
+        nameInput.parentNode.appendChild(nameErrorDiv);
+
+        let isNameValid = true;
+
+        function checkFormValidity() {
+            submitButton.disabled = !isNameValid;
+        }
+
+        function validateName() {
+            const name = nameInput.value.trim();
+            const globalProductCategoryId = globalCategorySelect.value;
+
+            if (name === originalName && globalProductCategoryId === originalGlobalCategoryId) {
+                nameErrorDiv.style.display = 'none';
+                nameInput.classList.remove('is-invalid');
+                isNameValid = true;
+                checkFormValidity();
+                return;
+            }
+
+            if (name.length > 0 && globalProductCategoryId) {
+                fetch(`/employee/warehouseManager/productCategories/check-name?name=${encodeURIComponent(name)}&globalProductCategoryId=${globalProductCategoryId}&id=${currentId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.exists) {
+                            nameErrorDiv.textContent = 'Категория с таким названием уже существует в выбранной глобальной категории';
+                            nameErrorDiv.style.display = 'block';
+                            nameInput.classList.add('is-invalid');
+                            isNameValid = false;
+                        } else {
+                            nameErrorDiv.style.display = 'none';
+                            nameInput.classList.remove('is-invalid');
+                            nameInput.classList.add('is-valid');
+                            isNameValid = true;
+                        }
+                        checkFormValidity();
+                    })
+                    .catch(error => {
+                        console.error('Ошибка:', error);
+                    });
+            } else {
+                nameErrorDiv.style.display = 'none';
+                nameInput.classList.remove('is-invalid', 'is-valid');
+                isNameValid = true;
+                checkFormValidity();
+            }
+        }
+
+        nameInput.addEventListener('input', validateName);
+        globalCategorySelect.addEventListener('change', validateName);
+    });
+</script>
+</body>
+</html>
