@@ -1,0 +1,64 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Глобальная категория | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/javascript.js"></script>
+</head>
+<body class="edit-page">
+<div class="edit-container">
+    <div class="edit-card">
+
+        <h1 class="page-title">Информация о глобальной категории</h1>
+        <p class="page-subtitle">Просмотр данных глобальной категории</p>
+
+        <div th:if="${deleteError}" class="alert alert-danger" th:text="${deleteError}"></div>
+
+        <div class="mb-4">
+            <h6 class="form-section-title">Название</h6>
+            <div class="row g-3">
+                <div class="col-12">
+                    <input type="text" class="form-control info-display"
+                           placeholder="Название категории"
+                           th:value="${categoryDTO.getName()}" disabled>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <a th:href="'/employee/warehouseManager/globalProductCategories/editGlobalProductCategory/' + ${categoryDTO.getId()}"
+               class="btn btn-profile">Редактировать</a>
+            <button type="button" class="btn btn-profile"
+                    th:data-name="${categoryDTO.getName()}"
+                    th:data-categoryid="${categoryDTO.getId()}"
+                    onclick="confirmDelete(this)">Удалить</button>
+        </div>
+
+        <div class="divider">
+            <span>или</span>
+        </div>
+
+        <div class="link-section">
+            <a th:href="'/employee/warehouseManager/globalProductCategories/allGlobalProductCategories'">
+                ← К списку глобальных категорий
+            </a>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function confirmDelete(button) {
+        const name = button.getAttribute('data-name');
+        const categoryId = button.getAttribute('data-categoryid');
+        if (confirm('Вы уверены, что хотите удалить глобальную категорию "' + name + '"?')) {
+            window.location.href = '/employee/warehouseManager/globalProductCategories/deleteGlobalProductCategory/' + categoryId;
+        }
+    }
+</script>
+</body>
+</html>

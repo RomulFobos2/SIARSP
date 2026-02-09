@@ -88,7 +88,7 @@ public class SupplierService {
         supplier.setBank(inputBank);
         supplier.setDirectorLastName(inputDirectorLastName);
         supplier.setDirectorFirstName(inputDirectorFirstName);
-        supplier.setDirectorPatronymicName(inputDirectorPatronymicName);
+        supplier.setDirectorPatronymicName(inputDirectorPatronymicName != null ? inputDirectorPatronymicName : "");
 
         try {
             supplierRepository.save(supplier);
