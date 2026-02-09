@@ -1,0 +1,177 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Редактировать ТС | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/javascript.js"></script>
+</head>
+<body class="edit-page">
+<div class="edit-container">
+    <div class="edit-card">
+        <form th:action="'/employee/manager/vehicles/editVehicle/' + ${vehicleDTO.getId()}"
+              method="post" class="auth-form">
+
+            <h1 class="page-title">Редактирование транспортного средства</h1>
+            <p class="page-subtitle">Обновите данные ТС</p>
+
+            <div th:if="${vehicleError}" class="alert alert-danger" th:text="${vehicleError}"></div>
+
+            <div class="mb-4">
+                <h6 class="form-section-title">Основные данные</h6>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="inputRegistrationNumber"
+                               id="inputRegistrationNumber" required placeholder="Гос. номер"
+                               maxlength="20" th:value="${vehicleDTO.getRegistrationNumber()}">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="inputBrand"
+                               id="inputBrand" required placeholder="Марка"
+                               maxlength="100" th:value="${vehicleDTO.getBrand()}">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="inputModel"
+                               id="inputModel" required placeholder="Модель"
+                               maxlength="100" th:value="${vehicleDTO.getModel()}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h6 class="form-section-title">Дополнительно</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <input type="number" class="form-control" name="inputYear"
+                               id="inputYear" placeholder="Год выпуска"
+                               min="1900" max="2100" th:value="${vehicleDTO.getYear()}">
+                    </div>
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" name="inputVin"
+                               id="inputVin" placeholder="VIN-код"
+                               maxlength="50" th:value="${vehicleDTO.getVin()}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h6 class="form-section-title">Грузовые характеристики</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <input type="number" class="form-control" name="inputLoadCapacity"
+                               id="inputLoadCapacity" required placeholder="Грузоподъёмность (кг)"
+                               step="0.01" min="0" th:value="${vehicleDTO.getLoadCapacity()}">
+                    </div>
+                    <div class="col-md-6">
+                        <input type="number" class="form-control" name="inputVolumeCapacity"
+                               id="inputVolumeCapacity" required placeholder="Объём кузова (м³)"
+                               step="0.01" min="0" th:value="${vehicleDTO.getVolumeCapacity()}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h6 class="form-section-title">Тип и статус</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <select class="form-select" name="inputType" id="inputType" required>
+                            <option th:each="type : ${vehicleTypes}"
+                                    th:value="${type}"
+                                    th:text="${type.getDisplayName()}"
+                                    th:selected="${type == vehicleDTO.getType()}">
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <select class="form-select" name="inputStatus" id="inputStatus" required>
+                            <option th:each="status : ${vehicleStatuses}"
+                                    th:value="${status}"
+                                    th:text="${status.getDisplayName()}"
+                                    th:selected="${status == vehicleDTO.getStatus()}">
+                            </option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="w-100 btn btn-auth" id="submitBtn">
+                Сохранить изменения
+            </button>
+
+            <div class="divider">
+                <span>или</span>
+            </div>
+
+            <div class="link-section">
+                <a th:href="'/employee/manager/vehicles/detailsVehicle/' + ${vehicleDTO.getId()}">
+                    ← Назад
+                </a>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        const regNumberInput = document.getElementById('inputRegistrationNumber');
+        const originalRegNumber = regNumberInput.value;
+        const submitButton = document.getElementById('submitBtn');
+        const currentId = (/*[[${vehicleDTO.getId()}]]*/);
+
+        const regNumberErrorDiv = document.createElement('div');
+        regNumberErrorDiv.className = 'alert alert-danger mt-2';
+        regNumberErrorDiv.style.display = 'none';
+        regNumberInput.parentNode.appendChild(regNumberErrorDiv);
+
+        let isRegNumberValid = true;
+
+        function checkFormValidity() {
+            submitButton.disabled = !isRegNumberValid;
+        }
+
+        regNumberInput.addEventListener('input', function() {
+            const regNumber = regNumberInput.value.trim();
+
+            if (regNumber === originalRegNumber) {
+                regNumberErrorDiv.style.display = 'none';
+                regNumberInput.classList.remove('is-invalid');
+                isRegNumberValid = true;
+                checkFormValidity();
+                return;
+            }
+
+            if (regNumber.length > 0) {
+                fetch(`/employee/manager/vehicles/check-regNumber?regNumber=${encodeURIComponent(regNumber)}&id=${currentId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.exists) {
+                            regNumberErrorDiv.textContent = 'ТС с таким гос. номером уже существует';
+                            regNumberErrorDiv.style.display = 'block';
+                            regNumberInput.classList.add('is-invalid');
+                            isRegNumberValid = false;
+                        } else {
+                            regNumberErrorDiv.style.display = 'none';
+                            regNumberInput.classList.remove('is-invalid');
+                            regNumberInput.classList.add('is-valid');
+                            isRegNumberValid = true;
+                        }
+                        checkFormValidity();
+                    })
+                    .catch(error => {
+                        console.error('Ошибка:', error);
+                    });
+            } else {
+                regNumberErrorDiv.style.display = 'none';
+                regNumberInput.classList.remove('is-invalid', 'is-valid');
+                isRegNumberValid = true;
+                checkFormValidity();
+            }
+        });
+    });
+</script>
+</body>
+</html>

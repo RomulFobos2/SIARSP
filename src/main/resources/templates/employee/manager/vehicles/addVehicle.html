@@ -1,0 +1,150 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Добавить ТС | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/javascript.js"></script>
+</head>
+<body class="edit-page">
+<div class="edit-container">
+    <div class="edit-card">
+        <form action="/employee/manager/vehicles/addVehicle" method="post" class="auth-form">
+
+            <h1 class="page-title">Добавление транспортного средства</h1>
+            <p class="page-subtitle">Зарегистрируйте новое ТС в системе</p>
+
+            <div th:if="${vehicleError}" class="alert alert-danger" th:text="${vehicleError}"></div>
+
+            <div class="mb-4">
+                <h6 class="form-section-title">Основные данные</h6>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="inputRegistrationNumber"
+                               id="inputRegistrationNumber" required placeholder="Гос. номер" maxlength="20">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="inputBrand"
+                               id="inputBrand" required placeholder="Марка" maxlength="100">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="inputModel"
+                               id="inputModel" required placeholder="Модель" maxlength="100">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h6 class="form-section-title">Дополнительно</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <input type="number" class="form-control" name="inputYear"
+                               id="inputYear" placeholder="Год выпуска" min="1900" max="2100">
+                    </div>
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" name="inputVin"
+                               id="inputVin" placeholder="VIN-код" maxlength="50">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h6 class="form-section-title">Грузовые характеристики</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <input type="number" class="form-control" name="inputLoadCapacity"
+                               id="inputLoadCapacity" required placeholder="Грузоподъёмность (кг)"
+                               step="0.01" min="0">
+                    </div>
+                    <div class="col-md-6">
+                        <input type="number" class="form-control" name="inputVolumeCapacity"
+                               id="inputVolumeCapacity" required placeholder="Объём кузова (м³)"
+                               step="0.01" min="0">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h6 class="form-section-title">Тип транспортного средства</h6>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <select class="form-select" name="inputType" id="inputType" required>
+                            <option value="" disabled selected>Выберите тип ТС</option>
+                            <option th:each="type : ${vehicleTypes}"
+                                    th:value="${type}"
+                                    th:text="${type.getDisplayName()}">
+                            </option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="w-100 btn btn-auth" id="submitBtn">
+                Добавить транспортное средство
+            </button>
+
+            <div class="divider">
+                <span>или</span>
+            </div>
+
+            <div class="link-section">
+                <a th:href="'/employee/manager/vehicles/allVehicles'">← К списку транспортных средств</a>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const regNumberInput = document.getElementById('inputRegistrationNumber');
+        const submitButton = document.getElementById('submitBtn');
+
+        const regNumberErrorDiv = document.createElement('div');
+        regNumberErrorDiv.className = 'alert alert-danger mt-2';
+        regNumberErrorDiv.style.display = 'none';
+        regNumberInput.parentNode.appendChild(regNumberErrorDiv);
+
+        let isRegNumberValid = true;
+
+        function checkFormValidity() {
+            submitButton.disabled = !isRegNumberValid;
+        }
+
+        regNumberInput.addEventListener('input', function() {
+            const regNumber = regNumberInput.value.trim();
+
+            if (regNumber.length > 0) {
+                fetch(`/employee/manager/vehicles/check-regNumber?regNumber=${encodeURIComponent(regNumber)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.exists) {
+                            regNumberErrorDiv.textContent = 'ТС с таким гос. номером уже существует';
+                            regNumberErrorDiv.style.display = 'block';
+                            regNumberInput.classList.add('is-invalid');
+                            isRegNumberValid = false;
+                        } else {
+                            regNumberErrorDiv.style.display = 'none';
+                            regNumberInput.classList.remove('is-invalid');
+                            regNumberInput.classList.add('is-valid');
+                            isRegNumberValid = true;
+                        }
+                        checkFormValidity();
+                    })
+                    .catch(error => {
+                        console.error('Ошибка:', error);
+                    });
+            } else {
+                regNumberErrorDiv.style.display = 'none';
+                regNumberInput.classList.remove('is-invalid', 'is-valid');
+                isRegNumberValid = true;
+                checkFormValidity();
+            }
+        });
+    });
+</script>
+</body>
+</html>

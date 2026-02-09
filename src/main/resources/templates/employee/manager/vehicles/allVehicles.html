@@ -1,0 +1,66 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Транспортные средства | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/javascript.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container my-5">
+    <div class="profile-card mb-4">
+        <div class="profile-actions">
+            <a th:href="'/'"
+               class="btn btn-secondary btn-profile">
+                ← Главная
+            </a>
+            <a th:href="'/employee/manager/vehicles/addVehicle'"
+               class="btn btn-success btn-profile">
+                + Добавить ТС
+            </a>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <h2 class="h3 mb-4 fw-bold">Список транспортных средств</h2>
+
+        <div class="table-responsive">
+            <table class="table table-modern">
+                <thead>
+                <tr>
+                    <th>№</th>
+                    <th>Рег. номер</th>
+                    <th>Марка и модель</th>
+                    <th>Тип</th>
+                    <th>Грузоподъёмность, кг</th>
+                    <th>Объём, м³</th>
+                    <th>Статус</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="vehicle, index : ${allVehicles}">
+                    <td th:text="${index.index+1}"></td>
+                    <td>
+                        <a th:text="${vehicle.getRegistrationNumber()}"
+                           th:href="'/employee/manager/vehicles/detailsVehicle/' + ${vehicle.getId()}"></a>
+                    </td>
+                    <td th:text="${vehicle.getBrand() + ' ' + vehicle.getModel()}"></td>
+                    <td th:text="${vehicle.getType().getDisplayName()}"></td>
+                    <td th:text="${vehicle.getLoadCapacity()}"></td>
+                    <td th:text="${vehicle.getVolumeCapacity()}"></td>
+                    <td th:text="${vehicle.getStatus().getDisplayName()}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>
