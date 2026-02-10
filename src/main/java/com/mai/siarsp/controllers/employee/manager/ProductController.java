@@ -3,9 +3,9 @@ package com.mai.siarsp.controllers.employee.manager;
 import com.mai.siarsp.dto.ProductCategoryDTO;
 import com.mai.siarsp.dto.ProductDTO;
 import com.mai.siarsp.enumeration.WarehouseType;
-import com.mai.siarsp.mapper.ProductCategoryMapper;
 import com.mai.siarsp.mapper.ProductMapper;
 import com.mai.siarsp.models.Product;
+import com.mai.siarsp.models.ProductCategory;
 import com.mai.siarsp.service.employee.manager.ProductService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -145,11 +145,31 @@ public class ProductController {
         return "redirect:/employee/manager/products/allProducts";
     }
 
+    /**
+     * Заполняет список категорий для формы без использования ProductCategoryMapper.
+     *
+     * Используется облегчённый ручной маппинг, чтобы не трогать LAZY-коллекцию
+     * ProductCategory.attributes и не провоцировать LazyInitializationException.
+     *
+     * В случае merge-конфликта с вариантом через ProductCategoryMapper следует
+     * оставлять именно текущую реализацию с toLightCategoryDTO(...).
+     */
     private void populateCategories(Model model) {
-        List<ProductCategoryDTO> categories = ProductCategoryMapper.INSTANCE
-                .toDTOList(productService.getProductCategoryRepository().findAll());
-        model.addAttribute("allProductCategories", categories.stream()
+        List<ProductCategoryDTO> categories = productService.getProductCategoryRepository().findAll().stream()
+                .map(this::toLightCategoryDTO)
                 .sorted(Comparator.comparing(ProductCategoryDTO::getDisplayName))
-                .toList());
+                .toList();
+
+        model.addAttribute("allProductCategories", categories);
+    }
+
+    private ProductCategoryDTO toLightCategoryDTO(ProductCategory category) {
+        ProductCategoryDTO dto = new ProductCategoryDTO();
+        dto.setId(category.getId());
+        dto.setName(category.getName());
+        dto.setGlobalProductCategoryId(category.getGlobalProductCategory().getId());
+        dto.setGlobalProductCategoryName(category.getGlobalProductCategory().getName());
+        dto.setDisplayName(category.getDisplayName());
+        return dto;
     }
 }
