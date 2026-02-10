@@ -10,6 +10,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     boolean existsByArticle(String article);
 
+    boolean existsByArticleAndIdNot(String article, Long id);
+
     boolean existsByCategory(ProductCategory category);
 
     Optional<Product> findByArticle(String article);

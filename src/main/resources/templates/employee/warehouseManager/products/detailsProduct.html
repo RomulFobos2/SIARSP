@@ -1,0 +1,74 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Информация о товаре | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="edit-page">
+<div class="edit-container">
+    <div class="edit-card">
+        <h1 class="page-title">Информация о товаре</h1>
+        <p class="page-subtitle">Просмотр карточки товара</p>
+
+        <div th:if="${deleteError}" class="alert alert-danger" th:text="${deleteError}"></div>
+
+        <div class="mb-4">
+            <h6 class="form-section-title">Основные данные</h6>
+            <div class="row g-3">
+                <div class="col-md-8"><input type="text" class="form-control info-display" th:value="${productDTO.getName()}" disabled></div>
+                <div class="col-md-4"><input type="text" class="form-control info-display" th:value="${productDTO.getArticle()}" disabled></div>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <h6 class="form-section-title">Складские параметры</h6>
+            <div class="row g-3">
+                <div class="col-md-3"><input type="text" class="form-control info-display" th:value="${productDTO.getStockQuantity()}" disabled></div>
+                <div class="col-md-3"><input type="text" class="form-control info-display" th:value="${productDTO.getQuantityForStock()}" disabled></div>
+                <div class="col-md-3"><input type="text" class="form-control info-display" th:value="${productDTO.getReservedQuantity()}" disabled></div>
+                <div class="col-md-3"><input type="text" class="form-control info-display" th:value="${productDTO.getAvailableQuantity()}" disabled></div>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <h6 class="form-section-title">Категория и тип склада</h6>
+            <div class="row g-3">
+                <div class="col-md-6"><input type="text" class="form-control info-display" th:value="${productDTO.getCategoryName()}" disabled></div>
+                <div class="col-md-6"><input type="text" class="form-control info-display" th:value="${productDTO.getWarehouseType().getDisplayName()}" disabled></div>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <h6 class="form-section-title">Изображение</h6>
+            <input type="text" class="form-control info-display" th:value="${productDTO.getImage()}" disabled>
+        </div>
+
+        <div class="action-buttons mb-4">
+            <button th:onclick="'window.location.href=\'/employee/warehouseManager/products/editProduct/' + ${productDTO.getId()} + '\';'" class="btn btn-primary btn-profile">Редактировать</button>
+            <button class="btn btn-danger btn-profile"
+                    th:data-productid="${productDTO.getId()}"
+                    th:data-name="${productDTO.getName()}"
+                    onclick="confirmDelete(this)">Удалить</button>
+        </div>
+
+        <div class="link-section">
+            <a th:href="'/employee/warehouseManager/products/allProducts'">← К списку товаров</a>
+        </div>
+    </div>
+</div>
+<script>
+    function confirmDelete(button) {
+        const id = button.getAttribute('data-productid');
+        const name = button.getAttribute('data-name');
+
+        if (confirm('Вы точно хотите удалить товар ' + name + '?')) {
+            window.location.href = '/employee/warehouseManager/products/deleteProduct/' + id;
+        }
+    }
+</script>
+</body>
+</html>

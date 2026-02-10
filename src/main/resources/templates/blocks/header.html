@@ -62,6 +62,12 @@
                         </a>
                     </li>
 
+                    <li class="nav-item" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
+                        <a class="nav-link px-3" href="/employee/manager/products/allProducts">
+                            Товары
+                        </a>
+                    </li>
+
                     <li class="nav-item" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
                         <a class="nav-link px-3" href="/employee/warehouseManager/globalProductCategories/allGlobalProductCategories">
                             Глобальные категории
@@ -77,6 +83,12 @@
                     <li class="nav-item" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
                         <a class="nav-link px-3" href="/employee/warehouseManager/productAttributes/allProductAttributes">
                             Атрибуты товаров
+                        </a>
+                    </li>
+
+                    <li class="nav-item" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
+                        <a class="nav-link px-3" href="/employee/warehouseManager/products/allProducts">
+                            Товары
                         </a>
                     </li>
 

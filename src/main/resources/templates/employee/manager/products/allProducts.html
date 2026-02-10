@@ -1,0 +1,57 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Товары | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container my-5">
+    <div class="profile-card mb-4">
+        <div class="profile-actions">
+            <a th:href="'/'" class="btn btn-secondary btn-profile">← Главная</a>
+            <a th:href="'/employee/manager/products/addProduct'" class="btn btn-success btn-profile">+ Добавить товар</a>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <h2 class="h3 mb-4 fw-bold">Список товаров</h2>
+        <div class="table-responsive">
+            <table class="table table-modern">
+                <thead>
+                <tr>
+                    <th>№</th>
+                    <th>Артикул</th>
+                    <th>Наименование</th>
+                    <th>Категория</th>
+                    <th>Тип склада</th>
+                    <th>Остаток</th>
+                    <th>Доступно</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="product, index : ${allProducts}">
+                    <td th:text="${index.index + 1}"></td>
+                    <td>
+                        <a th:text="${product.getArticle()}"
+                           th:href="'/employee/manager/products/detailsProduct/' + ${product.getId()}"></a>
+                    </td>
+                    <td th:text="${product.getName()}"></td>
+                    <td th:text="${product.getCategoryName()}"></td>
+                    <td th:text="${product.getWarehouseType().getDisplayName()}"></td>
+                    <td th:text="${product.getStockQuantity()}"></td>
+                    <td th:text="${product.getAvailableQuantity()}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>
