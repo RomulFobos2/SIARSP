@@ -145,6 +145,12 @@ public class ProductController {
         return "redirect:/employee/manager/products/allProducts";
     }
 
+    /**
+     * Заполняет список категорий для формы без использования ProductCategoryMapper.
+     *
+     * Используется облегчённый ручной маппинг, чтобы не трогать LAZY-коллекцию
+     * ProductCategory.attributes и не провоцировать LazyInitializationException.
+     */
     private void populateCategories(Model model) {
         List<ProductCategoryDTO> categories = productService.getProductCategoryRepository().findAll().stream()
                 .map(this::toLightCategoryDTO)
