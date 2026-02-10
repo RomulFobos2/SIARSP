@@ -150,6 +150,9 @@ public class ProductController {
      *
      * Используется облегчённый ручной маппинг, чтобы не трогать LAZY-коллекцию
      * ProductCategory.attributes и не провоцировать LazyInitializationException.
+     *
+     * В случае merge-конфликта с вариантом через ProductCategoryMapper следует
+     * оставлять именно текущую реализацию с toLightCategoryDTO(...).
      */
     private void populateCategories(Model model) {
         List<ProductCategoryDTO> categories = productService.getProductCategoryRepository().findAll().stream()
