@@ -1,0 +1,147 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Редактировать товар | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="edit-page">
+<div class="edit-container">
+    <div class="edit-card">
+        <form th:action="'/employee/manager/products/editProduct/' + ${productDTO.getId()}" method="post" enctype="multipart/form-data" class="auth-form">
+            <h1 class="page-title">Редактирование товара</h1>
+            <p class="page-subtitle">Измените параметры товарной позиции</p>
+
+            <div th:if="${productError}" class="alert alert-danger" th:text="${productError}"></div>
+
+            <div class="mb-4">
+                <h6 class="form-section-title">Основные данные</h6>
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <input type="text" class="form-control" name="inputName" required
+                               th:value="${productDTO.getName()}" maxlength="255">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="inputArticle" id="inputArticle" required
+                               th:value="${productDTO.getArticle()}" maxlength="255">
+                        <small id="articleError" class="text-danger" style="display:none;">Товар с таким артикулом уже существует</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h6 class="form-section-title">Складские параметры</h6>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <input type="number" class="form-control" name="inputStockQuantity" required min="0"
+                               th:value="${productDTO.getStockQuantity()}">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="number" class="form-control" name="inputQuantityForStock" required min="0"
+                               th:value="${productDTO.getQuantityForStock()}">
+                    </div>
+                    <div class="col-md-4">
+                        <select class="form-select" name="inputWarehouseType" required>
+                            <option th:each="type : ${warehouseTypes}" th:value="${type}" th:text="${type.getDisplayName()}"
+                                    th:selected="${type == productDTO.getWarehouseType()}"></option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h6 class="form-section-title">Классификация</h6>
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <select class="form-select" name="inputCategoryId" required>
+                            <option th:each="category : ${allProductCategories}"
+                                    th:value="${category.getId()}"
+                                    th:text="${category.getDisplayName()}"
+                                    th:selected="${category.getId() == productDTO.getCategoryId()}"></option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h6 class="form-section-title">Изображение товара</h6>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div id="imagePreviewContainer" style="margin-top: 10px;">
+                            <img id="imagePreview"
+                                 th:src="@{'/image/' + ${productDTO.getId()}}"
+                                 alt="Текущее изображение"
+                                 style="max-width: 300px; max-height: 300px; border-radius: 8px;
+                                        border: 2px solid #dee2e6; object-fit: contain;">
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <input type="file" class="form-control" name="inputFileField"
+                               id="inputFileField" accept="image/*">
+                        <small class="text-muted">Оставьте пустым, чтобы сохранить текущее изображение</small>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn btn-success btn-profile">Сохранить изменения</button>
+        </form>
+        <div class="link-section mt-3">
+            <a th:href="'/employee/manager/products/allProducts'">← К списку товаров</a>
+        </div>
+    </div>
+</div>
+<script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+        const articleInput = document.getElementById('inputArticle');
+        const articleErrorDiv = document.getElementById('articleError');
+        const submitButton = document.getElementById('submitBtn');
+        const productId = [[${productDTO.getId()}]];
+
+        const fileInput = document.getElementById('inputFileField');
+        const imagePreview = document.getElementById('imagePreview');
+        const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+
+        articleInput.addEventListener('input', function () {
+            const article = articleInput.value.trim();
+            if (article.length === 0) {
+                articleErrorDiv.style.display = 'none';
+                articleInput.classList.remove('is-invalid', 'is-valid');
+                submitButton.disabled = false;
+                return;
+            }
+
+            fetch('/employee/manager/products/check-article?article=' + encodeURIComponent(article) + '&id=' + productId)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.exists) {
+                        articleErrorDiv.style.display = 'block';
+                        articleInput.classList.add('is-invalid');
+                        articleInput.classList.remove('is-valid');
+                        submitButton.disabled = true;
+                    } else {
+                        articleErrorDiv.style.display = 'none';
+                        articleInput.classList.remove('is-invalid');
+                        articleInput.classList.add('is-valid');
+                        submitButton.disabled = false;
+                    }
+                });
+        });
+
+        fileInput.addEventListener('change', function (event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    imagePreview.src = e.target.result;
+                    imagePreviewContainer.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    });
+</script>
+</body>
+</html>
