@@ -11,7 +11,7 @@
 <body class="edit-page">
 <div class="edit-container">
     <div class="edit-card">
-        <form action="/employee/manager/products/addProduct" method="post" class="auth-form">
+        <form action="/employee/manager/products/addProduct" method="post" enctype="multipart/form-data" class="auth-form">
             <h1 class="page-title">Добавление товара</h1>
             <p class="page-subtitle">Создайте новую товарную позицию</p>
 
@@ -51,7 +51,7 @@
             <div class="mb-4">
                 <h6 class="form-section-title">Классификация</h6>
                 <div class="row g-3">
-                    <div class="col-md-6">
+                    <div class="col-md-12">
                         <select class="form-select" name="inputCategoryId" required>
                             <option value="">Выберите категорию</option>
                             <option th:each="category : ${allProductCategories}"
@@ -59,8 +59,22 @@
                                     th:text="${category.getDisplayName()}"></option>
                         </select>
                     </div>
-                    <div class="col-md-6">
-                        <input type="text" class="form-control" name="inputImage" required placeholder="Путь к изображению" maxlength="500">
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h6 class="form-section-title">Изображение товара</h6>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <input type="file" class="form-control" name="inputFileField"
+                               id="inputFileField" accept="image/*" required>
+                    </div>
+                    <div class="col-12">
+                        <div id="imagePreviewContainer" style="display: none; margin-top: 10px;">
+                            <img id="imagePreview" src="#" alt="Превью"
+                                 style="max-width: 300px; max-height: 300px; border-radius: 8px;
+                                        border: 2px solid #dee2e6; object-fit: contain;">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -73,34 +87,54 @@
     </div>
 </div>
 <script>
-    const articleInput = document.getElementById('inputArticle');
-    const articleErrorDiv = document.getElementById('articleError');
-    const submitButton = document.getElementById('submitBtn');
+    document.addEventListener('DOMContentLoaded', function () {
+        const articleInput = document.getElementById('inputArticle');
+        const articleErrorDiv = document.getElementById('articleError');
+        const submitButton = document.getElementById('submitBtn');
 
-    articleInput.addEventListener('input', function () {
-        const article = articleInput.value.trim();
-        if (article.length === 0) {
-            articleErrorDiv.style.display = 'none';
-            articleInput.classList.remove('is-invalid', 'is-valid');
-            submitButton.disabled = false;
-            return;
-        }
+        const fileInput = document.getElementById('inputFileField');
+        const imagePreview = document.getElementById('imagePreview');
+        const imagePreviewContainer = document.getElementById('imagePreviewContainer');
 
-        fetch('/employee/manager/products/check-article?article=' + encodeURIComponent(article))
-            .then(response => response.json())
-            .then(data => {
-                if (data.exists) {
-                    articleErrorDiv.style.display = 'block';
-                    articleInput.classList.add('is-invalid');
-                    articleInput.classList.remove('is-valid');
-                    submitButton.disabled = true;
-                } else {
-                    articleErrorDiv.style.display = 'none';
-                    articleInput.classList.remove('is-invalid');
-                    articleInput.classList.add('is-valid');
-                    submitButton.disabled = false;
-                }
-            });
+        articleInput.addEventListener('input', function () {
+            const article = articleInput.value.trim();
+            if (article.length === 0) {
+                articleErrorDiv.style.display = 'none';
+                articleInput.classList.remove('is-invalid', 'is-valid');
+                submitButton.disabled = false;
+                return;
+            }
+
+            fetch('/employee/manager/products/check-article?article=' + encodeURIComponent(article))
+                .then(response => response.json())
+                .then(data => {
+                    if (data.exists) {
+                        articleErrorDiv.style.display = 'block';
+                        articleInput.classList.add('is-invalid');
+                        articleInput.classList.remove('is-valid');
+                        submitButton.disabled = true;
+                    } else {
+                        articleErrorDiv.style.display = 'none';
+                        articleInput.classList.remove('is-invalid');
+                        articleInput.classList.add('is-valid');
+                        submitButton.disabled = false;
+                    }
+                });
+        });
+
+        fileInput.addEventListener('change', function (event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    imagePreview.src = e.target.result;
+                    imagePreviewContainer.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                imagePreviewContainer.style.display = 'none';
+            }
+        });
     });
 </script>
 </body>

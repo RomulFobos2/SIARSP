@@ -25,7 +25,7 @@
             <table class="table table-modern">
                 <thead>
                 <tr>
-                    <th>№</th>
+                    <th>Фото</th>
                     <th>Артикул</th>
                     <th>Наименование</th>
                     <th>Категория</th>
@@ -35,8 +35,12 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="product, index : ${allProducts}">
-                    <td th:text="${index.index + 1}"></td>
+                <tr th:each="product : ${allProducts}">
+                    <td>
+                        <img th:src="@{'/image/' + ${product.getId()}}"
+                             alt="Фото"
+                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;">
+                    </td>
                     <td>
                         <a th:text="${product.getArticle()}"
                            th:href="'/employee/warehouseManager/products/detailsProduct/' + ${product.getId()}"></a>

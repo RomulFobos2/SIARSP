@@ -44,7 +44,14 @@
 
         <div class="mb-4">
             <h6 class="form-section-title">Изображение</h6>
-            <input type="text" class="form-control info-display" th:value="${productDTO.getImage()}" disabled>
+            <div class="row g-3">
+                <div class="col-12">
+                    <img th:src="@{'/image/' + ${productDTO.getId()}}"
+                         alt="Изображение товара"
+                         style="max-width: 400px; max-height: 400px; border-radius: 8px;
+                                border: 2px solid #dee2e6; object-fit: contain;">
+                </div>
+            </div>
         </div>
 
         <div class="action-buttons mb-4">

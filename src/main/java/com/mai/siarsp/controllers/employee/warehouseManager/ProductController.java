@@ -13,14 +13,16 @@ import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
-@Controller
+@Controller("warehouseManagerProductController")
 @Slf4j
 public class ProductController {
 
@@ -60,27 +62,27 @@ public class ProductController {
                              @RequestParam String inputArticle,
                              @RequestParam int inputStockQuantity,
                              @RequestParam int inputQuantityForStock,
-                             @RequestParam String inputImage,
                              @RequestParam WarehouseType inputWarehouseType,
                              @RequestParam Long inputCategoryId,
+                             @RequestParam MultipartFile inputFileField,
                              Model model) {
         Product product = new Product();
         product.setName(inputName);
         product.setArticle(inputArticle);
         product.setStockQuantity(inputStockQuantity);
         product.setQuantityForStock(inputQuantityForStock);
-        product.setImage(inputImage);
         product.setWarehouseType(inputWarehouseType);
         product.setReservedQuantity(0);
 
-        if (!productService.saveProduct(product, inputCategoryId)) {
+        Optional<Long> savedProductId = productService.saveProduct(product, inputCategoryId, inputFileField);
+        if (savedProductId.isEmpty()) {
             model.addAttribute("productError", "Ошибка при сохранении товара.");
             model.addAttribute("warehouseTypes", WarehouseType.values());
             populateCategories(model);
             return "employee/warehouseManager/products/addProduct";
         }
 
-        return "redirect:/employee/warehouseManager/products/detailsProduct/" + product.getId();
+        return "redirect:/employee/warehouseManager/products/detailsProduct/" + savedProductId.get();
     }
 
     @Transactional
@@ -117,17 +119,19 @@ public class ProductController {
                               @RequestParam String inputArticle,
                               @RequestParam int inputStockQuantity,
                               @RequestParam int inputQuantityForStock,
-                              @RequestParam String inputImage,
                               @RequestParam WarehouseType inputWarehouseType,
                               @RequestParam Long inputCategoryId,
+                              @RequestParam(required = false) MultipartFile inputFileField,
                               RedirectAttributes redirectAttributes) {
-        if (!productService.editProduct(id, inputName, inputArticle, inputStockQuantity,
-                inputQuantityForStock, inputImage, inputWarehouseType, inputCategoryId)) {
+        Optional<Long> editedProductId = productService.editProduct(id, inputName, inputArticle, inputStockQuantity,
+                inputQuantityForStock, inputWarehouseType, inputCategoryId, inputFileField);
+
+        if (editedProductId.isEmpty()) {
             redirectAttributes.addFlashAttribute("productError", "Ошибка при сохранении изменений товара.");
             return "redirect:/employee/warehouseManager/products/editProduct/" + id;
         }
 
-        return "redirect:/employee/warehouseManager/products/detailsProduct/" + id;
+        return "redirect:/employee/warehouseManager/products/detailsProduct/" + editedProductId.get();
     }
 
     @GetMapping("/employee/warehouseManager/products/deleteProduct/{id}")

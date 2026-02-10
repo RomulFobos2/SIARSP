@@ -11,7 +11,7 @@
 <body class="edit-page">
 <div class="edit-container">
     <div class="edit-card">
-        <form th:action="'/employee/warehouseManager/products/editProduct/' + ${productDTO.getId()}" method="post" class="auth-form">
+        <form th:action="'/employee/warehouseManager/products/editProduct/' + ${productDTO.getId()}" method="post" enctype="multipart/form-data" class="auth-form">
             <h1 class="page-title">Редактирование товара</h1>
             <p class="page-subtitle">Измените параметры товарной позиции</p>
 
@@ -55,7 +55,7 @@
             <div class="mb-4">
                 <h6 class="form-section-title">Классификация</h6>
                 <div class="row g-3">
-                    <div class="col-md-6">
+                    <div class="col-md-12">
                         <select class="form-select" name="inputCategoryId" required>
                             <option th:each="category : ${allProductCategories}"
                                     th:value="${category.getId()}"
@@ -63,9 +63,25 @@
                                     th:selected="${category.getId() == productDTO.getCategoryId()}"></option>
                         </select>
                     </div>
-                    <div class="col-md-6">
-                        <input type="text" class="form-control" name="inputImage" required
-                               th:value="${productDTO.getImage()}" maxlength="500">
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h6 class="form-section-title">Изображение товара</h6>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div id="imagePreviewContainer" style="margin-top: 10px;">
+                            <img id="imagePreview"
+                                 th:src="@{'/image/' + ${productDTO.getId()}}"
+                                 alt="Текущее изображение"
+                                 style="max-width: 300px; max-height: 300px; border-radius: 8px;
+                                        border: 2px solid #dee2e6; object-fit: contain;">
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <input type="file" class="form-control" name="inputFileField"
+                               id="inputFileField" accept="image/*">
+                        <small class="text-muted">Оставьте пустым, чтобы сохранить текущее изображение</small>
                     </div>
                 </div>
             </div>
@@ -78,35 +94,53 @@
     </div>
 </div>
 <script th:inline="javascript">
-    const articleInput = document.getElementById('inputArticle');
-    const articleErrorDiv = document.getElementById('articleError');
-    const submitButton = document.getElementById('submitBtn');
-    const productId = [[${productDTO.getId()}]];
+    document.addEventListener('DOMContentLoaded', function () {
+        const articleInput = document.getElementById('inputArticle');
+        const articleErrorDiv = document.getElementById('articleError');
+        const submitButton = document.getElementById('submitBtn');
+        const productId = [[${productDTO.getId()}]];
 
-    articleInput.addEventListener('input', function () {
-        const article = articleInput.value.trim();
-        if (article.length === 0) {
-            articleErrorDiv.style.display = 'none';
-            articleInput.classList.remove('is-invalid', 'is-valid');
-            submitButton.disabled = false;
-            return;
-        }
+        const fileInput = document.getElementById('inputFileField');
+        const imagePreview = document.getElementById('imagePreview');
+        const imagePreviewContainer = document.getElementById('imagePreviewContainer');
 
-        fetch('/employee/warehouseManager/products/check-article?article=' + encodeURIComponent(article) + '&id=' + productId)
-            .then(response => response.json())
-            .then(data => {
-                if (data.exists) {
-                    articleErrorDiv.style.display = 'block';
-                    articleInput.classList.add('is-invalid');
-                    articleInput.classList.remove('is-valid');
-                    submitButton.disabled = true;
-                } else {
-                    articleErrorDiv.style.display = 'none';
-                    articleInput.classList.remove('is-invalid');
-                    articleInput.classList.add('is-valid');
-                    submitButton.disabled = false;
-                }
-            });
+        articleInput.addEventListener('input', function () {
+            const article = articleInput.value.trim();
+            if (article.length === 0) {
+                articleErrorDiv.style.display = 'none';
+                articleInput.classList.remove('is-invalid', 'is-valid');
+                submitButton.disabled = false;
+                return;
+            }
+
+            fetch('/employee/warehouseManager/products/check-article?article=' + encodeURIComponent(article) + '&id=' + productId)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.exists) {
+                        articleErrorDiv.style.display = 'block';
+                        articleInput.classList.add('is-invalid');
+                        articleInput.classList.remove('is-valid');
+                        submitButton.disabled = true;
+                    } else {
+                        articleErrorDiv.style.display = 'none';
+                        articleInput.classList.remove('is-invalid');
+                        articleInput.classList.add('is-valid');
+                        submitButton.disabled = false;
+                    }
+                });
+        });
+
+        fileInput.addEventListener('change', function (event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    imagePreview.src = e.target.result;
+                    imagePreviewContainer.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
     });
 </script>
 </body>
