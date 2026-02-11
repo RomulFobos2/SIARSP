@@ -200,22 +200,42 @@ public class ProductAttributeService {
 
         try {
             productAttributeRepository.save(attribute);
+            log.info("Атрибут '{}' (id={}) сохранён с обновлёнными полями.", attribute.getName(), id);
 
             // Пересинхронизация ManyToMany через owning side (ProductCategory)
-            // 1. Убираем атрибут из ВСЕХ текущих категорий
             List<ProductCategory> currentCategories = new ArrayList<>(attribute.getCategories());
+            List<ProductCategory> newCategories = (categoryIds != null && !categoryIds.isEmpty())
+                    ? productCategoryRepository.findAllById(categoryIds)
+                    : new ArrayList<>();
+
+            // Определяем удалённые категории (были в старом списке, но нет в новом)
+            List<ProductCategory> removedCategories = new ArrayList<>(currentCategories);
+            removedCategories.removeAll(newCategories);
+
+            log.info("Текущие категории: {}, Новые категории: {}, Удалённые категории: {}",
+                    currentCategories.stream().map(ProductCategory::getName).toList(),
+                    newCategories.stream().map(ProductCategory::getName).toList(),
+                    removedCategories.stream().map(ProductCategory::getName).toList());
+
+            // Каскадное удаление ProductAttributeValue для товаров удалённых категорий
+            for (ProductCategory removedCat : removedCategories) {
+                productAttributeValueRepository.deleteByProductCategoryAndAttribute(removedCat, attribute);
+                log.info("Удалены значения атрибута '{}' для товаров категории '{}'.",
+                        attribute.getName(), removedCat.getName());
+            }
+
+            // 1. Убираем атрибут из ВСЕХ текущих категорий
             for (ProductCategory oldCategory : currentCategories) {
                 oldCategory.getAttributes().remove(attribute);
                 productCategoryRepository.save(oldCategory);
+                log.info("Атрибут '{}' убран из категории '{}'.", attribute.getName(), oldCategory.getName());
             }
 
             // 2. Добавляем атрибут в новые категории
-            if (categoryIds != null && !categoryIds.isEmpty()) {
-                List<ProductCategory> newCategories = productCategoryRepository.findAllById(categoryIds);
-                for (ProductCategory newCategory : newCategories) {
-                    newCategory.getAttributes().add(attribute);
-                    productCategoryRepository.save(newCategory);
-                }
+            for (ProductCategory newCategory : newCategories) {
+                newCategory.getAttributes().add(attribute);
+                productCategoryRepository.save(newCategory);
+                log.info("Атрибут '{}' добавлен в категорию '{}'.", attribute.getName(), newCategory.getName());
             }
         } catch (Exception e) {
             log.error("Ошибка при сохранении изменений атрибута: {}", e.getMessage(), e);
@@ -223,7 +243,7 @@ public class ProductAttributeService {
             return false;
         }
 
-        log.info("Изменения атрибута успешно сохранены.");
+        log.info("Изменения атрибута '{}' (id={}) успешно сохранены.", attribute.getName(), id);
         return true;
     }
 
