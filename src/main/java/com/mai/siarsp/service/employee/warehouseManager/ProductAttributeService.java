@@ -166,18 +166,31 @@ public class ProductAttributeService {
     }
 
     /**
-     * Редактирует существующий атрибут товара и пересинхронизирует связи с категориями
+     * Редактирует существующий атрибут товара и пересинхронизирует связи с категориями.
+     * Обратная совместимость — вызывает основной метод без значений для товаров.
+     */
+    @Transactional
+    public boolean editProductAttribute(Long id, String inputName, String inputUnit,
+                                         AttributeType inputDataType, List<Long> categoryIds) {
+        return editProductAttribute(id, inputName, inputUnit, inputDataType, categoryIds, null);
+    }
+
+    /**
+     * Редактирует существующий атрибут товара, пересинхронизирует связи с категориями
+     * и создаёт значения атрибута для товаров в новых категориях.
      *
      * @param id ID редактируемого атрибута
      * @param inputName новое название
      * @param inputUnit новая единица измерения (может быть null)
      * @param inputDataType новый тип данных
      * @param categoryIds список ID новых категорий (может быть null)
+     * @param productValues карта: productId → значение атрибута (для товаров в новых категориях)
      * @return true при успешном сохранении
      */
     @Transactional
     public boolean editProductAttribute(Long id, String inputName, String inputUnit,
-                                         AttributeType inputDataType, List<Long> categoryIds) {
+                                         AttributeType inputDataType, List<Long> categoryIds,
+                                         Map<Long, String> productValues) {
         Optional<ProductAttribute> attributeOptional = productAttributeRepository.findById(id);
 
         if (attributeOptional.isEmpty()) {
@@ -236,6 +249,28 @@ public class ProductAttributeService {
                 newCategory.getAttributes().add(attribute);
                 productCategoryRepository.save(newCategory);
                 log.info("Атрибут '{}' добавлен в категорию '{}'.", attribute.getName(), newCategory.getName());
+            }
+
+            // 3. Создаём значения для товаров в новых категориях
+            if (productValues != null && !productValues.isEmpty()) {
+                for (Map.Entry<Long, String> entry : productValues.entrySet()) {
+                    Product product = productRepository.findById(entry.getKey()).orElse(null);
+                    if (product == null) {
+                        log.error("Товар с id = {} не найден при создании значений атрибута.", entry.getKey());
+                        TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                        return false;
+                    }
+                    String value = entry.getValue();
+                    if (value == null || value.isBlank()) {
+                        log.error("Значение атрибута для товара id={} пустое.", entry.getKey());
+                        TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                        return false;
+                    }
+                    ProductAttributeValue pav = new ProductAttributeValue(product, attribute, value.trim());
+                    productAttributeValueRepository.save(pav);
+                    log.info("Создано значение атрибута '{}' = '{}' для товара '{}'.",
+                            attribute.getName(), value.trim(), product.getName());
+                }
             }
         } catch (Exception e) {
             log.error("Ошибка при сохранении изменений атрибута: {}", e.getMessage(), e);
