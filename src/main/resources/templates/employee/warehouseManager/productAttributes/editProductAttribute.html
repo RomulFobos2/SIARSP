@@ -97,6 +97,7 @@
         const originalName = nameInput.value;
         const submitButton = document.getElementById('submitBtn');
         const currentId = (/*[[${attributeDTO.getId()}]]*/);
+        const categoryCheckboxes = document.querySelectorAll('input[name="inputCategoryIds"]');
 
         // Отметить ранее выбранные категории
         const selectedCategoryIds = (/*[[${selectedCategoryIds}]]*/);
@@ -114,10 +115,29 @@
         nameErrorDiv.style.display = 'none';
         nameInput.parentNode.appendChild(nameErrorDiv);
 
+        const categoryErrorDiv = document.createElement('div');
+        categoryErrorDiv.className = 'alert alert-danger mt-2';
+        categoryErrorDiv.textContent = 'Выберите хотя бы одну категорию';
+        categoryErrorDiv.style.display = 'none';
+        if (categoryCheckboxes.length > 0) {
+            categoryCheckboxes[0].closest('.mb-4').appendChild(categoryErrorDiv);
+        }
+
         let isNameValid = true;
+        let isCategorySelected = false;
 
         function checkFormValidity() {
-            submitButton.disabled = !isNameValid;
+            submitButton.disabled = !isNameValid || !isCategorySelected;
+        }
+
+        function validateCategories() {
+            isCategorySelected = Array.from(categoryCheckboxes).some(function(cb) { return cb.checked; });
+            if (isCategorySelected) {
+                categoryErrorDiv.style.display = 'none';
+            } else {
+                categoryErrorDiv.style.display = 'block';
+            }
+            checkFormValidity();
         }
 
         function validateName() {
@@ -160,6 +180,12 @@
         }
 
         nameInput.addEventListener('input', validateName);
+        categoryCheckboxes.forEach(function(cb) {
+            cb.addEventListener('change', validateCategories);
+        });
+
+        // Инициализация: проверяем текущее состояние категорий
+        validateCategories();
     });
 </script>
 </body>

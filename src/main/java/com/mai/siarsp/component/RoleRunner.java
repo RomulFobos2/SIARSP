@@ -40,6 +40,7 @@ public class RoleRunner implements CommandLineRunner {
         this.productAttributeRepository = productAttributeRepository;
     }
 
+    @Transactional
     @Override
     public void run(String... args) throws Exception {
         createRoleIfNotFound(ROLE_EMPLOYEE_ADMIN, "Администратор");
@@ -49,6 +50,7 @@ public class RoleRunner implements CommandLineRunner {
         createRoleIfNotFound(ROLE_EMPLOYEE_COURIER, "Водитель экспедитор");
         createRoleIfNotFound(ROLE_EMPLOYEE_ACCOUNTER, "Бухгалтер");
         createAdminIfNotFound();
+        createProductAttributeGabarite();
     }
 
     private void createRoleIfNotFound(String roleName, String description) {
@@ -71,9 +73,8 @@ public class RoleRunner implements CommandLineRunner {
         }
     }
 
-    @Transactional
     public void createProductAttributeGabarite() {
-        List<ProductCategory> categories = productCategoryRepository.findAll();
+        List<ProductCategory> categories = productCategoryRepository.findAllWithAttributes();
         log.info("🔧 Загружено {} категорий из БД", categories.size());
 
         addAttributeIfNotExists("Длина упаковки", "см", AttributeType.NUMBER, categories);
