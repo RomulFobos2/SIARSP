@@ -5,7 +5,9 @@ import com.mai.siarsp.mapper.ProductCategoryMapper;
 import com.mai.siarsp.models.GlobalProductCategory;
 import com.mai.siarsp.models.ProductCategory;
 import com.mai.siarsp.repo.GlobalProductCategoryRepository;
+import com.mai.siarsp.models.ProductAttribute;
 import com.mai.siarsp.repo.ProductAttributeRepository;
+import com.mai.siarsp.repo.ProductAttributeValueRepository;
 import com.mai.siarsp.repo.ProductCategoryRepository;
 import com.mai.siarsp.repo.ProductRepository;
 import lombok.Getter;
@@ -37,15 +39,18 @@ public class ProductCategoryService {
     private final GlobalProductCategoryRepository globalProductCategoryRepository;
     private final ProductAttributeRepository productAttributeRepository;
     private final ProductRepository productRepository;
+    private final ProductAttributeValueRepository productAttributeValueRepository;
 
     public ProductCategoryService(ProductCategoryRepository productCategoryRepository,
                                    GlobalProductCategoryRepository globalProductCategoryRepository,
                                    ProductAttributeRepository productAttributeRepository,
-                                   ProductRepository productRepository) {
+                                   ProductRepository productRepository,
+                                   ProductAttributeValueRepository productAttributeValueRepository) {
         this.productCategoryRepository = productCategoryRepository;
         this.globalProductCategoryRepository = globalProductCategoryRepository;
         this.productAttributeRepository = productAttributeRepository;
         this.productRepository = productRepository;
+        this.productAttributeValueRepository = productAttributeValueRepository;
     }
 
     /**
@@ -138,11 +143,24 @@ public class ProductCategoryService {
         category.setName(inputName);
         category.setGlobalProductCategory(globalCategoryOptional.get());
 
-        if (attributeIds != null && !attributeIds.isEmpty()) {
-            category.setAttributes(productAttributeRepository.findAllById(attributeIds));
-        } else {
-            category.setAttributes(new ArrayList<>());
+        // Определяем какие атрибуты удаляются
+        List<ProductAttribute> oldAttributes = new ArrayList<>(category.getAttributes());
+        List<ProductAttribute> newAttributes = (attributeIds != null && !attributeIds.isEmpty())
+                ? productAttributeRepository.findAllById(attributeIds)
+                : new ArrayList<>();
+
+        // Находим удалённые атрибуты (были в старом списке, но нет в новом)
+        List<ProductAttribute> removedAttributes = new ArrayList<>(oldAttributes);
+        removedAttributes.removeAll(newAttributes);
+
+        // Удаляем значения атрибутов для товаров этой категории
+        for (ProductAttribute removedAttr : removedAttributes) {
+            productAttributeValueRepository.deleteByProductCategoryAndAttribute(category, removedAttr);
+            log.info("Удалены значения атрибута '{}' для товаров категории '{}'.",
+                    removedAttr.getName(), category.getName());
         }
+
+        category.setAttributes(newAttributes);
 
         try {
             productCategoryRepository.save(category);

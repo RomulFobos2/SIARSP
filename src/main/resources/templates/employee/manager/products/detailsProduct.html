@@ -93,7 +93,7 @@
                     <tbody>
                     <tr th:each="av : ${productDTO.getAttributeValues()}">
                         <td th:text="${av.getAttributeName()}"></td>
-                        <td th:text="${av.getValue()}"></td>
+                        <td th:text="${av.getFormattedValue()}"></td>
                         <td th:text="${av.getAttributeUnit() != null ? av.getAttributeUnit() : ''}"></td>
                     </tr>
                     </tbody>

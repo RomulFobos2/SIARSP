@@ -4,8 +4,10 @@ import com.mai.siarsp.dto.ProductAttributeDTO;
 import com.mai.siarsp.dto.ProductCategoryDTO;
 import com.mai.siarsp.enumeration.AttributeType;
 import com.mai.siarsp.mapper.ProductAttributeMapper;
+import com.mai.siarsp.models.Product;
 import com.mai.siarsp.models.ProductAttribute;
 import com.mai.siarsp.service.employee.warehouseManager.ProductAttributeService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -14,10 +16,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Контроллер для управления атрибутами (характеристиками) товаров
@@ -57,6 +56,28 @@ public class ProductAttributeController {
     }
 
     /**
+     * AJAX-эндпоинт: возвращает список товаров в указанных категориях.
+     * Используется для модального окна при создании атрибута.
+     */
+    @GetMapping("/employee/warehouseManager/productAttributes/products-by-categories")
+    @ResponseBody
+    public ResponseEntity<List<Map<String, Object>>> getProductsByCategories(
+            @RequestParam List<Long> categoryIds) {
+        List<Product> products = productAttributeService.getProductRepository()
+                .findAllByCategoryIdIn(categoryIds);
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Product p : products) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("id", p.getId());
+            item.put("name", p.getName());
+            item.put("article", p.getArticle());
+            item.put("categoryName", p.getCategory().getName());
+            result.add(item);
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    /**
      * Страница списка всех атрибутов
      */
     @Transactional
@@ -87,20 +108,40 @@ public class ProductAttributeController {
     }
 
     /**
-     * Обработка формы добавления атрибута (POST)
+     * Обработка формы добавления атрибута (POST).
+     *
+     * Если в выбранных категориях есть существующие товары, из формы также приходят
+     * параметры productValue_{productId} с значениями нового атрибута для каждого товара.
      */
     @PostMapping("/employee/warehouseManager/productAttributes/addProductAttribute")
     public String addProductAttribute(@RequestParam String inputName,
                                        @RequestParam(required = false) String inputUnit,
                                        @RequestParam AttributeType inputDataType,
                                        @RequestParam(required = false) List<Long> inputCategoryIds,
+                                       HttpServletRequest request,
                                        Model model) {
         ProductAttribute attribute = new ProductAttribute(inputName,
                 inputUnit != null ? inputUnit : "",
                 inputDataType,
                 new java.util.ArrayList<>());
 
-        if (!productAttributeService.saveProductAttribute(attribute, inputCategoryIds)) {
+        // Извлекаем значения атрибутов для существующих товаров из параметров формы
+        Map<Long, String> productValues = new HashMap<>();
+        request.getParameterMap().forEach((key, values) -> {
+            if (key.startsWith("productValue_") && values.length > 0 && !values[0].isBlank()) {
+                Long productId = Long.parseLong(key.substring("productValue_".length()));
+                productValues.put(productId, values[0]);
+            }
+        });
+
+        boolean success;
+        if (!productValues.isEmpty()) {
+            success = productAttributeService.saveProductAttributeWithValues(attribute, inputCategoryIds, productValues);
+        } else {
+            success = productAttributeService.saveProductAttribute(attribute, inputCategoryIds);
+        }
+
+        if (!success) {
             model.addAttribute("attributeError", "Ошибка при сохранении атрибута.");
             populateDropdowns(model);
             return "employee/warehouseManager/productAttributes/addProductAttribute";
