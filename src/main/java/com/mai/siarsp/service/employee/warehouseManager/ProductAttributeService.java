@@ -3,20 +3,21 @@ package com.mai.siarsp.service.employee.warehouseManager;
 import com.mai.siarsp.dto.ProductAttributeDTO;
 import com.mai.siarsp.enumeration.AttributeType;
 import com.mai.siarsp.mapper.ProductAttributeMapper;
+import com.mai.siarsp.models.Product;
 import com.mai.siarsp.models.ProductAttribute;
+import com.mai.siarsp.models.ProductAttributeValue;
 import com.mai.siarsp.models.ProductCategory;
 import com.mai.siarsp.repo.ProductAttributeRepository;
 import com.mai.siarsp.repo.ProductAttributeValueRepository;
 import com.mai.siarsp.repo.ProductCategoryRepository;
+import com.mai.siarsp.repo.ProductRepository;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Сервис для управления атрибутами (характеристиками) товаров
@@ -40,13 +41,16 @@ public class ProductAttributeService {
     private final ProductAttributeRepository productAttributeRepository;
     private final ProductAttributeValueRepository productAttributeValueRepository;
     private final ProductCategoryRepository productCategoryRepository;
+    private final ProductRepository productRepository;
 
     public ProductAttributeService(ProductAttributeRepository productAttributeRepository,
                                     ProductAttributeValueRepository productAttributeValueRepository,
-                                    ProductCategoryRepository productCategoryRepository) {
+                                    ProductCategoryRepository productCategoryRepository,
+                                    ProductRepository productRepository) {
         this.productAttributeRepository = productAttributeRepository;
         this.productAttributeValueRepository = productAttributeValueRepository;
         this.productCategoryRepository = productCategoryRepository;
+        this.productRepository = productRepository;
     }
 
     /**
@@ -108,6 +112,56 @@ public class ProductAttributeService {
         }
 
         log.info("Атрибут {} успешно сохранён.", attribute.getName());
+        return true;
+    }
+
+    /**
+     * Сохраняет новый атрибут товара, привязывает к категориям и создаёт значения
+     * для всех существующих товаров в этих категориях.
+     *
+     * Используется когда в выбранных категориях уже есть товары и пользователь
+     * заполнил значения нового атрибута для каждого из них.
+     *
+     * @param attribute     объект атрибута для сохранения
+     * @param categoryIds   список ID категорий для привязки
+     * @param productValues карта: productId → значение атрибута
+     * @return true при успешном сохранении
+     */
+    @Transactional
+    public boolean saveProductAttributeWithValues(ProductAttribute attribute,
+                                                   List<Long> categoryIds,
+                                                   Map<Long, String> productValues) {
+        if (!saveProductAttribute(attribute, categoryIds)) {
+            return false;
+        }
+
+        if (productValues != null && !productValues.isEmpty()) {
+            try {
+                for (Map.Entry<Long, String> entry : productValues.entrySet()) {
+                    Product product = productRepository.findById(entry.getKey()).orElse(null);
+                    if (product == null) {
+                        log.error("Товар с id = {} не найден при создании значений атрибута.", entry.getKey());
+                        TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                        return false;
+                    }
+                    String value = entry.getValue();
+                    if (value == null || value.isBlank()) {
+                        log.error("Значение атрибута для товара id={} пустое.", entry.getKey());
+                        TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                        return false;
+                    }
+                    ProductAttributeValue pav = new ProductAttributeValue(product, attribute, value.trim());
+                    productAttributeValueRepository.save(pav);
+                    log.info("Создано значение атрибута '{}' = '{}' для товара '{}'.",
+                            attribute.getName(), value.trim(), product.getName());
+                }
+            } catch (Exception e) {
+                log.error("Ошибка при сохранении значений атрибутов: {}", e.getMessage(), e);
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                return false;
+            }
+        }
+
         return true;
     }
 

@@ -1,5 +1,4 @@
 <!DOCTYPE HTML>
-<!-- TODO: Перевести на Bootstrap Grid (.container > .row > .col-*) вместо .edit-container/.edit-card — см. паттерн в products/ -->
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Информация о клиенте | СИАРСП</title>
@@ -11,8 +10,11 @@
     <script src="/js/javascript.js"></script>
 </head>
 <body class="edit-page">
-<div class="edit-container">
-    <div class="edit-card">
+<header th:insert="~{blocks/header :: header}"></header>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+            <div class="profile-card p-4">
 
         <h1 class="page-title">Информация о клиенте</h1>
         <p class="page-subtitle">Просмотр данных клиента</p>
@@ -114,8 +116,11 @@
             <a th:href="'/employee/manager/clients/allClients'">← К списку клиентов</a>
         </div>
 
+            </div>
+        </div>
     </div>
 </div>
+<div th:insert="~{blocks/footer :: footer}"></div>
 
 <script>
     function confirmDelete(button) {

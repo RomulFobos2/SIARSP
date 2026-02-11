@@ -1,5 +1,4 @@
 <!DOCTYPE HTML>
-<!-- TODO: Перевести на Bootstrap Grid (.container > .row > .col-*) вместо .edit-container/.edit-card — см. паттерн в products/ -->
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Добавить атрибут товара | СИАРСП</title>
@@ -11,8 +10,11 @@
     <script src="/js/javascript.js"></script>
 </head>
 <body class="edit-page">
-<div class="edit-container">
-    <div class="edit-card">
+<header th:insert="~{blocks/header :: header}"></header>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+            <div class="profile-card p-4">
         <form action="/employee/warehouseManager/productAttributes/addProductAttribute"
               method="post" class="auth-form">
 
@@ -81,32 +83,82 @@
             </div>
 
         </form>
+            </div>
+        </div>
     </div>
 </div>
 
+<!-- Модальное окно: значения атрибута для существующих товаров -->
+<div class="modal fade" id="productValuesModal" tabindex="-1" aria-labelledby="productValuesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="productValuesModalLabel">Значения атрибута для существующих товаров</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">В выбранных категориях уже есть товары.
+                    Укажите значение нового атрибута для каждого товара (обязательно):</p>
+                <div id="productValuesContainer"></div>
+                <div id="modalValidationError" class="alert alert-danger mt-3" style="display: none;">
+                    Заполните значения для всех товаров.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="confirmProductValues">Подтвердить и добавить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form.auth-form');
         const nameInput = document.getElementById('inputName');
         const submitButton = document.getElementById('submitBtn');
+        const dataTypeSelect = document.getElementById('inputDataType');
+        const categoryCheckboxes = document.querySelectorAll('input[name="inputCategoryIds"]');
 
         const nameErrorDiv = document.createElement('div');
         nameErrorDiv.className = 'alert alert-danger mt-2';
         nameErrorDiv.style.display = 'none';
         nameInput.parentNode.appendChild(nameErrorDiv);
 
+        const categoryErrorDiv = document.createElement('div');
+        categoryErrorDiv.className = 'alert alert-danger mt-2';
+        categoryErrorDiv.textContent = 'Выберите хотя бы одну категорию';
+        categoryErrorDiv.style.display = 'none';
+        if (categoryCheckboxes.length > 0) {
+            categoryCheckboxes[0].closest('.mb-4').appendChild(categoryErrorDiv);
+        }
+
         let isNameValid = true;
+        let isCategorySelected = false;
 
         function checkFormValidity() {
-            submitButton.disabled = !isNameValid;
+            submitButton.disabled = !isNameValid || !isCategorySelected;
+        }
+
+        function validateCategories() {
+            isCategorySelected = Array.from(categoryCheckboxes).some(cb => cb.checked);
+            if (isCategorySelected) {
+                categoryErrorDiv.style.display = 'none';
+            } else {
+                categoryErrorDiv.style.display = 'block';
+            }
+            checkFormValidity();
         }
 
         function validateName() {
             const name = nameInput.value.trim();
 
             if (name.length > 0) {
-                fetch(`/employee/warehouseManager/productAttributes/check-name?name=${encodeURIComponent(name)}`)
-                    .then(response => response.json())
-                    .then(data => {
+                fetch('/employee/warehouseManager/productAttributes/check-name?name=' + encodeURIComponent(name))
+                    .then(function(response) { return response.json(); })
+                    .then(function(data) {
                         if (data.exists) {
                             nameErrorDiv.textContent = 'Атрибут с таким названием уже существует';
                             nameErrorDiv.style.display = 'block';
@@ -120,7 +172,7 @@
                         }
                         checkFormValidity();
                     })
-                    .catch(error => {
+                    .catch(function(error) {
                         console.error('Ошибка:', error);
                     });
             } else {
@@ -132,6 +184,130 @@
         }
 
         nameInput.addEventListener('input', validateName);
+        categoryCheckboxes.forEach(function(cb) {
+            cb.addEventListener('change', validateCategories);
+        });
+
+        // Инициализация: кнопка заблокирована до выбора категории
+        validateCategories();
+
+        // Перехват submit формы — проверяем есть ли товары в выбранных категориях
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // Собираем ID выбранных категорий
+            var selectedIds = Array.from(categoryCheckboxes)
+                .filter(function(cb) { return cb.checked; })
+                .map(function(cb) { return cb.value; });
+
+            if (selectedIds.length === 0) {
+                return;
+            }
+
+            // AJAX: проверяем есть ли товары в выбранных категориях
+            var url = '/employee/warehouseManager/productAttributes/products-by-categories?'
+                + selectedIds.map(function(id) { return 'categoryIds=' + id; }).join('&');
+
+            fetch(url)
+                .then(function(response) { return response.json(); })
+                .then(function(products) {
+                    if (products.length === 0) {
+                        // Нет товаров — сабмитим форму напрямую
+                        form.submit();
+                        return;
+                    }
+
+                    // Есть товары — строим модальное окно
+                    var container = document.getElementById('productValuesContainer');
+                    container.innerHTML = '';
+                    var dataType = dataTypeSelect.value;
+                    var attrName = nameInput.value.trim();
+
+                    products.forEach(function(product) {
+                        var row = document.createElement('div');
+                        row.className = 'row g-2 mb-3 align-items-center';
+
+                        var labelCol = document.createElement('div');
+                        labelCol.className = 'col-md-5';
+                        var label = document.createElement('label');
+                        label.className = 'form-label mb-0 fw-semibold';
+                        label.textContent = product.name;
+                        var small = document.createElement('small');
+                        small.className = 'text-muted d-block';
+                        small.textContent = 'Артикул: ' + product.article + ' | ' + product.categoryName;
+                        labelCol.appendChild(label);
+                        labelCol.appendChild(small);
+
+                        var inputCol = document.createElement('div');
+                        inputCol.className = 'col-md-7';
+
+                        var input = document.createElement('input');
+                        input.className = 'form-control';
+                        input.name = 'productValue_' + product.id;
+                        input.required = true;
+                        input.placeholder = attrName;
+
+                        if (dataType === 'NUMBER') {
+                            input.type = 'number';
+                            input.step = 'any';
+                        } else if (dataType === 'DATE') {
+                            input.type = 'date';
+                        } else {
+                            input.type = 'text';
+                        }
+
+                        inputCol.appendChild(input);
+                        row.appendChild(labelCol);
+                        row.appendChild(inputCol);
+                        container.appendChild(row);
+                    });
+
+                    // Показываем модалку
+                    document.getElementById('modalValidationError').style.display = 'none';
+                    var modal = new bootstrap.Modal(document.getElementById('productValuesModal'));
+                    modal.show();
+                })
+                .catch(function(error) {
+                    console.error('Ошибка при проверке товаров:', error);
+                    // При ошибке — сабмитим форму напрямую
+                    form.submit();
+                });
+        });
+
+        // Кнопка "Подтвердить и добавить" в модальном окне
+        document.getElementById('confirmProductValues').addEventListener('click', function() {
+            var modalInputs = document.querySelectorAll('#productValuesContainer input');
+            var allFilled = true;
+
+            modalInputs.forEach(function(input) {
+                if (!input.value || input.value.trim() === '') {
+                    input.classList.add('is-invalid');
+                    allFilled = false;
+                } else {
+                    input.classList.remove('is-invalid');
+                }
+            });
+
+            if (!allFilled) {
+                document.getElementById('modalValidationError').style.display = 'block';
+                return;
+            }
+
+            // Переносим значения из модалки в hidden inputs формы
+            modalInputs.forEach(function(input) {
+                var hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = input.name;
+                hidden.value = input.value;
+                form.appendChild(hidden);
+            });
+
+            // Закрываем модалку и сабмитим форму
+            var modalEl = document.getElementById('productValuesModal');
+            var modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+            form.submit();
+        });
     });
 </script>
 </body>
