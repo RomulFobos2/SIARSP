@@ -4,7 +4,11 @@ import com.mai.siarsp.dto.ProductDTO;
 import com.mai.siarsp.enumeration.WarehouseType;
 import com.mai.siarsp.mapper.ProductMapper;
 import com.mai.siarsp.models.Product;
+import com.mai.siarsp.models.ProductAttribute;
+import com.mai.siarsp.models.ProductAttributeValue;
 import com.mai.siarsp.models.ProductCategory;
+import com.mai.siarsp.repo.ProductAttributeRepository;
+import com.mai.siarsp.repo.ProductAttributeValueRepository;
 import com.mai.siarsp.repo.ProductCategoryRepository;
 import com.mai.siarsp.repo.ProductRepository;
 import com.mai.siarsp.service.general.ImageService;
@@ -16,6 +20,7 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -31,11 +36,17 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final ProductCategoryRepository productCategoryRepository;
+    private final ProductAttributeRepository productAttributeRepository;
+    private final ProductAttributeValueRepository productAttributeValueRepository;
 
     public ProductService(ProductRepository productRepository,
-                          ProductCategoryRepository productCategoryRepository) {
+                          ProductCategoryRepository productCategoryRepository,
+                          ProductAttributeRepository productAttributeRepository,
+                          ProductAttributeValueRepository productAttributeValueRepository) {
         this.productRepository = productRepository;
         this.productCategoryRepository = productCategoryRepository;
+        this.productAttributeRepository = productAttributeRepository;
+        this.productAttributeValueRepository = productAttributeValueRepository;
     }
 
     /**
@@ -66,7 +77,8 @@ public class ProductService {
      * @return Optional с ID сохранённого товара или empty при ошибке
      */
     @Transactional
-    public Optional<Long> saveProduct(Product product, Long categoryId, MultipartFile inputFileField) {
+    public Optional<Long> saveProduct(Product product, Long categoryId, MultipartFile inputFileField,
+                                      Map<String, String> attributeValues) {
         if (checkArticle(product.getArticle(), null)) {
             log.error("Товар с артикулом {} уже существует.", product.getArticle());
             return Optional.empty();
@@ -88,6 +100,7 @@ public class ProductService {
         try {
             product.setImage(ImageService.uploadImage(inputFileField));
             productRepository.save(product);
+            saveAttributeValues(product, attributeValues);
         } catch (Exception e) {
             log.error("Ошибка при сохранении товара: {}", e.getMessage(), e);
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -118,7 +131,8 @@ public class ProductService {
                                       int inputQuantityForStock,
                                       WarehouseType inputWarehouseType,
                                       Long inputCategoryId,
-                                      MultipartFile inputFileField) {
+                                      MultipartFile inputFileField,
+                                      Map<String, String> attributeValues) {
         Optional<Product> productOptional = productRepository.findById(id);
         if (productOptional.isEmpty()) {
             log.error("Товар с id = {} не найден.", id);
@@ -149,6 +163,7 @@ public class ProductService {
                 product.setImage(ImageService.uploadImage(inputFileField));
             }
             productRepository.save(product);
+            updateAttributeValues(product, attributeValues);
         } catch (Exception e) {
             log.error("Ошибка при обновлении товара: {}", e.getMessage(), e);
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -192,5 +207,27 @@ public class ProductService {
     @Transactional
     public List<ProductDTO> getAllProducts() {
         return ProductMapper.INSTANCE.toDTOList(productRepository.findAll());
+    }
+
+    private void saveAttributeValues(Product product, Map<String, String> attributeValues) {
+        if (attributeValues == null || attributeValues.isEmpty()) return;
+
+        for (Map.Entry<String, String> entry : attributeValues.entrySet()) {
+            Long attrId = Long.parseLong(entry.getKey());
+            String value = entry.getValue();
+            if (value == null || value.isBlank()) continue;
+
+            Optional<ProductAttribute> attrOpt = productAttributeRepository.findById(attrId);
+            if (attrOpt.isPresent()) {
+                ProductAttributeValue pav = new ProductAttributeValue(product, attrOpt.get(), value.trim());
+                productAttributeValueRepository.save(pav);
+            }
+        }
+    }
+
+    private void updateAttributeValues(Product product, Map<String, String> attributeValues) {
+        product.getAttributeValues().clear();
+        productRepository.save(product);
+        saveAttributeValues(product, attributeValues);
     }
 }

@@ -10,7 +10,7 @@
 </head>
 <body class="edit-page">
 <div class="edit-container">
-    <div class="edit-card">
+    <div class="edit-card" style="max-width: 900px;">
         <form action="/employee/warehouseManager/products/addProduct" method="post" enctype="multipart/form-data" class="auth-form">
             <h1 class="page-title">Добавление товара</h1>
             <p class="page-subtitle">Создайте новую товарную позицию</p>
@@ -52,13 +52,20 @@
                 <h6 class="form-section-title">Классификация</h6>
                 <div class="row g-3">
                     <div class="col-md-12">
-                        <select class="form-select" name="inputCategoryId" required>
+                        <select class="form-select" name="inputCategoryId" id="inputCategoryId" required>
                             <option value="">Выберите категорию</option>
                             <option th:each="category : ${allProductCategories}"
                                     th:value="${category.getId()}"
                                     th:text="${category.getDisplayName()}"></option>
                         </select>
                     </div>
+                </div>
+            </div>
+
+            <!-- Характеристики (динамически загружаются при выборе категории) -->
+            <div class="mb-4" id="attributesSection" style="display: none;">
+                <h6 class="form-section-title">Характеристики</h6>
+                <div id="attributesContainer" class="row g-3">
                 </div>
             </div>
 
@@ -91,6 +98,7 @@
         const articleInput = document.getElementById('inputArticle');
         const articleErrorDiv = document.getElementById('articleError');
         const submitButton = document.getElementById('submitBtn');
+        const categorySelect = document.getElementById('inputCategoryId');
 
         const fileInput = document.getElementById('inputFileField');
         const imagePreview = document.getElementById('imagePreview');
@@ -134,6 +142,54 @@
             } else {
                 imagePreviewContainer.style.display = 'none';
             }
+        });
+
+        // Загрузка атрибутов при выборе категории
+        categorySelect.addEventListener('change', function () {
+            const categoryId = categorySelect.value;
+            const section = document.getElementById('attributesSection');
+            const container = document.getElementById('attributesContainer');
+
+            if (!categoryId) {
+                section.style.display = 'none';
+                container.innerHTML = '';
+                return;
+            }
+
+            fetch('/employee/general/productAttributeValues/attributes-by-category?categoryId=' + categoryId + '&productId=0')
+                .then(function (response) { return response.json(); })
+                .then(function (data) {
+                    container.innerHTML = '';
+                    if (data.length === 0) {
+                        section.style.display = 'none';
+                        return;
+                    }
+
+                    data.forEach(function (attr) {
+                        var col = document.createElement('div');
+                        col.className = 'col-md-6';
+
+                        var label = document.createElement('label');
+                        label.className = 'form-label text-muted';
+                        label.textContent = attr.name + (attr.unit ? ' (' + attr.unit + ')' : '');
+
+                        var input = document.createElement('input');
+                        input.type = 'text';
+                        input.className = 'form-control';
+                        input.name = 'attributeValues[' + attr.id + ']';
+                        input.placeholder = attr.name;
+
+                        col.appendChild(label);
+                        col.appendChild(input);
+                        container.appendChild(col);
+                    });
+
+                    section.style.display = '';
+                })
+                .catch(function () {
+                    section.style.display = 'none';
+                    container.innerHTML = '';
+                });
         });
     });
 </script>
