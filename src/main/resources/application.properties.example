@@ -1,3 +1,0 @@
-# Локальная конфигурация. Скопируйте в application.properties
-# (файл application.properties находится в .gitignore)
-upload.path=C:/siarsp-uploads/images
