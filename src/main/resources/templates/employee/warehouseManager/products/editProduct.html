@@ -9,8 +9,11 @@
     <script src="/js/bootstrap.bundle.min.js"></script>
 </head>
 <body class="edit-page">
-<div class="edit-container">
-    <div class="edit-card" style="max-width: 900px;">
+<header th:insert="~{blocks/header :: header}"></header>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+            <div class="profile-card p-4">
         <form th:action="'/employee/warehouseManager/products/editProduct/' + ${productDTO.getId()}" method="post" enctype="multipart/form-data" class="auth-form">
             <h1 class="page-title">Редактирование товара</h1>
             <p class="page-subtitle">Измените параметры товарной позиции</p>
@@ -98,8 +101,11 @@
         <div class="link-section mt-3">
             <a th:href="'/employee/warehouseManager/products/allProducts'">← К списку товаров</a>
         </div>
+            </div>
+        </div>
     </div>
 </div>
+<div th:insert="~{blocks/footer :: footer}"></div>
 <script th:inline="javascript">
     document.addEventListener('DOMContentLoaded', function () {
         const articleInput = document.getElementById('inputArticle');
@@ -180,7 +186,14 @@
                         label.textContent = attr.name + (attr.unit ? ' (' + attr.unit + ')' : '');
 
                         var input = document.createElement('input');
-                        input.type = 'text';
+                        if (attr.dataType === 'NUMBER') {
+                            input.type = 'number';
+                            input.step = 'any';
+                        } else if (attr.dataType === 'DATE') {
+                            input.type = 'date';
+                        } else {
+                            input.type = 'text';
+                        }
                         input.className = 'form-control';
                         input.name = 'attributeValues[' + attr.id + ']';
                         input.placeholder = attr.name;

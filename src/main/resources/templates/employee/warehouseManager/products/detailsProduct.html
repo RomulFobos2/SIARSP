@@ -9,8 +9,11 @@
     <script src="/js/bootstrap.bundle.min.js"></script>
 </head>
 <body class="edit-page">
-<div class="edit-container">
-    <div class="edit-card" style="max-width: 900px;">
+<header th:insert="~{blocks/header :: header}"></header>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+            <div class="profile-card p-4">
         <h1 class="page-title">Информация о товаре</h1>
         <p class="page-subtitle">Просмотр карточки товара</p>
 
@@ -109,8 +112,11 @@
         <div class="link-section">
             <a th:href="'/employee/warehouseManager/products/allProducts'">← К списку товаров</a>
         </div>
+            </div>
+        </div>
     </div>
 </div>
+<div th:insert="~{blocks/footer :: footer}"></div>
 <script>
     function confirmDelete(button) {
         const id = button.getAttribute('data-productid');
