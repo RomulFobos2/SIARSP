@@ -65,6 +65,7 @@ public class ProductController {
                              @RequestParam WarehouseType inputWarehouseType,
                              @RequestParam Long inputCategoryId,
                              @RequestParam MultipartFile inputFileField,
+                             @RequestParam Map<String, String> allParams,
                              Model model) {
         Product product = new Product();
         product.setName(inputName);
@@ -74,7 +75,9 @@ public class ProductController {
         product.setWarehouseType(inputWarehouseType);
         product.setReservedQuantity(0);
 
-        Optional<Long> savedProductId = productService.saveProduct(product, inputCategoryId, inputFileField);
+        Map<String, String> attributeValues = extractAttributeValues(allParams);
+
+        Optional<Long> savedProductId = productService.saveProduct(product, inputCategoryId, inputFileField, attributeValues);
         if (savedProductId.isEmpty()) {
             model.addAttribute("productError", "Ошибка при сохранении товара.");
             model.addAttribute("warehouseTypes", WarehouseType.values());
@@ -122,9 +125,12 @@ public class ProductController {
                               @RequestParam WarehouseType inputWarehouseType,
                               @RequestParam Long inputCategoryId,
                               @RequestParam(required = false) MultipartFile inputFileField,
+                              @RequestParam Map<String, String> allParams,
                               RedirectAttributes redirectAttributes) {
+        Map<String, String> attributeValues = extractAttributeValues(allParams);
+
         Optional<Long> editedProductId = productService.editProduct(id, inputName, inputArticle, inputStockQuantity,
-                inputQuantityForStock, inputWarehouseType, inputCategoryId, inputFileField);
+                inputQuantityForStock, inputWarehouseType, inputCategoryId, inputFileField, attributeValues);
 
         if (editedProductId.isEmpty()) {
             redirectAttributes.addFlashAttribute("productError", "Ошибка при сохранении изменений товара.");
@@ -161,6 +167,22 @@ public class ProductController {
                 .toList();
 
         model.addAttribute("allProductCategories", categories);
+    }
+
+    /**
+     * Извлекает значения атрибутов из всех параметров формы.
+     * Параметры атрибутов имеют формат attributeValues[{id}]
+     */
+    private Map<String, String> extractAttributeValues(Map<String, String> allParams) {
+        Map<String, String> attributeValues = new HashMap<>();
+        String prefix = "attributeValues[";
+        for (Map.Entry<String, String> entry : allParams.entrySet()) {
+            if (entry.getKey().startsWith(prefix) && entry.getKey().endsWith("]")) {
+                String attrId = entry.getKey().substring(prefix.length(), entry.getKey().length() - 1);
+                attributeValues.put(attrId, entry.getValue());
+            }
+        }
+        return attributeValues;
     }
 
     private ProductCategoryDTO toLightCategoryDTO(ProductCategory category) {
