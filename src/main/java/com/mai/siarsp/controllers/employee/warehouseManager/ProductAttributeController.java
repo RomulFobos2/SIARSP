@@ -203,7 +203,11 @@ public class ProductAttributeController {
     }
 
     /**
-     * Обработка формы редактирования атрибута (POST)
+     * Обработка формы редактирования атрибута (POST).
+     *
+     * Если при редактировании добавлены новые категории, содержащие товары,
+     * из формы также приходят параметры productValue_{productId} с значениями
+     * атрибута для каждого товара из новых категорий.
      */
     @PostMapping("/employee/warehouseManager/productAttributes/editProductAttribute/{id}")
     public String editProductAttribute(@PathVariable(value = "id") long id,
@@ -211,8 +215,18 @@ public class ProductAttributeController {
                                         @RequestParam(required = false) String inputUnit,
                                         @RequestParam AttributeType inputDataType,
                                         @RequestParam(required = false) List<Long> inputCategoryIds,
+                                        HttpServletRequest request,
                                         RedirectAttributes redirectAttributes) {
-        if (!productAttributeService.editProductAttribute(id, inputName, inputUnit, inputDataType, inputCategoryIds)) {
+        // Извлекаем значения атрибутов для товаров из новых категорий
+        Map<Long, String> productValues = new HashMap<>();
+        request.getParameterMap().forEach((key, values) -> {
+            if (key.startsWith("productValue_") && values.length > 0 && !values[0].isBlank()) {
+                Long productId = Long.parseLong(key.substring("productValue_".length()));
+                productValues.put(productId, values[0]);
+            }
+        });
+
+        if (!productAttributeService.editProductAttribute(id, inputName, inputUnit, inputDataType, inputCategoryIds, productValues)) {
             redirectAttributes.addFlashAttribute("attributeError", "Ошибка при сохранении изменений.");
             return "redirect:/employee/warehouseManager/productAttributes/editProductAttribute/" + id;
         }

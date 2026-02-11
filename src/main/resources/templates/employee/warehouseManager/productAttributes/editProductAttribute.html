@@ -89,18 +89,47 @@
         </div>
     </div>
 </div>
+
+<!-- Модальное окно: значения атрибута для товаров в новых категориях -->
+<div class="modal fade" id="productValuesModal" tabindex="-1" aria-labelledby="productValuesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="productValuesModalLabel">Значения атрибута для существующих товаров</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">В добавленных категориях уже есть товары.
+                    Укажите значение атрибута для каждого товара (обязательно):</p>
+                <div id="productValuesContainer"></div>
+                <div id="modalValidationError" class="alert alert-danger mt-3" style="display: none;">
+                    Заполните значения для всех товаров.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="confirmProductValues">Подтвердить и сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div th:insert="~{blocks/footer :: footer}"></div>
 
 <script th:inline="javascript">
     document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form.auth-form');
         const nameInput = document.getElementById('inputName');
         const originalName = nameInput.value;
         const submitButton = document.getElementById('submitBtn');
+        const dataTypeSelect = document.getElementById('inputDataType');
         const currentId = (/*[[${attributeDTO.getId()}]]*/);
         const categoryCheckboxes = document.querySelectorAll('input[name="inputCategoryIds"]');
 
+        // Ранее связанные категории (для определения вновь добавленных)
+        const selectedCategoryIds = (/*[[${selectedCategoryIds}]]*/) || [];
+
         // Отметить ранее выбранные категории
-        const selectedCategoryIds = (/*[[${selectedCategoryIds}]]*/);
         if (selectedCategoryIds) {
             selectedCategoryIds.forEach(function(catId) {
                 const checkbox = document.getElementById('cat_' + catId);
@@ -152,9 +181,9 @@
             }
 
             if (name.length > 0) {
-                fetch(`/employee/warehouseManager/productAttributes/check-name?name=${encodeURIComponent(name)}&id=${currentId}`)
-                    .then(response => response.json())
-                    .then(data => {
+                fetch('/employee/warehouseManager/productAttributes/check-name?name=' + encodeURIComponent(name) + '&id=' + currentId)
+                    .then(function(response) { return response.json(); })
+                    .then(function(data) {
                         if (data.exists) {
                             nameErrorDiv.textContent = 'Атрибут с таким названием уже существует';
                             nameErrorDiv.style.display = 'block';
@@ -168,7 +197,7 @@
                         }
                         checkFormValidity();
                     })
-                    .catch(error => {
+                    .catch(function(error) {
                         console.error('Ошибка:', error);
                     });
             } else {
@@ -186,6 +215,136 @@
 
         // Инициализация: проверяем текущее состояние категорий
         validateCategories();
+
+        // Перехват submit формы — проверяем есть ли товары в НОВЫХ категориях
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // Собираем ID всех отмеченных категорий
+            var allSelectedIds = Array.from(categoryCheckboxes)
+                .filter(function(cb) { return cb.checked; })
+                .map(function(cb) { return cb.value; });
+
+            if (allSelectedIds.length === 0) {
+                return;
+            }
+
+            // Определяем ВНОВЬ ДОБАВЛЕННЫЕ категории (не были связаны ранее)
+            var previousIds = selectedCategoryIds.map(function(id) { return String(id); });
+            var newCategoryIds = allSelectedIds.filter(function(id) {
+                return previousIds.indexOf(id) === -1;
+            });
+
+            // Если новых категорий нет — сабмитим форму напрямую
+            if (newCategoryIds.length === 0) {
+                form.submit();
+                return;
+            }
+
+            // AJAX: проверяем есть ли товары в новых категориях
+            var url = '/employee/warehouseManager/productAttributes/products-by-categories?'
+                + newCategoryIds.map(function(id) { return 'categoryIds=' + id; }).join('&');
+
+            fetch(url)
+                .then(function(response) { return response.json(); })
+                .then(function(products) {
+                    if (products.length === 0) {
+                        // Нет товаров — сабмитим форму напрямую
+                        form.submit();
+                        return;
+                    }
+
+                    // Есть товары — строим модальное окно
+                    var container = document.getElementById('productValuesContainer');
+                    container.innerHTML = '';
+                    var dataType = dataTypeSelect.value;
+                    var attrName = nameInput.value.trim();
+
+                    products.forEach(function(product) {
+                        var row = document.createElement('div');
+                        row.className = 'row g-2 mb-3 align-items-center';
+
+                        var labelCol = document.createElement('div');
+                        labelCol.className = 'col-md-5';
+                        var label = document.createElement('label');
+                        label.className = 'form-label mb-0 fw-semibold';
+                        label.textContent = product.name;
+                        var small = document.createElement('small');
+                        small.className = 'text-muted d-block';
+                        small.textContent = 'Артикул: ' + product.article + ' | ' + product.categoryName;
+                        labelCol.appendChild(label);
+                        labelCol.appendChild(small);
+
+                        var inputCol = document.createElement('div');
+                        inputCol.className = 'col-md-7';
+
+                        var input = document.createElement('input');
+                        input.className = 'form-control';
+                        input.name = 'productValue_' + product.id;
+                        input.required = true;
+                        input.placeholder = attrName;
+
+                        if (dataType === 'NUMBER') {
+                            input.type = 'number';
+                            input.step = 'any';
+                        } else if (dataType === 'DATE') {
+                            input.type = 'date';
+                        } else {
+                            input.type = 'text';
+                        }
+
+                        inputCol.appendChild(input);
+                        row.appendChild(labelCol);
+                        row.appendChild(inputCol);
+                        container.appendChild(row);
+                    });
+
+                    // Показываем модалку
+                    document.getElementById('modalValidationError').style.display = 'none';
+                    var modal = new bootstrap.Modal(document.getElementById('productValuesModal'));
+                    modal.show();
+                })
+                .catch(function(error) {
+                    console.error('Ошибка при проверке товаров:', error);
+                    // При ошибке — сабмитим форму напрямую
+                    form.submit();
+                });
+        });
+
+        // Кнопка "Подтвердить и сохранить" в модальном окне
+        document.getElementById('confirmProductValues').addEventListener('click', function() {
+            var modalInputs = document.querySelectorAll('#productValuesContainer input');
+            var allFilled = true;
+
+            modalInputs.forEach(function(input) {
+                if (!input.value || input.value.trim() === '') {
+                    input.classList.add('is-invalid');
+                    allFilled = false;
+                } else {
+                    input.classList.remove('is-invalid');
+                }
+            });
+
+            if (!allFilled) {
+                document.getElementById('modalValidationError').style.display = 'block';
+                return;
+            }
+
+            // Переносим значения из модалки в hidden inputs формы
+            modalInputs.forEach(function(input) {
+                var hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = input.name;
+                hidden.value = input.value;
+                form.appendChild(hidden);
+            });
+
+            // Закрываем модалку и сабмитим форму
+            var modalEl = document.getElementById('productValuesModal');
+            var modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+            form.submit();
+        });
     });
 </script>
 </body>
