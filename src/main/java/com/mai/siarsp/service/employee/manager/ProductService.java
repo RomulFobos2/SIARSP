@@ -19,9 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Сервис для управления товарами (Product) со стороны руководителя
@@ -233,17 +231,47 @@ public class ProductService {
 
     /**
      * Обновляет значения атрибутов для существующего товара.
-     * Удаляет старые значения и создаёт новые.
+     * Использует хирургическое обновление (find-update-delete) вместо clear+reinsert,
+     * чтобы избежать нарушения unique constraint (product_id, attribute_id).
      *
      * @param product редактируемый товар
      * @param attributeValues карта {attributeId → value}
      */
     private void updateAttributeValues(Product product, Map<String, String> attributeValues) {
-        // Удаляем все старые значения атрибутов
-        product.getAttributeValues().clear();
-        productRepository.save(product);
+        // 1. Создаём карту новых значений: attrId → value
+        Map<Long, String> newValues = new HashMap<>();
+        if (attributeValues != null) {
+            for (Map.Entry<String, String> entry : attributeValues.entrySet()) {
+                Long attrId = Long.parseLong(entry.getKey());
+                String value = entry.getValue();
+                if (value != null && !value.isBlank()) {
+                    newValues.put(attrId, value.trim());
+                }
+            }
+        }
 
-        // Сохраняем новые
-        saveAttributeValues(product, attributeValues);
+        // 2. Обновить существующие или удалить неактуальные
+        Iterator<ProductAttributeValue> it = product.getAttributeValues().iterator();
+        while (it.hasNext()) {
+            ProductAttributeValue pav = it.next();
+            Long attrId = pav.getAttribute().getId();
+            if (newValues.containsKey(attrId)) {
+                pav.setValue(newValues.get(attrId));
+                newValues.remove(attrId);
+            } else {
+                it.remove();
+            }
+        }
+
+        // 3. Добавить новые атрибуты
+        for (Map.Entry<Long, String> entry : newValues.entrySet()) {
+            Optional<ProductAttribute> attrOpt = productAttributeRepository.findById(entry.getKey());
+            if (attrOpt.isPresent()) {
+                ProductAttributeValue pav = new ProductAttributeValue(product, attrOpt.get(), entry.getValue());
+                product.getAttributeValues().add(pav);
+            }
+        }
+
+        productRepository.save(product);
     }
 }

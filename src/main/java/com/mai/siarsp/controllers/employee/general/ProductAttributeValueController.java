@@ -103,6 +103,7 @@ public class ProductAttributeValueController {
             item.put("id", attr.getId());
             item.put("name", attr.getName());
             item.put("unit", attr.getUnit() != null ? attr.getUnit() : "");
+            item.put("dataType", attr.getDataType().name());
 
             String value = "";
             if (product != null) {
