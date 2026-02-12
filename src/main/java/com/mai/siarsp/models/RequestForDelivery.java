@@ -142,6 +142,15 @@ public class RequestForDelivery {
     private List<RequestedProduct> requestedProducts = new ArrayList<>();
 
     /**
+     * Комментарии к заявке
+     * Используются участниками workflow при согласовании/отклонении заявки
+     */
+    @ToString.Exclude
+    @OneToMany(mappedBy = "requestForDelivery", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("createdAt ASC")
+    private List<Comment> comments = new ArrayList<>();
+
+    /**
      * Связь с фактической поставкой
      * После того как поставщик привезет товар, создается Delivery
      * и связывается с этой заявкой для контроля выполнения

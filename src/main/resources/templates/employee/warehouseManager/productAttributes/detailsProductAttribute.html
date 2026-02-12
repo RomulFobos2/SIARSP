@@ -20,6 +20,10 @@
         <p class="page-subtitle">Просмотр данных атрибута</p>
 
         <div th:if="${deleteError}" class="alert alert-danger" th:text="${deleteError}"></div>
+        <div th:if="${attributeError}" class="alert alert-danger" th:text="${attributeError}"></div>
+        <div th:if="${isProtected}" class="alert alert-warning">
+            Системный габаритный атрибут. Редактирование и удаление недоступны.
+        </div>
 
         <div class="mb-4">
             <h6 class="form-section-title">Основные данные</h6>
@@ -58,7 +62,7 @@
             </div>
         </div>
 
-        <div class="action-buttons mb-4">
+        <div class="action-buttons mb-4" th:unless="${isProtected}">
             <button th:onclick="'window.location.href=\'/employee/warehouseManager/productAttributes/editProductAttribute/' + ${attributeDTO.getId()} + '\';'"
                     class="btn btn-primary btn-profile">
                 Редактировать

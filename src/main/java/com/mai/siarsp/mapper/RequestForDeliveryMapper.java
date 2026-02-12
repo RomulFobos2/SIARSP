@@ -8,7 +8,7 @@ import org.mapstruct.factory.Mappers;
 
 import java.util.List;
 
-@Mapper(uses = {RequestedProductMapper.class})
+@Mapper(uses = {RequestedProductMapper.class, CommentMapper.class})
 public interface RequestForDeliveryMapper {
     RequestForDeliveryMapper INSTANCE = Mappers.getMapper(RequestForDeliveryMapper.class);
 

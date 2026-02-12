@@ -176,6 +176,7 @@ public class ProductAttributeController {
 
         model.addAttribute("attributeDTO", attributeDTO);
         model.addAttribute("linkedCategories", linkedCategories);
+        model.addAttribute("isProtected", productAttributeService.isProtectedGabarite(attribute));
         return "employee/warehouseManager/productAttributes/detailsProductAttribute";
     }
 
@@ -184,11 +185,20 @@ public class ProductAttributeController {
      */
     @Transactional
     @GetMapping("/employee/warehouseManager/productAttributes/editProductAttribute/{id}")
-    public String editProductAttribute(@PathVariable(value = "id") long id, Model model) {
+    public String editProductAttribute(@PathVariable(value = "id") long id, Model model,
+                                        RedirectAttributes redirectAttributes) {
         if (!productAttributeService.getProductAttributeRepository().existsById(id)) {
             return "redirect:/employee/warehouseManager/productAttributes/allProductAttributes";
         }
         ProductAttribute attribute = productAttributeService.getProductAttributeRepository().findById(id).get();
+
+        // Защита: нельзя открыть форму редактирования для системных габаритных атрибутов
+        if (productAttributeService.isProtectedGabarite(attribute)) {
+            redirectAttributes.addFlashAttribute("attributeError",
+                    "Системный габаритный атрибут не подлежит редактированию.");
+            return "redirect:/employee/warehouseManager/productAttributes/detailsProductAttribute/" + id;
+        }
+
         ProductAttributeDTO attributeDTO = ProductAttributeMapper.INSTANCE.toDTO(attribute);
 
         // ID текущих категорий для предотмечивания чекбоксов

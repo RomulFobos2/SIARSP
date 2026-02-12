@@ -16,4 +16,5 @@ public class RequestForDeliveryDTO {
     private String supplierName;
     private Long deliveryId;
     private List<RequestedProductDTO> requestedProducts;
+    private List<CommentDTO> comments;
 }
