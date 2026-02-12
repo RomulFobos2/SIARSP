@@ -1,0 +1,50 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Согласование заявки | СИАРСП</title>
+    <meta charset="UTF-8"/>
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+<header th:insert="~{blocks/header :: header}"></header>
+<div class="container my-4" th:object="${request}">
+    <h1>Заявка №<span th:text="*{id}"></span></h1>
+    <div th:if="${requestError}" class="alert alert-danger" th:text="${requestError}"></div>
+    <p><b>Дата:</b> <span th:text="*{requestDate}"></span></p>
+    <p><b>Поставщик:</b> <span th:text="*{supplierName}"></span></p>
+    <p><b>Статус:</b> <span th:text="*{status.displayName}"></span></p>
+
+    <table class="table table-bordered"><tr><th>Товар</th><th>Количество</th></tr>
+        <tr th:each="i : *{requestedProducts}"><td th:text="${i.productName}"></td><td th:text="${i.quantity}"></td></tr>
+    </table>
+
+    <h5>Комментарии</h5>
+    <ul class="list-group mb-3">
+        <li class="list-group-item" th:each="c : *{comments}"><b th:text="${c.authorFullName}"></b> <small th:text="${c.createdAt}"></small><div th:text="${c.text}"></div></li>
+    </ul>
+
+    <div th:if="*{status.name() == 'PENDING_DIRECTOR'}" class="d-flex gap-2">
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveModal">Согласовать</button>
+        <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">Отклонить</button>
+    </div>
+    <a class="btn btn-outline-secondary mt-3" href="/employee/manager/requestsForDelivery/allRequestsForDelivery">К списку</a>
+
+    <div class="modal fade" id="approveModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+        <form th:action="@{'/employee/manager/requestsForDelivery/approveRequestForDelivery/' + *{id}}" method="post">
+            <div class="modal-header"><h5>Комментарий (обязательно)</h5></div>
+            <div class="modal-body"><textarea name="commentText" class="form-control" required minlength="3"></textarea></div>
+            <div class="modal-footer"><button type="submit" class="btn btn-success">Согласовать</button></div>
+        </form>
+    </div></div></div>
+
+    <div class="modal fade" id="rejectModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+        <form th:action="@{'/employee/manager/requestsForDelivery/rejectRequestForDelivery/' + *{id}}" method="post">
+            <div class="modal-header"><h5>Причина отклонения (обязательно)</h5></div>
+            <div class="modal-body"><textarea name="commentText" class="form-control" required minlength="3"></textarea></div>
+            <div class="modal-footer"><button type="submit" class="btn btn-danger">Отклонить</button></div>
+        </form>
+    </div></div></div>
+</div>
+</body>
+</html>

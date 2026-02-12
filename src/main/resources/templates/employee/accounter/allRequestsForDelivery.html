@@ -1,0 +1,30 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Согласование заявок бухгалтером | СИАРСП</title>
+    <meta charset="UTF-8"/>
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<header th:insert="~{blocks/header :: header}"></header>
+<div class="container my-4">
+    <h1>Заявки на поставку</h1>
+    <form class="row g-2 mb-3" method="get" action="/employee/accounter/requestsForDelivery/allRequestsForDelivery">
+        <div class="col-auto">
+            <select class="form-select" name="status">
+                <option value="">Все статусы</option>
+                <option th:each="s : ${allStatuses}" th:value="${s.name()}" th:text="${s.displayName}" th:selected="${selectedStatus == s}"></option>
+            </select>
+        </div>
+        <div class="col-auto"><button class="btn btn-primary" type="submit">Фильтр</button></div>
+    </form>
+    <table class="table table-bordered">
+        <tr><th>ID</th><th>Дата</th><th>Поставщик</th><th>Статус</th><th>Действие</th></tr>
+        <tr th:each="r : ${allRequests}" th:classappend="${r.status.name() == 'PENDING_ACCOUNTANT'} ? 'table-warning'">
+            <td th:text="${r.id}"></td><td th:text="${r.requestDate}"></td><td th:text="${r.supplierName}"></td><td th:text="${r.status.displayName}"></td>
+            <td><a class="btn btn-sm btn-primary" th:href="@{'/employee/accounter/requestsForDelivery/detailsRequestForDelivery/' + ${r.id}}">Подробнее</a></td>
+        </tr>
+    </table>
+</div>
+</body>
+</html>

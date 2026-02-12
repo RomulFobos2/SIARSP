@@ -1,0 +1,58 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Заявка на поставку | СИАРСП</title>
+    <meta charset="UTF-8"/>
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+<header th:insert="~{blocks/header :: header}"></header>
+<div class="container my-4" th:object="${request}">
+    <h1>Заявка №<span th:text="*{id}"></span></h1>
+    <div th:if="${requestError}" class="alert alert-danger" th:text="${requestError}"></div>
+    <p><b>Дата:</b> <span th:text="*{requestDate}"></span></p>
+    <p><b>Поставщик:</b> <span th:text="*{supplierName}"></span></p>
+    <p><b>Статус:</b> <span th:text="*{status.displayName}"></span></p>
+
+    <h5>Позиции</h5>
+    <table class="table table-bordered"><tr><th>Товар</th><th>Количество</th></tr>
+        <tr th:each="i : *{requestedProducts}"><td th:text="${i.productName}"></td><td th:text="${i.quantity}"></td></tr>
+    </table>
+
+    <h5>Комментарии</h5>
+    <ul class="list-group mb-3">
+        <li class="list-group-item" th:each="c : *{comments}">
+            <b th:text="${c.authorFullName}"></b> <small th:text="${c.createdAt}"></small>
+            <div th:text="${c.text}"></div>
+        </li>
+        <li class="list-group-item" th:if="*{comments == null or comments.isEmpty()}">Комментариев нет</li>
+    </ul>
+
+    <div th:if="*{status.name() == 'DRAFT'}" class="d-flex gap-2">
+        <a class="btn btn-primary" th:href="@{'/employee/warehouseManager/requestsForDelivery/editRequestForDelivery/' + *{id}}">Редактировать</a>
+        <a class="btn btn-danger" th:href="@{'/employee/warehouseManager/requestsForDelivery/deleteRequestForDelivery/' + *{id}}">Удалить</a>
+        <form th:action="@{'/employee/warehouseManager/requestsForDelivery/submitRequestForDelivery/' + *{id}}" method="post">
+            <button class="btn btn-success" type="submit">Отправить на согласование</button>
+        </form>
+    </div>
+
+    <div th:if="*{status.name() == 'REJECTED_BY_DIRECTOR' or status.name() == 'REJECTED_BY_ACCOUNTANT'}" class="d-flex gap-2">
+        <a class="btn btn-primary" th:href="@{'/employee/warehouseManager/requestsForDelivery/editRequestForDelivery/' + *{id}}">Редактировать</a>
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#resubmitModal">Повторно отправить</button>
+    </div>
+
+    <a class="btn btn-outline-secondary mt-3" href="/employee/warehouseManager/requestsForDelivery/allRequestsForDelivery">К списку</a>
+
+    <div class="modal fade" id="resubmitModal" tabindex="-1">
+        <div class="modal-dialog"><div class="modal-content">
+            <form th:action="@{'/employee/warehouseManager/requestsForDelivery/resubmitRequestForDelivery/' + *{id}}" method="post">
+                <div class="modal-header"><h5 class="modal-title">Комментарий к повторной отправке</h5></div>
+                <div class="modal-body"><textarea class="form-control" name="commentText" required minlength="3"></textarea></div>
+                <div class="modal-footer"><button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Отмена</button><button class="btn btn-success" type="submit">Отправить</button></div>
+            </form>
+        </div></div>
+    </div>
+</div>
+</body>
+</html>
