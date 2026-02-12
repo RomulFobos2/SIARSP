@@ -92,6 +92,15 @@
                         </a>
                     </li>
 
+                    <li class="nav-item" sec:authorize="isAuthenticated()">
+                        <a class="nav-link px-3 position-relative" href="/employee/notifications/">
+                            Уведомления
+                            <span id="notificationBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none;">
+                                0
+                            </span>
+                        </a>
+                    </li>
+
                     <li class="nav-item" sec:authorize="!isAuthenticated()">
                         <a class="nav-link px-3" href="/employee/login">Вход</a>
                     </li>
@@ -108,4 +117,25 @@
         </div>
     </nav>
 </div>
+
+<script sec:authorize="isAuthenticated()">
+    document.addEventListener('DOMContentLoaded', function() {
+        var badge = document.getElementById('notificationBadge');
+        if (badge) {
+            fetch('/employee/notifications/unreadCount')
+                .then(function(response) { return response.json(); })
+                .then(function(count) {
+                    if (count > 0) {
+                        badge.textContent = count;
+                        badge.style.display = '';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Ошибка загрузки уведомлений:', error);
+                });
+        }
+    });
+</script>
 </html>

@@ -38,6 +38,15 @@ import java.util.*;
 @Slf4j
 public class ProductAttributeService {
 
+    /**
+     * Набор защищённых габаритных атрибутов (формат "название:единица измерения").
+     * Эти атрибуты создаются автоматически при старте приложения (RoleRunner)
+     * и не подлежат редактированию и удалению.
+     */
+    private static final Set<String> PROTECTED_GABARITES = Set.of(
+            "Длина упаковки:см", "Ширина упаковки:см", "Высота упаковки:см"
+    );
+
     private final ProductAttributeRepository productAttributeRepository;
     private final ProductAttributeValueRepository productAttributeValueRepository;
     private final ProductCategoryRepository productCategoryRepository;
@@ -51,6 +60,17 @@ public class ProductAttributeService {
         this.productAttributeValueRepository = productAttributeValueRepository;
         this.productCategoryRepository = productCategoryRepository;
         this.productRepository = productRepository;
+    }
+
+    /**
+     * Проверяет, является ли атрибут защищённым габаритным атрибутом
+     *
+     * @param attribute атрибут для проверки
+     * @return true если атрибут защищён от редактирования/удаления
+     */
+    public boolean isProtectedGabarite(ProductAttribute attribute) {
+        String key = attribute.getName().trim() + ":" + attribute.getUnit().trim();
+        return PROTECTED_GABARITES.contains(key);
     }
 
     /**
@@ -204,6 +224,13 @@ public class ProductAttributeService {
         }
 
         ProductAttribute attribute = attributeOptional.get();
+
+        // Защита: нельзя редактировать системные габаритные атрибуты
+        if (isProtectedGabarite(attribute)) {
+            log.warn("Попытка редактирования защищённого габаритного атрибута '{}' (id={}).", attribute.getName(), id);
+            return false;
+        }
+
         log.info("Начинаем редактирование атрибута с id = {}...", id);
 
         // Обновляем поля атрибута
@@ -300,6 +327,12 @@ public class ProductAttributeService {
         }
 
         ProductAttribute attribute = attributeOptional.get();
+
+        // Защита: нельзя удалить системные габаритные атрибуты
+        if (isProtectedGabarite(attribute)) {
+            log.warn("Попытка удаления защищённого габаритного атрибута '{}' (id={}).", attribute.getName(), id);
+            return false;
+        }
 
         // Защита: нельзя удалить если есть значения для товаров
         if (productAttributeValueRepository.existsByAttribute(attribute)) {

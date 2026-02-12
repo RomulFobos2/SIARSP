@@ -1,0 +1,73 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Уведомления | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/javascript.js"></script>
+</head>
+<body class="admin-page">
+<div th:insert="~{blocks/header :: header}"></div>
+
+<div class="container py-4">
+    <div class="profile-card mb-4">
+        <div class="profile-actions">
+            <a th:href="'/'"
+               class="btn btn-secondary btn-profile">
+                ← Главная
+            </a>
+            <a th:href="'/employee/notifications/markAllAsRead'"
+               class="btn btn-primary btn-profile">
+                Пометить все как прочитанные
+            </a>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <h2 class="h3 mb-4 fw-bold">Уведомления</h2>
+
+        <div th:if="${notifications.isEmpty()}" class="alert alert-info">
+            Нет уведомлений.
+        </div>
+
+        <div class="table-responsive" th:unless="${notifications.isEmpty()}">
+            <table class="table table-modern">
+                <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>Текст</th>
+                    <th>Статус</th>
+                    <th>Действия</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="notification : ${notifications}"
+                    th:classappend="${notification.getStatus() == 'Новое'} ? 'table-warning' : ''">
+                    <td th:text="${#temporals.format(notification.getCreatedAt(), 'dd.MM.yyyy HH:mm')}"></td>
+                    <td th:text="${notification.getText()}"></td>
+                    <td>
+                        <span th:if="${notification.getStatus() == 'Новое'}" class="badge bg-primary"
+                              th:text="${notification.getStatus()}"></span>
+                        <span th:if="${notification.getStatus() != 'Новое'}" class="badge bg-secondary"
+                              th:text="${notification.getStatus()}"></span>
+                    </td>
+                    <td>
+                        <a th:if="${notification.getStatus() == 'Новое'}"
+                           th:href="'/employee/notifications/markAsRead/' + ${notification.getId()}"
+                           class="btn btn-sm btn-outline-primary">
+                            Прочитано
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>
