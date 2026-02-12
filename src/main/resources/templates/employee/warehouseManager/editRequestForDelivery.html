@@ -1,0 +1,47 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Редактировать заявку | СИАРСП</title>
+    <meta charset="UTF-8"/>
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<header th:insert="~{blocks/header :: header}"></header>
+<div class="container my-4" th:object="${request}">
+    <h1>Редактирование заявки №<span th:text="*{id}"></span></h1>
+    <div th:if="${requestError}" class="alert alert-danger" th:text="${requestError}"></div>
+    <form th:action="@{'/employee/warehouseManager/requestsForDelivery/editRequestForDelivery/' + *{id}}" method="post">
+        <div class="mb-3">
+            <label class="form-label">Поставщик</label>
+            <select class="form-select" name="supplierId" required>
+                <option th:each="s : ${suppliers}" th:value="${s.id}" th:text="${s.name}" th:selected="${s.id == request.supplierId}"></option>
+            </select>
+        </div>
+        <table class="table" id="productsTable"><thead><tr><th>Товар</th><th>Количество</th><th></th></tr></thead><tbody></tbody></table>
+        <button type="button" class="btn btn-outline-secondary" onclick="addRow()">Добавить позицию</button>
+        <button type="submit" class="btn btn-success">Сохранить</button>
+    </form>
+</div>
+<script th:inline="javascript">
+    const products = /*[[${products}]]*/ [];
+    const existing = /*[[${request.requestedProducts}]]*/ [];
+
+    function addRow(productId = '', quantity = 1) {
+        const tbody = document.querySelector('#productsTable tbody');
+        const tr = document.createElement('tr');
+        const options = ['<option value="">Выберите товар</option>']
+            .concat(products.map(p => `<option value="${p.id}">${p.name}</option>`)).join('');
+        tr.innerHTML = `<td><select class="form-select" name="productIds" required>${options}</select></td>
+                        <td><input class="form-control" type="number" name="quantities" min="1" required value="${quantity}"></td>
+                        <td><button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove()">Удалить</button></td>`;
+        tbody.appendChild(tr);
+        tr.querySelector('select').value = productId;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (existing.length === 0) addRow();
+        existing.forEach(i => addRow(i.productId, i.quantity));
+    });
+</script>
+</body>
+</html>
