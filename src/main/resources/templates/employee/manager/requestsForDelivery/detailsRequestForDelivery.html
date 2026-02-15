@@ -34,6 +34,10 @@
             <div class="col-md-8" th:text="${requestDTO.getSupplierName()}"></div>
         </div>
         <div class="row mb-3">
+            <div class="col-md-4"><strong>Склад-получатель:</strong></div>
+            <div class="col-md-8" th:text="${requestDTO.getWarehouseName() + ' (' + requestDTO.getWarehouseAddress() + ')'}"></div>
+        </div>
+        <div class="row mb-3">
             <div class="col-md-4"><strong>Статус:</strong></div>
             <div class="col-md-8">
                 <span class="badge"
@@ -61,6 +65,8 @@
                     <th>Артикул</th>
                     <th>Наименование</th>
                     <th>Количество</th>
+                    <th>Цена за ед.</th>
+                    <th>Сумма</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -69,6 +75,20 @@
                     <td th:text="${item.getProductArticle()}"></td>
                     <td th:text="${item.getProductName()}"></td>
                     <td th:text="${item.getQuantity()}"></td>
+                    <td th:text="${#numbers.formatDecimal(item.getPurchasePrice(), 1, 2)} + ' руб.'"></td>
+                    <td th:text="${#numbers.formatDecimal(item.getTotalPrice(), 1, 2)} + ' руб.'"></td>
+                </tr>
+                <tr class="table-secondary">
+                    <td colspan="5" class="text-end fw-semibold">Стоимость товаров:</td>
+                    <td class="fw-semibold" th:text="${#numbers.formatDecimal(requestDTO.getTotalCost() - requestDTO.getDeliveryCost(), 1, 2)} + ' руб.'"></td>
+                </tr>
+                <tr class="table-secondary">
+                    <td colspan="5" class="text-end fw-semibold">Стоимость доставки:</td>
+                    <td class="fw-semibold" th:text="${#numbers.formatDecimal(requestDTO.getDeliveryCost(), 1, 2)} + ' руб.'"></td>
+                </tr>
+                <tr class="table-primary">
+                    <td colspan="5" class="text-end fw-bold">ИТОГО:</td>
+                    <td class="fw-bold" th:text="${#numbers.formatDecimal(requestDTO.getTotalCost(), 1, 2)} + ' руб.'"></td>
                 </tr>
                 </tbody>
             </table>
