@@ -1,0 +1,155 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Заявка на поставку | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container my-5">
+    <div class="profile-card mb-4">
+        <div class="profile-actions">
+            <a th:href="'/employee/accounter/requestsForDelivery/allRequestsForDelivery'" class="btn btn-secondary btn-profile">← Назад к списку</a>
+        </div>
+    </div>
+
+    <div th:if="${requestError}" class="alert alert-danger" th:text="${requestError}"></div>
+    <div th:if="${requestSuccess}" class="alert alert-success" th:text="${requestSuccess}"></div>
+
+    <div class="profile-card p-4">
+        <h2 class="h3 mb-4 fw-bold">Заявка на поставку №<span th:text="${requestDTO.getId()}"></span></h2>
+
+        <div class="row mb-3">
+            <div class="col-md-4"><strong>Дата создания:</strong></div>
+            <div class="col-md-8" th:text="${requestDTO.getRequestDate()}"></div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-md-4"><strong>Поставщик:</strong></div>
+            <div class="col-md-8" th:text="${requestDTO.getSupplierName()}"></div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-md-4"><strong>Статус:</strong></div>
+            <div class="col-md-8">
+                <span class="badge"
+                      th:classappend="${requestDTO.getStatus().name() == 'DRAFT'} ? 'bg-secondary' :
+                                      (${requestDTO.getStatus().name() == 'PENDING_DIRECTOR'} ? 'bg-warning text-dark' :
+                                      (${requestDTO.getStatus().name() == 'REJECTED_BY_DIRECTOR' || requestDTO.getStatus().name() == 'REJECTED_BY_ACCOUNTANT'} ? 'bg-danger' :
+                                      (${requestDTO.getStatus().name() == 'PENDING_ACCOUNTANT'} ? 'bg-info' :
+                                      (${requestDTO.getStatus().name() == 'APPROVED'} ? 'bg-success' :
+                                      (${requestDTO.getStatus().name() == 'PARTIALLY_RECEIVED' || requestDTO.getStatus().name() == 'RECEIVED'} ? 'bg-primary' :
+                                      'bg-dark')))))"
+                      th:text="${requestDTO.getStatus().getDisplayName()}"></span>
+            </div>
+        </div>
+        <div th:if="${requestDTO.getReceivedDate() != null}" class="row mb-3">
+            <div class="col-md-4"><strong>Дата получения:</strong></div>
+            <div class="col-md-8" th:text="${requestDTO.getReceivedDate()}"></div>
+        </div>
+
+        <h4 class="mt-4 mb-3">Позиции заявки</h4>
+        <div class="table-responsive">
+            <table class="table table-modern">
+                <thead>
+                <tr>
+                    <th>№</th>
+                    <th>Артикул</th>
+                    <th>Наименование</th>
+                    <th>Количество</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="item, iter : ${requestDTO.getRequestedProducts()}">
+                    <td th:text="${iter.count}"></td>
+                    <td th:text="${item.getProductArticle()}"></td>
+                    <td th:text="${item.getProductName()}"></td>
+                    <td th:text="${item.getQuantity()}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Комментарии -->
+        <div th:if="${requestDTO.getComments() != null && !requestDTO.getComments().isEmpty()}" class="mt-4">
+            <h4 class="mb-3">Комментарии</h4>
+            <div th:each="comment : ${requestDTO.getComments()}" class="card mb-2">
+                <div class="card-body py-2 px-3">
+                    <div class="d-flex justify-content-between">
+                        <strong th:text="${comment.getAuthorFullName()}"></strong>
+                        <small class="text-muted" th:text="${#temporals.format(comment.getCreatedAt(), 'dd.MM.yyyy HH:mm')}"></small>
+                    </div>
+                    <p class="mb-0 mt-1" th:text="${comment.getText()}"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Кнопки действий — только для PENDING_ACCOUNTANT -->
+        <div th:if="${requestDTO.getStatus().name() == 'PENDING_ACCOUNTANT'}" class="mt-4 d-flex gap-2">
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveModal">
+                Согласовать
+            </button>
+            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                Отклонить
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно согласования -->
+<div class="modal fade" id="approveModal" tabindex="-1" aria-labelledby="approveModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" th:action="@{'/employee/accounter/requestsForDelivery/approveRequestForDelivery/' + ${requestDTO.getId()}}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="approveModalLabel">Согласование заявки</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="approveComment" class="form-label">Комментарий (обязательно)</label>
+                        <textarea id="approveComment" name="commentText" class="form-control" rows="3" required maxlength="1000"
+                                  placeholder="Укажите комментарий к согласованию..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-success">Согласовать</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно отклонения -->
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" th:action="@{'/employee/accounter/requestsForDelivery/rejectRequestForDelivery/' + ${requestDTO.getId()}}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="rejectModalLabel">Отклонение заявки</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="rejectComment" class="form-label">Причина отклонения (обязательно)</label>
+                        <textarea id="rejectComment" name="commentText" class="form-control" rows="3" required maxlength="1000"
+                                  placeholder="Укажите причину отклонения..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-danger">Отклонить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>
