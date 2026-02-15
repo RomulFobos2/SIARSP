@@ -35,12 +35,14 @@ public class RequestForDeliveryController {
         this.productService = productService;
     }
 
+    @Transactional
     @GetMapping("/employee/warehouseManager/requestsForDelivery/allRequestsForDelivery")
     public String allRequestsForDelivery(Model model) {
         model.addAttribute("allRequests", requestForDeliveryService.getAllRequests());
         return "employee/warehouseManager/requestsForDelivery/allRequestsForDelivery";
     }
 
+    @Transactional
     @GetMapping("/employee/warehouseManager/requestsForDelivery/addRequestForDelivery")
     public String addRequestForDelivery(Model model) {
         model.addAttribute("allSuppliers", supplierService.getAllSuppliers());

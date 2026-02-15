@@ -28,6 +28,7 @@ public class RequestForDeliveryController {
         this.requestForDeliveryService = requestForDeliveryService;
     }
 
+    @Transactional
     @GetMapping("/employee/manager/requestsForDelivery/allRequestsForDelivery")
     public String allRequestsForDelivery(@RequestParam(value = "statusFilter", required = false) String statusFilter,
                                           Model model) {

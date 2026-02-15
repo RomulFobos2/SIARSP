@@ -18,10 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 import static com.mai.siarsp.enumeration.RequestStatus.*;
 
@@ -153,21 +150,46 @@ public class RequestForDeliveryService {
 
         request.setSupplier(supplierOpt.get());
 
-        // Удаляем старые позиции через репозиторий и flush, чтобы DELETE выполнился в БД
-        // до INSERT новых записей (иначе UniqueConstraint на request_id+product_id нарушается)
-        requestedProductRepository.deleteAll(request.getRequestedProducts());
-        requestedProductRepository.flush();
-        request.getRequestedProducts().clear();
-
+        // 1) Нормализуем вход (на всякий случай: если дубли — суммируем)
+        Map<Long, Integer> incoming = new LinkedHashMap<>();
         for (int i = 0; i < productIds.size(); i++) {
-            Optional<Product> productOpt = productRepository.findById(productIds.get(i));
-            if (productOpt.isEmpty()) {
-                log.error("Товар с id={} не найден.", productIds.get(i));
-                return false;
-            }
-            int qty = (quantities != null && i < quantities.size()) ? quantities.get(i) : 1;
-            request.addRequestedProduct(new RequestedProduct(productOpt.get(), qty));
+            Long pid = productIds.get(i);
+            if (pid == null) continue;
+
+            int qty = (quantities != null && i < quantities.size() && quantities.get(i) != null)
+                    ? quantities.get(i) : 1;
+            if (qty < 1) qty = 1;
+
+            incoming.merge(pid, qty, Integer::sum);
         }
+
+        // 2) Индексируем текущие позиции заявки по productId
+        Map<Long, RequestedProduct> existing = new HashMap<>();
+        for (RequestedProduct rp : request.getRequestedProducts()) {
+            existing.put(rp.getProduct().getId(), rp);
+        }
+
+        // 3) UPDATE существующих + ADD новых
+        for (Map.Entry<Long, Integer> e : incoming.entrySet()) {
+            Long pid = e.getKey();
+            Integer qty = e.getValue();
+
+            RequestedProduct rp = existing.get(pid);
+            if (rp != null) {
+                rp.setQuantity(qty); // UPDATE
+            } else {
+                Product product = productRepository.findById(pid).orElse(null);
+                if (product == null) {
+                    log.error("Товар с id={} не найден.", pid);
+                    return false;
+                }
+                request.addRequestedProduct(new RequestedProduct(product, qty)); // INSERT только для новых
+            }
+        }
+
+        // 4) REMOVE позиций, которых больше нет во входе
+        request.getRequestedProducts().removeIf(rp -> !incoming.containsKey(rp.getProduct().getId()));
+        // orphanRemoval=true сделает DELETE в БД :contentReference[oaicite:2]{index=2}
 
         try {
             requestForDeliveryRepository.save(request);
@@ -180,6 +202,7 @@ public class RequestForDeliveryService {
         log.info("Заявка №{} успешно обновлена.", id);
         return true;
     }
+
 
     @Transactional
     public boolean deleteRequest(Long id) {

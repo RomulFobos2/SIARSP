@@ -47,7 +47,7 @@
                 <div class="mb-3">
                     <input type="text" name="inputUsername" id="inputUsername"
                            placeholder="Логин" class="form-control" required maxlength="50"
-                           pattern="[A-Za-z0-9._-]+"
+                           pattern="[A-Za-z0-9._\-]+"
                            title="Логин может содержать только латинские буквы, цифры и символы . _ -">
                 </div>
 
@@ -82,7 +82,7 @@
                 </div>
             </div>
 
-            <button type="submit" class="w-100 btn btn-auth" disabled>
+            <button id="addEmployeeSubmit" type="submit" class="w-100 btn btn-auth" disabled>
                 Добавить пользователя
             </button>
 
@@ -106,7 +106,8 @@
         const usernameInput = document.getElementById('inputUsername');
         const passwordInput = document.getElementById('inputPassword');
         const passwordConfirmInput = document.getElementById('inputPasswordConfirm');
-        const submitButton = document.querySelector('button[type="submit"]');
+        const submitButton = document.getElementById('addEmployeeSubmit');
+
         const form = document.querySelector('form');
 
         // Создаем элемент для ошибки username
