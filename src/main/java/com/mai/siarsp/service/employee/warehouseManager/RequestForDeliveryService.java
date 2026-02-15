@@ -7,6 +7,7 @@ import com.mai.siarsp.models.*;
 import com.mai.siarsp.repo.CommentRepository;
 import com.mai.siarsp.repo.ProductRepository;
 import com.mai.siarsp.repo.RequestForDeliveryRepository;
+import com.mai.siarsp.repo.RequestedProductRepository;
 import com.mai.siarsp.repo.SupplierRepository;
 import com.mai.siarsp.service.employee.EmployeeService;
 import com.mai.siarsp.service.employee.NotificationService;
@@ -51,6 +52,7 @@ public class RequestForDeliveryService {
     );
 
     private final RequestForDeliveryRepository requestForDeliveryRepository;
+    private final RequestedProductRepository requestedProductRepository;
     private final SupplierRepository supplierRepository;
     private final ProductRepository productRepository;
     private final EmployeeService employeeService;
@@ -58,12 +60,14 @@ public class RequestForDeliveryService {
     private final CommentRepository commentRepository;
 
     public RequestForDeliveryService(RequestForDeliveryRepository requestForDeliveryRepository,
+                                      RequestedProductRepository requestedProductRepository,
                                       SupplierRepository supplierRepository,
                                       ProductRepository productRepository,
                                       EmployeeService employeeService,
                                       NotificationService notificationService,
                                       CommentRepository commentRepository) {
         this.requestForDeliveryRepository = requestForDeliveryRepository;
+        this.requestedProductRepository = requestedProductRepository;
         this.supplierRepository = supplierRepository;
         this.productRepository = productRepository;
         this.employeeService = employeeService;
@@ -148,6 +152,11 @@ public class RequestForDeliveryService {
         }
 
         request.setSupplier(supplierOpt.get());
+
+        // Удаляем старые позиции через репозиторий и flush, чтобы DELETE выполнился в БД
+        // до INSERT новых записей (иначе UniqueConstraint на request_id+product_id нарушается)
+        requestedProductRepository.deleteAll(request.getRequestedProducts());
+        requestedProductRepository.flush();
         request.getRequestedProducts().clear();
 
         for (int i = 0; i < productIds.size(); i++) {
