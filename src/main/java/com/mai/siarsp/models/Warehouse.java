@@ -104,6 +104,22 @@ public class Warehouse {
     private double totalVolume;
 
     /**
+     * Адрес склада
+     * Физический адрес местонахождения складского помещения
+     *
+     * Используется для:
+     * - Формирования договоров поставки (адрес доставки товара)
+     * - Координации логистики
+     * - Документации и отчетности
+     *
+     * Примеры:
+     * - "г. Минск, ул. Складская, д. 15"
+     * - "г. Гродно, пр-т Космонавтов, д. 42, корп. 2"
+     */
+    @Column
+    private String address;
+
+    /**
      * Список стеллажей на складе
      * Физические конструкции для размещения полок с товаром
      *
@@ -140,6 +156,22 @@ public class Warehouse {
         this.name = name;
         this.type = type;
         this.totalVolume = totalVolume;
+    }
+
+    /**
+     * Создает новый склад с адресом
+     * Инициализирует пустой список стеллажей (будут добавлены позже)
+     *
+     * @param name название склада (например, "Основной склад")
+     * @param type тип склада (STANDARD или REFRIGERATED)
+     * @param totalVolume общий объем склада в литрах
+     * @param address физический адрес склада
+     */
+    public Warehouse(String name, WarehouseType type, double totalVolume, String address) {
+        this.name = name;
+        this.type = type;
+        this.totalVolume = totalVolume;
+        this.address = address;
     }
 
     // ========== МЕТОДЫ ==========

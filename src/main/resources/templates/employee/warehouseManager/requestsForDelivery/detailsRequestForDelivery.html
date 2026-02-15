@@ -34,6 +34,10 @@
             <div class="col-md-8" th:text="${requestDTO.getSupplierName()}"></div>
         </div>
         <div class="row mb-3">
+            <div class="col-md-4"><strong>Склад-получатель:</strong></div>
+            <div class="col-md-8" th:text="${requestDTO.getWarehouseName() + ' (' + requestDTO.getWarehouseAddress() + ')'}"></div>
+        </div>
+        <div class="row mb-3">
             <div class="col-md-4"><strong>Статус:</strong></div>
             <div class="col-md-8">
                 <span class="badge"
@@ -61,6 +65,8 @@
                     <th>Артикул</th>
                     <th>Наименование</th>
                     <th>Количество</th>
+                    <th>Цена за ед.</th>
+                    <th>Сумма</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -69,6 +75,20 @@
                     <td th:text="${item.getProductArticle()}"></td>
                     <td th:text="${item.getProductName()}"></td>
                     <td th:text="${item.getQuantity()}"></td>
+                    <td th:text="${#numbers.formatDecimal(item.getPurchasePrice(), 1, 2)} + ' руб.'"></td>
+                    <td th:text="${#numbers.formatDecimal(item.getTotalPrice(), 1, 2)} + ' руб.'"></td>
+                </tr>
+                <tr class="table-secondary">
+                    <td colspan="5" class="text-end fw-semibold">Стоимость товаров:</td>
+                    <td class="fw-semibold" th:text="${#numbers.formatDecimal(requestDTO.getTotalCost() - requestDTO.getDeliveryCost(), 1, 2)} + ' руб.'"></td>
+                </tr>
+                <tr class="table-secondary">
+                    <td colspan="5" class="text-end fw-semibold">Стоимость доставки:</td>
+                    <td class="fw-semibold" th:text="${#numbers.formatDecimal(requestDTO.getDeliveryCost(), 1, 2)} + ' руб.'"></td>
+                </tr>
+                <tr class="table-primary">
+                    <td colspan="5" class="text-end fw-bold">ИТОГО:</td>
+                    <td class="fw-bold" th:text="${#numbers.formatDecimal(requestDTO.getTotalCost(), 1, 2)} + ' руб.'"></td>
                 </tr>
                 </tbody>
             </table>
@@ -94,7 +114,7 @@
             <form th:if="${requestDTO.getStatus().name() == 'DRAFT'}"
                   method="post"
                   th:action="@{'/employee/warehouseManager/requestsForDelivery/submitRequestForDelivery/' + ${requestDTO.getId()}}">
-                <button type="submit" class="btn btn-primary">Отправить на согласование</button>
+                <button type="submit" class="btn btn-primary">Отправить бухгалтеру</button>
             </form>
             <a th:if="${requestDTO.getStatus().name() == 'DRAFT'}"
                th:href="'/employee/warehouseManager/requestsForDelivery/editRequestForDelivery/' + ${requestDTO.getId()}"
@@ -111,6 +131,12 @@
             <button th:if="${requestDTO.getStatus().name() == 'REJECTED_BY_DIRECTOR' || requestDTO.getStatus().name() == 'REJECTED_BY_ACCOUNTANT'}"
                     type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#resubmitModal">
                 Повторно отправить
+            </button>
+
+            <!-- APPROVED: отменить -->
+            <button th:if="${requestDTO.getStatus().name() == 'APPROVED'}"
+                    type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                Отменить заявку
             </button>
         </div>
     </div>
@@ -135,6 +161,28 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
                     <button type="submit" class="btn btn-primary">Отправить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для отмены заявки -->
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" th:action="@{'/employee/warehouseManager/requestsForDelivery/cancelRequestForDelivery/' + ${requestDTO.getId()}}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="cancelModalLabel">Подтверждение отмены</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Вы уверены, что хотите отменить заявку?</p>
+                    <p class="text-muted small">Отмененная заявка получит статус "Отменена" и не может быть восстановлена.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Нет</button>
+                    <button type="submit" class="btn btn-danger">Да, отменить</button>
                 </div>
             </form>
         </div>

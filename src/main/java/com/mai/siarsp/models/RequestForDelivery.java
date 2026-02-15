@@ -7,6 +7,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,34 +22,38 @@ import java.util.List;
  * Бизнес-процесс (согласно ТЗ):
  *
  * 1. СОЗДАНИЕ (статус DRAFT):
- *    - Заведующий складом выявляет нехватку товара (ТЗ п.177)
- *    - Создает заявку, добавляет позиции товаров (RequestedProduct)
+ *    - Заведующий складом выявляет нехватку товара
+ *    - Создает заявку, добавляет позиции товаров с ценами
+ *    - Указывает склад-получатель и стоимость доставки
  *    - Сохраняет как черновик
  *
- * 2. СОГЛАСОВАНИЕ ДИРЕКТОРОМ (PENDING_DIRECTOR → APPROVED / REJECTED_BY_DIRECTOR):
- *    - Заведующий отправляет на согласование директору
+ * 2. СОГЛАСОВАНИЕ БУХГАЛТЕРОМ (PENDING_ACCOUNTANT → PENDING_DIRECTOR / REJECTED_BY_ACCOUNTANT):
+ *    - Заведующий отправляет на согласование бухгалтеру
+ *    - Бухгалтер проверяет финансовую возможность, цены, условия договора
+ *    - Оформляет договор на закупку
+ *    - Согласовывает (отправляет директору) или отклоняет с комментарием
+ *
+ * 3. СОГЛАСОВАНИЕ ДИРЕКТОРОМ (PENDING_DIRECTOR → APPROVED / REJECTED_BY_DIRECTOR):
+ *    - После одобрения бухгалтером заявка идет к директору
  *    - Директор проверяет целесообразность закупки, бюджет
  *    - Согласовывает или отклоняет с комментарием
  *
- * 3. СОГЛАСОВАНИЕ БУХГАЛТЕРОМ (PENDING_ACCOUNTANT → APPROVED / REJECTED_BY_ACCOUNTANT):
- *    - После одобрения директором заявка идет к бухгалтеру
- *    - Бухгалтер проверяет финансовую возможность, условия договора
- *    - Оформляет договор на закупку
- *    - Согласовывает или отклоняет
- *
  * 4. ОТПРАВКА ПОСТАВЩИКУ (APPROVED):
  *    - После двойного согласования заявка отправляется поставщику
+ *    - Заведующий может отменить заявку (CANCELLED) при необходимости
  *
  * 5. ПОЛУЧЕНИЕ ТОВАРА (PARTIALLY_RECEIVED / RECEIVED):
  *    - Поставщик привозит товар → создается Delivery
- *    - Заведующий принимает товар, проверяет по накладной (ТЗ п.83-89)
+ *    - Заведующий принимает товар, проверяет по накладной
  *    - При полном получении статус → RECEIVED
  *    - При частичном получении → PARTIALLY_RECEIVED
  *
  * Переходы статусов:
- * DRAFT → PENDING_DIRECTOR → PENDING_ACCOUNTANT → APPROVED → RECEIVED
+ * DRAFT → PENDING_ACCOUNTANT → PENDING_DIRECTOR → APPROVED → RECEIVED
  *     ↓           ↓                    ↓               ↓
- * CANCELLED  REJECTED_BY_DIRECTOR  REJECTED_BY_ACCOUNTANT  PARTIALLY_RECEIVED
+ * CANCELLED  REJECTED_BY_ACCOUNTANT  REJECTED_BY_DIRECTOR  PARTIALLY_RECEIVED
+ *                                                        ↓
+ *                                                    CANCELLED
  *
  * Связи:
  * - Адресована одному поставщику (Supplier)
@@ -117,6 +122,38 @@ public class RequestForDelivery {
     @ManyToOne
     @JoinColumn(nullable = false)
     private Supplier supplier;
+
+    /**
+     * Склад-получатель
+     * Склад, на который должна быть доставлена поставка
+     *
+     * Используется для:
+     * - Формирования договора поставки (адрес доставки)
+     * - Координации логистики
+     * - Планирования размещения товара
+     */
+    @ToString.Exclude
+    @ManyToOne
+    @JoinColumn
+    private Warehouse warehouse;
+
+    /**
+     * Стоимость доставки (в рублях)
+     * Оплата за транспортировку товара от поставщика до склада
+     *
+     * Заполняется заведующим складом при формировании заявки на основе:
+     * - Тарифов транспортной компании
+     * - Расстояния от поставщика до склада
+     * - Объема/веса груза
+     * - Условий договора с поставщиком
+     *
+     * Используется для:
+     * - Расчета общей стоимости заявки
+     * - Согласования бюджета бухгалтером и директором
+     * - Формирования финансовых документов
+     */
+    @Column(precision = 10, scale = 2)
+    private BigDecimal deliveryCost;
 
     /**
      * Список позиций заявки (запрашиваемых товаров)
@@ -203,13 +240,31 @@ public class RequestForDelivery {
      * 3. Для каждого товара создает RequestedProduct и добавляет через этот метод
      * 4. После добавления всех позиций отправляет на согласование
      *
-     * @param requestedProduct позиция заявки (товар + требуемое количество)
+     * @param requestedProduct позиция заявки (товар + требуемое количество + цена)
      */
     public void addRequestedProduct(RequestedProduct requestedProduct) {
         this.requestedProducts.add(requestedProduct);
         requestedProduct.setRequest(this);
     }
 
-
+    /**
+     * Вычисляет общую стоимость заявки
+     * Формула: сумма (purchasePrice × quantity) всех позиций + стоимость доставки
+     *
+     * Используется для:
+     * - Согласования бюджета бухгалтером и директором
+     * - Отображения в UI (детали заявки)
+     * - Формирования финансовых документов
+     * - Планирования расходов
+     *
+     * @return общая стоимость заявки в рублях (товары + доставка)
+     */
+    @Transient
+    public BigDecimal getTotalCost() {
+        BigDecimal productsCost = requestedProducts.stream()
+                .map(RequestedProduct::getTotalPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return productsCost.add(deliveryCost != null ? deliveryCost : BigDecimal.ZERO);
+    }
 
 }

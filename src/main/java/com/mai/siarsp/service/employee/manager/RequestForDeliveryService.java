@@ -90,7 +90,7 @@ public class RequestForDeliveryService {
         Comment comment = new Comment(currentEmployee, commentText, request);
         commentRepository.save(comment);
 
-        request.setStatus(RequestStatus.PENDING_ACCOUNTANT);
+        request.setStatus(RequestStatus.APPROVED);
 
         try {
             requestForDeliveryRepository.save(request);
@@ -101,11 +101,12 @@ public class RequestForDeliveryService {
         }
 
         String notificationText = String.format(
-                "Заявка на поставку №%d от %s для поставщика «%s» согласована директором, ожидает согласования бухгалтера",
+                "Заявка на поставку №%d от %s для поставщика «%s» полностью согласована директором",
                 request.getId(), request.getRequestDate().format(DATE_FMT), request.getSupplier().getName());
-        notificationService.notifyByRole("ROLE_EMPLOYEE_ACCOUNTER", notificationText);
+        notificationService.notifyByRoles(
+                List.of("ROLE_EMPLOYEE_WAREHOUSE_MANAGER", "ROLE_EMPLOYEE_ACCOUNTER"), notificationText);
 
-        log.info("Заявка №{} согласована директором.", id);
+        log.info("Заявка №{} полностью согласована директором.", id);
         return true;
     }
 
@@ -145,7 +146,8 @@ public class RequestForDeliveryService {
         String notificationText = String.format(
                 "Заявка на поставку №%d от %s для поставщика «%s» отклонена директором",
                 request.getId(), request.getRequestDate().format(DATE_FMT), request.getSupplier().getName());
-        notificationService.notifyByRole("ROLE_EMPLOYEE_WAREHOUSE_MANAGER", notificationText);
+        notificationService.notifyByRoles(
+                List.of("ROLE_EMPLOYEE_WAREHOUSE_MANAGER", "ROLE_EMPLOYEE_ACCOUNTER"), notificationText);
 
         log.info("Заявка №{} отклонена директором.", id);
         return true;

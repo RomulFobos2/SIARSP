@@ -9,6 +9,7 @@ import com.mai.siarsp.repo.ProductRepository;
 import com.mai.siarsp.repo.RequestForDeliveryRepository;
 import com.mai.siarsp.repo.RequestedProductRepository;
 import com.mai.siarsp.repo.SupplierRepository;
+import com.mai.siarsp.repo.WarehouseRepository;
 import com.mai.siarsp.service.employee.EmployeeService;
 import com.mai.siarsp.service.employee.NotificationService;
 import lombok.Getter;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
+import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -39,12 +41,12 @@ public class RequestForDeliveryService {
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     private static final Map<RequestStatus, Set<RequestStatus>> VALID_TRANSITIONS = Map.of(
-            DRAFT, Set.of(PENDING_DIRECTOR, CANCELLED),
-            PENDING_DIRECTOR, Set.of(PENDING_ACCOUNTANT, REJECTED_BY_DIRECTOR),
-            REJECTED_BY_DIRECTOR, Set.of(PENDING_DIRECTOR, CANCELLED),
-            PENDING_ACCOUNTANT, Set.of(APPROVED, REJECTED_BY_ACCOUNTANT),
-            REJECTED_BY_ACCOUNTANT, Set.of(PENDING_DIRECTOR, CANCELLED),
-            APPROVED, Set.of(PARTIALLY_RECEIVED, RECEIVED),
+            DRAFT, Set.of(PENDING_ACCOUNTANT, CANCELLED),
+            PENDING_ACCOUNTANT, Set.of(PENDING_DIRECTOR, REJECTED_BY_ACCOUNTANT),
+            REJECTED_BY_ACCOUNTANT, Set.of(PENDING_ACCOUNTANT, CANCELLED),
+            PENDING_DIRECTOR, Set.of(APPROVED, REJECTED_BY_DIRECTOR),
+            REJECTED_BY_DIRECTOR, Set.of(PENDING_ACCOUNTANT, CANCELLED),
+            APPROVED, Set.of(PARTIALLY_RECEIVED, RECEIVED, CANCELLED),
             PARTIALLY_RECEIVED, Set.of(RECEIVED)
     );
 
@@ -52,6 +54,7 @@ public class RequestForDeliveryService {
     private final RequestedProductRepository requestedProductRepository;
     private final SupplierRepository supplierRepository;
     private final ProductRepository productRepository;
+    private final WarehouseRepository warehouseRepository;
     private final EmployeeService employeeService;
     private final NotificationService notificationService;
     private final CommentRepository commentRepository;
@@ -60,6 +63,7 @@ public class RequestForDeliveryService {
                                       RequestedProductRepository requestedProductRepository,
                                       SupplierRepository supplierRepository,
                                       ProductRepository productRepository,
+                                      WarehouseRepository warehouseRepository,
                                       EmployeeService employeeService,
                                       NotificationService notificationService,
                                       CommentRepository commentRepository) {
@@ -67,6 +71,7 @@ public class RequestForDeliveryService {
         this.requestedProductRepository = requestedProductRepository;
         this.supplierRepository = supplierRepository;
         this.productRepository = productRepository;
+        this.warehouseRepository = warehouseRepository;
         this.employeeService = employeeService;
         this.notificationService = notificationService;
         this.commentRepository = commentRepository;
@@ -87,12 +92,19 @@ public class RequestForDeliveryService {
     }
 
     @Transactional
-    public boolean createRequest(Long supplierId, List<Long> productIds, List<Integer> quantities) {
+    public boolean createRequest(Long supplierId, Long warehouseId, BigDecimal deliveryCost,
+                                  List<Long> productIds, List<Integer> quantities, List<BigDecimal> purchasePrices) {
         log.info("Создание заявки на поставку для поставщика id={}...", supplierId);
 
         Optional<Supplier> supplierOpt = supplierRepository.findById(supplierId);
         if (supplierOpt.isEmpty()) {
             log.error("Поставщик с id={} не найден.", supplierId);
+            return false;
+        }
+
+        Optional<Warehouse> warehouseOpt = warehouseRepository.findById(warehouseId);
+        if (warehouseOpt.isEmpty()) {
+            log.error("Склад с id={} не найден.", warehouseId);
             return false;
         }
 
@@ -102,6 +114,8 @@ public class RequestForDeliveryService {
         }
 
         RequestForDelivery request = new RequestForDelivery(supplierOpt.get());
+        request.setWarehouse(warehouseOpt.get());
+        request.setDeliveryCost(deliveryCost != null ? deliveryCost : BigDecimal.ZERO);
 
         for (int i = 0; i < productIds.size(); i++) {
             Optional<Product> productOpt = productRepository.findById(productIds.get(i));
@@ -110,7 +124,8 @@ public class RequestForDeliveryService {
                 return false;
             }
             int qty = (quantities != null && i < quantities.size()) ? quantities.get(i) : 1;
-            request.addRequestedProduct(new RequestedProduct(productOpt.get(), qty));
+            BigDecimal price = (purchasePrices != null && i < purchasePrices.size()) ? purchasePrices.get(i) : BigDecimal.ZERO;
+            request.addRequestedProduct(new RequestedProduct(productOpt.get(), qty, price));
         }
 
         try {
@@ -126,7 +141,8 @@ public class RequestForDeliveryService {
     }
 
     @Transactional
-    public boolean updateRequest(Long id, Long supplierId, List<Long> productIds, List<Integer> quantities) {
+    public boolean updateRequest(Long id, Long supplierId, Long warehouseId, BigDecimal deliveryCost,
+                                  List<Long> productIds, List<Integer> quantities, List<BigDecimal> purchasePrices) {
         Optional<RequestForDelivery> requestOpt = requestForDeliveryRepository.findById(id);
         if (requestOpt.isEmpty()) {
             log.error("Заявка с id={} не найдена.", id);
@@ -148,10 +164,18 @@ public class RequestForDeliveryService {
             return false;
         }
 
-        request.setSupplier(supplierOpt.get());
+        Optional<Warehouse> warehouseOpt = warehouseRepository.findById(warehouseId);
+        if (warehouseOpt.isEmpty()) {
+            log.error("Склад с id={} не найден.", warehouseId);
+            return false;
+        }
 
-        // 1) Нормализуем вход (на всякий случай: если дубли — суммируем)
-        Map<Long, Integer> incoming = new LinkedHashMap<>();
+        request.setSupplier(supplierOpt.get());
+        request.setWarehouse(warehouseOpt.get());
+        request.setDeliveryCost(deliveryCost != null ? deliveryCost : BigDecimal.ZERO);
+
+        // 1) Нормализуем вход: productId -> {qty, price}
+        Map<Long, ProductData> incoming = new LinkedHashMap<>();
         for (int i = 0; i < productIds.size(); i++) {
             Long pid = productIds.get(i);
             if (pid == null) continue;
@@ -160,7 +184,10 @@ public class RequestForDeliveryService {
                     ? quantities.get(i) : 1;
             if (qty < 1) qty = 1;
 
-            incoming.merge(pid, qty, Integer::sum);
+            BigDecimal price = (purchasePrices != null && i < purchasePrices.size() && purchasePrices.get(i) != null)
+                    ? purchasePrices.get(i) : BigDecimal.ZERO;
+
+            incoming.put(pid, new ProductData(qty, price));
         }
 
         // 2) Индексируем текущие позиции заявки по productId
@@ -170,26 +197,26 @@ public class RequestForDeliveryService {
         }
 
         // 3) UPDATE существующих + ADD новых
-        for (Map.Entry<Long, Integer> e : incoming.entrySet()) {
+        for (Map.Entry<Long, ProductData> e : incoming.entrySet()) {
             Long pid = e.getKey();
-            Integer qty = e.getValue();
+            ProductData data = e.getValue();
 
             RequestedProduct rp = existing.get(pid);
             if (rp != null) {
-                rp.setQuantity(qty); // UPDATE
+                rp.setQuantity(data.quantity);
+                rp.setPurchasePrice(data.price); // UPDATE
             } else {
                 Product product = productRepository.findById(pid).orElse(null);
                 if (product == null) {
                     log.error("Товар с id={} не найден.", pid);
                     return false;
                 }
-                request.addRequestedProduct(new RequestedProduct(product, qty)); // INSERT только для новых
+                request.addRequestedProduct(new RequestedProduct(product, data.quantity, data.price)); // INSERT
             }
         }
 
         // 4) REMOVE позиций, которых больше нет во входе
         request.getRequestedProducts().removeIf(rp -> !incoming.containsKey(rp.getProduct().getId()));
-        // orphanRemoval=true сделает DELETE в БД :contentReference[oaicite:2]{index=2}
 
         try {
             requestForDeliveryRepository.save(request);
@@ -202,6 +229,9 @@ public class RequestForDeliveryService {
         log.info("Заявка №{} успешно обновлена.", id);
         return true;
     }
+
+    // Вспомогательный класс для хранения данных о товаре
+    private record ProductData(int quantity, BigDecimal price) {}
 
 
     @Transactional
@@ -244,7 +274,7 @@ public class RequestForDeliveryService {
             return false;
         }
 
-        request.setStatus(PENDING_DIRECTOR);
+        request.setStatus(PENDING_ACCOUNTANT);
 
         try {
             requestForDeliveryRepository.save(request);
@@ -255,11 +285,11 @@ public class RequestForDeliveryService {
         }
 
         String notificationText = String.format(
-                "Заявка на поставку №%d от %s для поставщика «%s» отправлена на согласование",
+                "Заявка на поставку №%d от %s для поставщика «%s» отправлена на согласование бухгалтеру",
                 request.getId(), request.getRequestDate().format(DATE_FMT), request.getSupplier().getName());
-        notificationService.notifyByRole("ROLE_EMPLOYEE_MANAGER", notificationText);
+        notificationService.notifyByRole("ROLE_EMPLOYEE_ACCOUNTER", notificationText);
 
-        log.info("Заявка №{} отправлена на согласование директору.", id);
+        log.info("Заявка №{} отправлена на согласование бухгалтеру.", id);
         return true;
     }
 
@@ -286,7 +316,7 @@ public class RequestForDeliveryService {
         Comment comment = new Comment(currentEmployee, commentText, request);
         commentRepository.save(comment);
 
-        request.setStatus(PENDING_DIRECTOR);
+        request.setStatus(PENDING_ACCOUNTANT);
 
         try {
             requestForDeliveryRepository.save(request);
@@ -297,11 +327,45 @@ public class RequestForDeliveryService {
         }
 
         String notificationText = String.format(
-                "Заявка на поставку №%d от %s для поставщика «%s» отправлена на согласование",
+                "Заявка на поставку №%d от %s для поставщика «%s» повторно отправлена на согласование бухгалтеру",
+                request.getId(), request.getRequestDate().format(DATE_FMT), request.getSupplier().getName());
+        notificationService.notifyByRole("ROLE_EMPLOYEE_ACCOUNTER", notificationText);
+
+        log.info("Заявка №{} повторно отправлена на согласование бухгалтеру.", id);
+        return true;
+    }
+
+    @Transactional
+    public boolean cancelRequest(Long id) {
+        Optional<RequestForDelivery> requestOpt = requestForDeliveryRepository.findById(id);
+        if (requestOpt.isEmpty()) {
+            log.error("Заявка с id={} не найдена.", id);
+            return false;
+        }
+
+        RequestForDelivery request = requestOpt.get();
+        if (request.getStatus() != APPROVED) {
+            log.error("Отменить можно только согласованную заявку. Текущий статус: '{}'.", request.getStatus().getDisplayName());
+            return false;
+        }
+
+        request.setStatus(CANCELLED);
+
+        try {
+            requestForDeliveryRepository.save(request);
+        } catch (Exception e) {
+            log.error("Ошибка при отмене заявки №{}: {}", id, e.getMessage(), e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return false;
+        }
+
+        String notificationText = String.format(
+                "Заявка на поставку №%d от %s для поставщика «%s» отменена заведующим складом",
                 request.getId(), request.getRequestDate().format(DATE_FMT), request.getSupplier().getName());
         notificationService.notifyByRole("ROLE_EMPLOYEE_MANAGER", notificationText);
+        notificationService.notifyByRole("ROLE_EMPLOYEE_ACCOUNTER", notificationText);
 
-        log.info("Заявка №{} повторно отправлена на согласование.", id);
+        log.info("Заявка №{} отменена.", id);
         return true;
     }
 }

@@ -5,6 +5,7 @@ import com.mai.siarsp.models.RequestForDelivery;
 import com.mai.siarsp.service.employee.manager.SupplierService;
 import com.mai.siarsp.service.employee.warehouseManager.ProductService;
 import com.mai.siarsp.service.employee.warehouseManager.RequestForDeliveryService;
+import com.mai.siarsp.service.employee.warehouseManager.WarehouseService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Controller;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Controller("warehouseManagerRequestForDeliveryController")
@@ -25,14 +27,17 @@ public class RequestForDeliveryController {
     private final RequestForDeliveryService requestForDeliveryService;
     private final SupplierService supplierService;
     private final ProductService productService;
+    private final WarehouseService warehouseService;
 
     public RequestForDeliveryController(
             @Qualifier("warehouseManagerRequestForDeliveryService") RequestForDeliveryService requestForDeliveryService,
             SupplierService supplierService,
-            @Qualifier("warehouseManagerProductService") ProductService productService) {
+            @Qualifier("warehouseManagerProductService") ProductService productService,
+            @Qualifier("warehouseManagerWarehouseService") WarehouseService warehouseService) {
         this.requestForDeliveryService = requestForDeliveryService;
         this.supplierService = supplierService;
         this.productService = productService;
+        this.warehouseService = warehouseService;
     }
 
     @Transactional
@@ -47,15 +52,19 @@ public class RequestForDeliveryController {
     public String addRequestForDelivery(Model model) {
         model.addAttribute("allSuppliers", supplierService.getAllSuppliers());
         model.addAttribute("allProducts", productService.getAllProducts());
+        model.addAttribute("allWarehouses", warehouseService.getAllWarehouses());
         return "employee/warehouseManager/requestsForDelivery/addRequestForDelivery";
     }
 
     @PostMapping("/employee/warehouseManager/requestsForDelivery/addRequestForDelivery")
     public String addRequestForDelivery(@RequestParam Long supplierId,
+                                         @RequestParam Long warehouseId,
+                                         @RequestParam BigDecimal deliveryCost,
                                          @RequestParam List<Long> productIds,
                                          @RequestParam List<Integer> quantities,
+                                         @RequestParam List<BigDecimal> purchasePrices,
                                          RedirectAttributes redirectAttributes) {
-        if (!requestForDeliveryService.createRequest(supplierId, productIds, quantities)) {
+        if (!requestForDeliveryService.createRequest(supplierId, warehouseId, deliveryCost, productIds, quantities, purchasePrices)) {
             redirectAttributes.addFlashAttribute("requestError", "Ошибка при создании заявки.");
             return "redirect:/employee/warehouseManager/requestsForDelivery/addRequestForDelivery";
         }
@@ -95,16 +104,20 @@ public class RequestForDeliveryController {
         model.addAttribute("requestDTO", dto);
         model.addAttribute("allSuppliers", supplierService.getAllSuppliers());
         model.addAttribute("allProducts", productService.getAllProducts());
+        model.addAttribute("allWarehouses", warehouseService.getAllWarehouses());
         return "employee/warehouseManager/requestsForDelivery/editRequestForDelivery";
     }
 
     @PostMapping("/employee/warehouseManager/requestsForDelivery/editRequestForDelivery/{id}")
     public String editRequestForDelivery(@PathVariable(value = "id") long id,
                                           @RequestParam Long supplierId,
+                                          @RequestParam Long warehouseId,
+                                          @RequestParam BigDecimal deliveryCost,
                                           @RequestParam List<Long> productIds,
                                           @RequestParam List<Integer> quantities,
+                                          @RequestParam List<BigDecimal> purchasePrices,
                                           RedirectAttributes redirectAttributes) {
-        if (!requestForDeliveryService.updateRequest(id, supplierId, productIds, quantities)) {
+        if (!requestForDeliveryService.updateRequest(id, supplierId, warehouseId, deliveryCost, productIds, quantities, purchasePrices)) {
             redirectAttributes.addFlashAttribute("requestError", "Ошибка при сохранении изменений заявки.");
             return "redirect:/employee/warehouseManager/requestsForDelivery/editRequestForDelivery/" + id;
         }
@@ -126,7 +139,7 @@ public class RequestForDeliveryController {
             redirectAttributes.addFlashAttribute("requestError", "Ошибка при отправке заявки на согласование.");
             return "redirect:/employee/warehouseManager/requestsForDelivery/detailsRequestForDelivery/" + id;
         }
-        redirectAttributes.addFlashAttribute("requestSuccess", "Заявка отправлена на согласование директору.");
+        redirectAttributes.addFlashAttribute("requestSuccess", "Заявка отправлена на согласование бухгалтеру.");
         return "redirect:/employee/warehouseManager/requestsForDelivery/detailsRequestForDelivery/" + id;
     }
 
@@ -139,6 +152,16 @@ public class RequestForDeliveryController {
             return "redirect:/employee/warehouseManager/requestsForDelivery/detailsRequestForDelivery/" + id;
         }
         redirectAttributes.addFlashAttribute("requestSuccess", "Заявка повторно отправлена на согласование.");
+        return "redirect:/employee/warehouseManager/requestsForDelivery/detailsRequestForDelivery/" + id;
+    }
+
+    @PostMapping("/employee/warehouseManager/requestsForDelivery/cancelRequestForDelivery/{id}")
+    public String cancelRequestForDelivery(@PathVariable(value = "id") long id, RedirectAttributes redirectAttributes) {
+        if (!requestForDeliveryService.cancelRequest(id)) {
+            redirectAttributes.addFlashAttribute("requestError", "Не удалось отменить заявку. Отменить можно только согласованную заявку.");
+            return "redirect:/employee/warehouseManager/requestsForDelivery/detailsRequestForDelivery/" + id;
+        }
+        redirectAttributes.addFlashAttribute("requestSuccess", "Заявка успешно отменена.");
         return "redirect:/employee/warehouseManager/requestsForDelivery/detailsRequestForDelivery/" + id;
     }
 }

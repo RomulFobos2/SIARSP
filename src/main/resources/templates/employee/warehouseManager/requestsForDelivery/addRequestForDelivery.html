@@ -40,6 +40,21 @@
             </div>
 
             <div class="mb-3">
+                <label for="warehouseId" class="form-label fw-semibold">Склад-получатель</label>
+                <select id="warehouseId" name="warehouseId" class="form-select" required>
+                    <option value="" disabled selected>Выберите склад</option>
+                    <option th:each="warehouse : ${allWarehouses}"
+                            th:value="${warehouse.getId()}"
+                            th:text="${warehouse.getName() + ' (' + warehouse.getAddress() + ')'}"></option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="deliveryCost" class="form-label fw-semibold">Стоимость доставки (руб.)</label>
+                <input type="number" id="deliveryCost" name="deliveryCost" class="form-control" step="0.01" min="0" value="0" required>
+            </div>
+
+            <div class="mb-3">
                 <label class="form-label fw-semibold">Товары</label>
                 <div id="productRows"></div>
                 <button type="button" class="btn btn-sm btn-outline-success mt-2" onclick="addProductRow()">
@@ -49,7 +64,7 @@
 
             <template id="productTemplate">
                 <div class="row g-2 mb-2 product-row">
-                    <div class="col-md-7">
+                    <div class="col-md-5">
                         <select name="productIds" class="form-select product-select" required>
                             <option value="">Поиск товара...</option>
                             <option th:each="product : ${allProducts}"
@@ -57,8 +72,11 @@
                                     th:text="${product.getName() + ' (' + product.getArticle() + ')'}"></option>
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <input type="number" name="quantities" class="form-control" placeholder="Кол-во" min="1" value="1" required>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="number" name="purchasePrices" class="form-control" placeholder="Цена за ед." step="0.01" min="0" value="0" required>
                     </div>
                     <div class="col-md-2">
                         <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeProductRow(this)">
@@ -89,12 +107,16 @@
         });
     }
 
-    function addProductRow(productId, quantity) {
+    function addProductRow(productId, quantity, price) {
         var template = document.getElementById('productTemplate');
         var clone = template.content.cloneNode(true);
         if (quantity) {
             var input = clone.querySelector('input[name="quantities"]');
             input.value = quantity;
+        }
+        if (price) {
+            var priceInput = clone.querySelector('input[name="purchasePrices"]');
+            priceInput.value = price;
         }
         document.getElementById('productRows').appendChild(clone);
 

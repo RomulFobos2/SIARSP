@@ -14,6 +14,9 @@ public interface RequestForDeliveryMapper {
 
     @Mapping(source = "supplier.id", target = "supplierId")
     @Mapping(source = "supplier.name", target = "supplierName")
+    @Mapping(source = "warehouse.id", target = "warehouseId")
+    @Mapping(source = "warehouse.name", target = "warehouseName")
+    @Mapping(source = "warehouse.address", target = "warehouseAddress")
     @Mapping(source = "delivery.id", target = "deliveryId")
     RequestForDeliveryDTO toDTO(RequestForDelivery request);
 
