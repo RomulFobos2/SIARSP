@@ -1,0 +1,111 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Редактирование заявки | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container my-5">
+    <div class="profile-card mb-4">
+        <div class="profile-actions">
+            <a th:href="'/employee/warehouseManager/requestsForDelivery/detailsRequestForDelivery/' + ${requestDTO.getId()}" class="btn btn-secondary btn-profile">← Назад к заявке</a>
+        </div>
+    </div>
+
+    <div th:if="${requestError}" class="alert alert-danger" th:text="${requestError}"></div>
+
+    <div class="profile-card p-4">
+        <h2 class="h3 mb-4 fw-bold">Редактирование заявки №<span th:text="${requestDTO.getId()}"></span></h2>
+
+        <form method="post" th:action="@{'/employee/warehouseManager/requestsForDelivery/editRequestForDelivery/' + ${requestDTO.getId()}}">
+            <div class="mb-3">
+                <label for="supplierId" class="form-label fw-semibold">Поставщик</label>
+                <select id="supplierId" name="supplierId" class="form-select" required>
+                    <option th:each="supplier : ${allSuppliers}"
+                            th:value="${supplier.getId()}"
+                            th:text="${supplier.getName()}"
+                            th:selected="${supplier.getId() == requestDTO.getSupplierId()}"></option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Товары</label>
+                <div id="productRows"></div>
+                <button type="button" class="btn btn-sm btn-outline-success mt-2" onclick="addProductRow()">
+                    <i class="bi bi-plus-circle"></i> Добавить товар
+                </button>
+            </div>
+
+            <template id="productTemplate">
+                <div class="row g-2 mb-2 product-row">
+                    <div class="col-md-7">
+                        <select name="productIds" class="form-select" required>
+                            <option value="" disabled selected>Выберите товар</option>
+                            <option th:each="product : ${allProducts}"
+                                    th:value="${product.getId()}"
+                                    th:text="${product.getName() + ' (' + product.getArticle() + ')'}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="number" name="quantities" class="form-control" placeholder="Кол-во" min="1" value="1" required>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeProductRow(this)">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </template>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+
+<script th:inline="javascript">
+    var existingProducts = /*[[${requestDTO.getRequestedProducts()}]]*/ [];
+
+    function addProductRow(productId, quantity) {
+        var template = document.getElementById('productTemplate');
+        var clone = template.content.cloneNode(true);
+        if (productId) {
+            var select = clone.querySelector('select[name="productIds"]');
+            select.value = productId;
+        }
+        if (quantity) {
+            var input = clone.querySelector('input[name="quantities"]');
+            input.value = quantity;
+        }
+        document.getElementById('productRows').appendChild(clone);
+    }
+
+    function removeProductRow(btn) {
+        var rows = document.querySelectorAll('.product-row');
+        if (rows.length > 1) {
+            btn.closest('.product-row').remove();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (existingProducts && existingProducts.length > 0) {
+            existingProducts.forEach(function(item) {
+                addProductRow(item.productId, item.quantity);
+            });
+        } else {
+            addProductRow();
+        }
+    });
+</script>
+</body>
+</html>

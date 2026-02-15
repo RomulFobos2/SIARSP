@@ -217,6 +217,11 @@ public class EmployeeService implements UserDetailsService {
         return employeeOptional.map(EmployeeMapper.INSTANCE::toDTO).orElse(null);
     }
 
+    public Employee getAuthenticationEmployee() {
+        return employeeRepository.findByUsername(
+                SecurityContextHolder.getContext().getAuthentication().getName()).orElse(null);
+    }
+
     public boolean changePassword(String newPassword) {
         Optional<Employee> employeeOptional = employeeRepository.findByUsername(
                 SecurityContextHolder.getContext().getAuthentication().getName());

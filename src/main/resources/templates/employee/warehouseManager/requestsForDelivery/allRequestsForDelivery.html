@@ -1,0 +1,73 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Заявки на поставку | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container my-5">
+    <div class="profile-card mb-4">
+        <div class="profile-actions">
+            <a th:href="'/'" class="btn btn-secondary btn-profile">← Главная</a>
+            <a th:href="'/employee/warehouseManager/requestsForDelivery/addRequestForDelivery'" class="btn btn-success btn-profile">+ Создать заявку</a>
+        </div>
+    </div>
+
+    <div class="profile-card p-4">
+        <h2 class="h3 mb-4 fw-bold">Заявки на поставку</h2>
+
+        <div th:if="${#lists.isEmpty(allRequests)}" class="text-center text-muted py-4">
+            <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+            <p class="mt-2">Заявки отсутствуют</p>
+        </div>
+
+        <div th:unless="${#lists.isEmpty(allRequests)}" class="table-responsive">
+            <table class="table table-modern">
+                <thead>
+                <tr>
+                    <th>№</th>
+                    <th>Дата</th>
+                    <th>Поставщик</th>
+                    <th>Статус</th>
+                    <th>Позиций</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="request : ${allRequests}">
+                    <td th:text="${request.getId()}"></td>
+                    <td th:text="${request.getRequestDate()}"></td>
+                    <td th:text="${request.getSupplierName()}"></td>
+                    <td>
+                        <span class="badge"
+                              th:classappend="${request.getStatus().name() == 'DRAFT'} ? 'bg-secondary' :
+                                              (${request.getStatus().name() == 'PENDING_DIRECTOR'} ? 'bg-warning text-dark' :
+                                              (${request.getStatus().name() == 'REJECTED_BY_DIRECTOR' || request.getStatus().name() == 'REJECTED_BY_ACCOUNTANT'} ? 'bg-danger' :
+                                              (${request.getStatus().name() == 'PENDING_ACCOUNTANT'} ? 'bg-info' :
+                                              (${request.getStatus().name() == 'APPROVED'} ? 'bg-success' :
+                                              (${request.getStatus().name() == 'PARTIALLY_RECEIVED' || request.getStatus().name() == 'RECEIVED'} ? 'bg-primary' :
+                                              'bg-dark')))))"
+                              th:text="${request.getStatus().getDisplayName()}"></span>
+                    </td>
+                    <td th:text="${request.getRequestedProducts() != null ? request.getRequestedProducts().size() : 0}"></td>
+                    <td>
+                        <a th:href="'/employee/warehouseManager/requestsForDelivery/detailsRequestForDelivery/' + ${request.getId()}"
+                           class="btn btn-sm btn-outline-primary">Подробнее</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>
