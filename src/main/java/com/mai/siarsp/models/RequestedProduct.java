@@ -6,6 +6,8 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.math.BigDecimal;
+
 /**
  * Позиция в заявке на поставку товара
  *
@@ -79,6 +81,29 @@ public class RequestedProduct {
     private int quantity;
 
     /**
+     * Цена за единицу товара (в рублях)
+     * Планируемая цена закупки, указываемая заведующим складом при формировании заявки
+     *
+     * Заполняется заведующим складом на основе:
+     * - Прайс-листа поставщика
+     * - Договоренностей с поставщиком
+     * - Истории закупочных цен
+     * - Рыночных цен на аналогичный товар
+     *
+     * Используется для:
+     * - Расчета предварительной стоимости заявки (для согласования бухгалтером и директором)
+     * - Планирования бюджета закупок
+     * - Формирования документов (договор, счет)
+     * - Контроля финансовых условий поставки
+     *
+     * Отличие от Supply.purchasePrice:
+     * - RequestedProduct.purchasePrice - планируемая цена (в заявке)
+     * - Supply.purchasePrice - фактическая цена (в поставке)
+     */
+    @Column(precision = 10, scale = 2)
+    private BigDecimal purchasePrice;
+
+    /**
      * Товар, который необходимо заказать
      * Ссылка на справочник товаров
      *
@@ -126,6 +151,36 @@ public class RequestedProduct {
         this.quantity = quantity;
     }
 
+    /**
+     * Создает новую позицию заявки на поставку с ценой
+     *
+     * @param product товар, который нужно заказать у поставщика
+     * @param quantity требуемое количество единиц товара
+     * @param purchasePrice планируемая цена закупки за единицу
+     */
+    public RequestedProduct(Product product, int quantity, BigDecimal purchasePrice) {
+        this.product = product;
+        this.quantity = quantity;
+        this.purchasePrice = purchasePrice;
+    }
+
     // ========== МЕТОДЫ ==========
+
+    /**
+     * Вычисляет общую стоимость позиции заявки
+     * Формула: purchasePrice × quantity
+     *
+     * Используется для:
+     * - Расчета общей стоимости заявки (RequestForDelivery.getTotalCost())
+     * - Отображения в UI (таблица позиций заявки)
+     * - Бюджетного планирования
+     *
+     * @return стоимость позиции в рублях (цена × количество)
+     */
+    @Transient
+    public BigDecimal getTotalPrice() {
+        if (purchasePrice == null) return BigDecimal.ZERO;
+        return purchasePrice.multiply(BigDecimal.valueOf(quantity));
+    }
 
 }
