@@ -134,26 +134,26 @@
             </div>
         </div>
     </nav>
-</div>
 
-<script sec:authorize="isAuthenticated()">
-    document.addEventListener('DOMContentLoaded', function() {
-        var badge = document.getElementById('notificationBadge');
-        if (badge) {
-            fetch('/employee/notifications/unreadCount')
-                .then(function(response) { return response.json(); })
-                .then(function(count) {
-                    if (count > 0) {
-                        badge.textContent = count;
-                        badge.style.display = '';
-                    } else {
-                        badge.style.display = 'none';
-                    }
-                })
-                .catch(function(error) {
-                    console.error('Ошибка загрузки уведомлений:', error);
-                });
-        }
-    });
-</script>
+    <script sec:authorize="isAuthenticated()">
+        document.addEventListener('DOMContentLoaded', function() {
+            var badge = document.getElementById('notificationBadge');
+            if (badge) {
+                fetch('/employee/notifications/unreadCount')
+                    .then(function(response) { return response.json(); })
+                    .then(function(count) {
+                        if (count > 0) {
+                            badge.textContent = count;
+                            badge.style.display = '';
+                        } else {
+                            badge.style.display = 'none';
+                        }
+                    })
+                    .catch(function(error) {
+                        console.error('Ошибка загрузки уведомлений:', error);
+                    });
+            }
+        });
+    </script>
+</div>
 </html>
