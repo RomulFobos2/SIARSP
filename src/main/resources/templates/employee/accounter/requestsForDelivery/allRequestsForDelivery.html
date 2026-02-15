@@ -22,18 +22,36 @@
     <div class="profile-card p-4">
         <h2 class="h3 mb-4 fw-bold">Заявки на поставку (бухгалтер)</h2>
 
+        <!-- Поиск и фильтры -->
         <div class="row g-3 mb-4">
-            <div class="col-md-4">
-                <form method="get" th:action="@{/employee/accounter/requestsForDelivery/allRequestsForDelivery}">
-                    <select name="statusFilter" class="form-select" onchange="this.form.submit()">
-                        <option value="">Все статусы</option>
-                        <option th:each="status : ${statuses}"
-                                th:value="${status.name()}"
-                                th:text="${status.getDisplayName()}"
-                                th:selected="${status.name() == currentFilter}"></option>
-                    </select>
-                </form>
+            <div class="col-md-3">
+                <input type="text" id="searchInput" class="form-control" placeholder="Поиск по № или поставщику...">
             </div>
+            <div class="col-md-2">
+                <select id="statusFilter" class="form-select" onchange="applyFilters()">
+                    <option value="all">Все статусы</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select id="supplierFilter" class="form-select" onchange="applyFilters()">
+                    <option value="all">Все поставщики</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="date" id="dateFromFilter" class="form-control" onchange="applyFilters()" title="Дата от">
+            </div>
+            <div class="col-md-2">
+                <input type="date" id="dateToFilter" class="form-control" onchange="applyFilters()" title="Дата до">
+            </div>
+            <div class="col-md-1 d-flex align-items-start">
+                <button class="btn btn-outline-secondary" onclick="resetFilters()">Сбросить</button>
+            </div>
+        </div>
+
+        <!-- Активные фильтры -->
+        <div id="activeFilters" class="mb-3" style="display: none;">
+            <span class="text-muted me-2">Активные фильтры:</span>
+            <span id="filterBadges"></span>
         </div>
 
         <div th:if="${#lists.isEmpty(allRequests)}" class="text-center text-muted py-4">
@@ -42,7 +60,7 @@
         </div>
 
         <div th:unless="${#lists.isEmpty(allRequests)}" class="table-responsive">
-            <table class="table table-modern">
+            <table class="table table-modern" id="requestsTable">
                 <thead>
                 <tr>
                     <th>№</th>
@@ -55,7 +73,12 @@
                 </thead>
                 <tbody>
                 <tr th:each="request : ${allRequests}"
-                    th:classappend="${request.getStatus().name() == 'PENDING_ACCOUNTANT'} ? 'table-info' : ''">
+                    th:classappend="${request.getStatus().name() == 'PENDING_ACCOUNTANT'} ? 'table-info' : ''"
+                    th:data-id="${request.getId()}"
+                    th:data-supplier="${request.getSupplierName()}"
+                    th:data-status="${request.getStatus().name()}"
+                    th:data-status-display="${request.getStatus().getDisplayName()}"
+                    th:data-date="${request.getRequestDate()}">
                     <td th:text="${request.getId()}"></td>
                     <td th:text="${request.getRequestDate()}"></td>
                     <td th:text="${request.getSupplierName()}"></td>
@@ -79,9 +102,132 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Сообщение "Заявки не найдены" -->
+        <div id="noResults" class="text-center text-muted py-4" style="display: none;">
+            <i class="bi bi-search" style="font-size: 2rem;"></i>
+            <p class="mt-2">Заявки не найдены</p>
+        </div>
     </div>
 </div>
 
 <div th:insert="~{blocks/footer :: footer}"></div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var rows = document.querySelectorAll('#requestsTable tbody tr');
+        var statuses = new Map();
+        var suppliers = new Set();
+
+        rows.forEach(function (row) {
+            var statusKey = row.getAttribute('data-status');
+            var statusDisplay = row.getAttribute('data-status-display');
+            if (statusKey && statusDisplay) statuses.set(statusKey, statusDisplay);
+            var supplier = row.getAttribute('data-supplier');
+            if (supplier) suppliers.add(supplier);
+        });
+
+        var statusSelect = document.getElementById('statusFilter');
+        statuses.forEach(function (display, key) {
+            var option = document.createElement('option');
+            option.value = key;
+            option.textContent = display;
+            statusSelect.appendChild(option);
+        });
+
+        var supplierSelect = document.getElementById('supplierFilter');
+        Array.from(suppliers).sort().forEach(function (s) {
+            var option = document.createElement('option');
+            option.value = s;
+            option.textContent = s;
+            supplierSelect.appendChild(option);
+        });
+
+        document.getElementById('searchInput').addEventListener('keyup', function () {
+            applyFilters();
+        });
+    });
+
+    function applyFilters() {
+        var search = document.getElementById('searchInput').value.trim().toLowerCase();
+        var statusFilter = document.getElementById('statusFilter').value;
+        var supplierFilter = document.getElementById('supplierFilter').value;
+        var dateFrom = document.getElementById('dateFromFilter').value;
+        var dateTo = document.getElementById('dateToFilter').value;
+        var rows = document.querySelectorAll('#requestsTable tbody tr');
+        var visibleCount = 0;
+
+        rows.forEach(function (row) {
+            var id = (row.getAttribute('data-id') || '').toLowerCase();
+            var supplier = (row.getAttribute('data-supplier') || '').toLowerCase();
+            var status = row.getAttribute('data-status') || '';
+            var date = row.getAttribute('data-date') || '';
+
+            var show = true;
+
+            if (search && !id.includes(search) && !supplier.includes(search)) {
+                show = false;
+            }
+            if (statusFilter !== 'all' && status !== statusFilter) {
+                show = false;
+            }
+            if (supplierFilter !== 'all' && (row.getAttribute('data-supplier') || '') !== supplierFilter) {
+                show = false;
+            }
+            if (dateFrom && date < dateFrom) {
+                show = false;
+            }
+            if (dateTo && date > dateTo) {
+                show = false;
+            }
+
+            row.style.display = show ? '' : 'none';
+            if (show) visibleCount++;
+        });
+
+        document.getElementById('noResults').style.display = visibleCount === 0 ? '' : 'none';
+        updateActiveFilters(search, statusFilter, supplierFilter, dateFrom, dateTo);
+    }
+
+    function updateActiveFilters(search, statusFilter, supplierFilter, dateFrom, dateTo) {
+        var container = document.getElementById('activeFilters');
+        var badges = document.getElementById('filterBadges');
+        badges.innerHTML = '';
+        var hasFilters = false;
+
+        if (search) {
+            badges.innerHTML += '<span class="badge bg-primary me-1">Поиск: ' + search + '</span>';
+            hasFilters = true;
+        }
+        if (statusFilter !== 'all') {
+            var statusText = document.getElementById('statusFilter');
+            badges.innerHTML += '<span class="badge bg-info me-1">' + statusText.options[statusText.selectedIndex].text + '</span>';
+            hasFilters = true;
+        }
+        if (supplierFilter !== 'all') {
+            badges.innerHTML += '<span class="badge bg-secondary me-1">' + supplierFilter + '</span>';
+            hasFilters = true;
+        }
+        if (dateFrom) {
+            badges.innerHTML += '<span class="badge bg-warning text-dark me-1">С ' + dateFrom + '</span>';
+            hasFilters = true;
+        }
+        if (dateTo) {
+            badges.innerHTML += '<span class="badge bg-warning text-dark me-1">По ' + dateTo + '</span>';
+            hasFilters = true;
+        }
+
+        container.style.display = hasFilters ? '' : 'none';
+    }
+
+    function resetFilters() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('statusFilter').value = 'all';
+        document.getElementById('supplierFilter').value = 'all';
+        document.getElementById('dateFromFilter').value = '';
+        document.getElementById('dateToFilter').value = '';
+        applyFilters();
+    }
+</script>
 </body>
 </html>
