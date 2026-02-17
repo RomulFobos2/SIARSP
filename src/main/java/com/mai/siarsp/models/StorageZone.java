@@ -177,6 +177,14 @@ public class StorageZone {
 
     // ========== КОНСТРУКТОРЫ ==========
 
+    public StorageZone(String label, double length, double width, double height, Shelf shelf) {
+        this.label = label;
+        this.length = length;
+        this.width = width;
+        this.height = height;
+        this.shelf = shelf;
+    }
+
     // ========== МЕТОДЫ ==========
 
     /**

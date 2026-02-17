@@ -1,0 +1,125 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Добавить склад | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container my-5">
+    <div class="profile-card mb-4">
+        <div class="profile-actions">
+            <a th:href="'/employee/warehouseManager/warehouses/allWarehouses'" class="btn btn-secondary btn-profile">← Назад к складам</a>
+        </div>
+    </div>
+
+    <div th:if="${warehouseError}" class="alert alert-danger" th:text="${warehouseError}"></div>
+
+    <div class="profile-card p-4">
+        <h2 class="h3 mb-4 fw-bold">Добавить склад</h2>
+
+        <form method="post" th:action="@{/employee/warehouseManager/warehouses/addWarehouse}">
+            <div class="mb-3">
+                <label for="name" class="form-label fw-semibold">Название склада</label>
+                <input type="text" id="name" name="name" class="form-control" required
+                       placeholder="Например: Основной склад">
+            </div>
+
+            <div class="mb-3">
+                <label for="type" class="form-label fw-semibold">Тип склада</label>
+                <select id="type" name="type" class="form-select" required>
+                    <option th:each="wt : ${warehouseTypes}"
+                            th:value="${wt.name()}"
+                            th:text="${wt.name() == 'REGULAR'} ? 'Обычный' : 'Холодильный'"></option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="address" class="form-label fw-semibold">Адрес</label>
+                <input type="text" id="address" name="address" class="form-control"
+                       placeholder="Например: г. Минск, ул. Складская, д. 15">
+            </div>
+
+            <hr class="my-4">
+            <h5 class="mb-3">Структура склада</h5>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label for="shelfCount" class="form-label fw-semibold">Количество стеллажей</label>
+                    <input type="number" id="shelfCount" name="shelfCount" class="form-control"
+                           min="1" max="26" value="3" required>
+                    <div class="form-text">До 26 стеллажей (A, B, C... Z)</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="zonesPerShelf" class="form-label fw-semibold">Зон (полок) на стеллаже</label>
+                    <input type="number" id="zonesPerShelf" name="zonesPerShelf" class="form-control"
+                           min="1" value="4" required>
+                </div>
+            </div>
+
+            <hr class="my-3">
+            <h6 class="mb-3 text-muted">Габариты одной зоны хранения (полки) в см</h6>
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label for="zoneLength" class="form-label fw-semibold">Длина (см)</label>
+                    <input type="number" id="zoneLength" name="zoneLength" class="form-control"
+                           step="0.1" min="1" value="200" required>
+                </div>
+                <div class="col-md-4">
+                    <label for="zoneWidth" class="form-label fw-semibold">Ширина (см)</label>
+                    <input type="number" id="zoneWidth" name="zoneWidth" class="form-control"
+                           step="0.1" min="1" value="80" required>
+                </div>
+                <div class="col-md-4">
+                    <label for="zoneHeight" class="form-label fw-semibold">Высота (см)</label>
+                    <input type="number" id="zoneHeight" name="zoneHeight" class="form-control"
+                           step="0.1" min="1" value="40" required>
+                </div>
+            </div>
+
+            <div class="alert alert-info" id="volumeInfo">
+                Расчётный объём склада будет вычислен автоматически при создании.
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-building-add"></i> Создать склад
+                </button>
+                <a th:href="'/employee/warehouseManager/warehouses/allWarehouses'" class="btn btn-outline-secondary">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+
+<script>
+    function updateVolumeInfo() {
+        var shelfCount = parseInt(document.getElementById('shelfCount').value) || 0;
+        var zonesPerShelf = parseInt(document.getElementById('zonesPerShelf').value) || 0;
+        var zoneLength = parseFloat(document.getElementById('zoneLength').value) || 0;
+        var zoneWidth = parseFloat(document.getElementById('zoneWidth').value) || 0;
+        var zoneHeight = parseFloat(document.getElementById('zoneHeight').value) || 0;
+
+        if (shelfCount > 0 && zonesPerShelf > 0 && zoneLength > 0 && zoneWidth > 0 && zoneHeight > 0) {
+            var zoneVolume = (zoneLength * zoneWidth * zoneHeight) / 1000;
+            var totalVolume = zoneVolume * shelfCount * zonesPerShelf;
+            document.getElementById('volumeInfo').textContent =
+                'Расчётный объём склада: ' + totalVolume.toFixed(1) + ' л ' +
+                '(' + shelfCount + ' стеллажей × ' + zonesPerShelf + ' зон × ' + zoneVolume.toFixed(1) + ' л)';
+        }
+    }
+
+    ['shelfCount', 'zonesPerShelf', 'zoneLength', 'zoneWidth', 'zoneHeight'].forEach(function(id) {
+        document.getElementById(id).addEventListener('input', updateVolumeInfo);
+    });
+    updateVolumeInfo();
+</script>
+</body>
+</html>
