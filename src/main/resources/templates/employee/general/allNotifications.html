@@ -5,6 +5,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
     <link href="/css/style.css" rel="stylesheet">
     <script src="/js/bootstrap.bundle.min.js"></script>
     <script src="/js/javascript.js"></script>
@@ -29,6 +30,37 @@
     <div class="table-container">
         <h2 class="h3 mb-4 fw-bold">Уведомления</h2>
 
+        <!-- Фильтры -->
+        <form method="get" action="/employee/notifications/" class="row g-3 mb-4">
+            <div class="col-md-3">
+                <select name="status" class="form-select" onchange="this.form.submit()">
+                    <option value="">Все статусы</option>
+                    <option value="NEW" th:selected="${statusFilter == 'NEW'}">Новые</option>
+                    <option value="READ" th:selected="${statusFilter == 'READ'}">Прочитанные</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <div class="input-group">
+                    <input type="text" name="search" class="form-control" placeholder="Поиск по тексту..."
+                           th:value="${searchFilter}">
+                    <button class="btn btn-outline-secondary" type="submit">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <select name="size" class="form-select" onchange="this.form.submit()">
+                    <option value="10" th:selected="${pageSize == 10}">10</option>
+                    <option value="20" th:selected="${pageSize == 20}">20</option>
+                    <option value="50" th:selected="${pageSize == 50}">50</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <a href="/employee/notifications/" class="btn btn-outline-secondary">Сбросить</a>
+            </div>
+            <input type="hidden" name="page" value="0"/>
+        </form>
+
         <div th:if="${notifications.isEmpty()}" class="alert alert-info">
             Нет уведомлений.
         </div>
@@ -44,7 +76,7 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="notification : ${notifications}"
+                <tr th:each="notification : ${notifications.getContent()}"
                     th:classappend="${notification.getStatus() == 'Новое'} ? 'table-warning' : ''">
                     <td th:text="${#temporals.format(notification.getCreatedAt(), 'dd.MM.yyyy HH:mm')}"></td>
                     <td th:text="${notification.getText()}"></td>
@@ -65,6 +97,35 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Пагинация -->
+        <nav th:if="${notifications.getTotalPages() > 1}" aria-label="Навигация по страницам" class="mt-3">
+            <ul class="pagination justify-content-center">
+                <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                    <a class="page-link"
+                       th:href="@{/employee/notifications/(page=${currentPage - 1}, size=${pageSize}, status=${statusFilter}, search=${searchFilter})}">
+                        &laquo; Назад
+                    </a>
+                </li>
+                <th:block th:each="i : ${#numbers.sequence(0, notifications.getTotalPages() - 1)}">
+                    <li class="page-item" th:classappend="${i == currentPage} ? 'active'">
+                        <a class="page-link"
+                           th:href="@{/employee/notifications/(page=${i}, size=${pageSize}, status=${statusFilter}, search=${searchFilter})}"
+                           th:text="${i + 1}"></a>
+                    </li>
+                </th:block>
+                <li class="page-item" th:classappend="${currentPage >= notifications.getTotalPages() - 1} ? 'disabled'">
+                    <a class="page-link"
+                       th:href="@{/employee/notifications/(page=${currentPage + 1}, size=${pageSize}, status=${statusFilter}, search=${searchFilter})}">
+                        Вперёд &raquo;
+                    </a>
+                </li>
+            </ul>
+            <p class="text-center text-muted small">
+                Показано <span th:text="${notifications.getNumberOfElements()}"></span>
+                из <span th:text="${notifications.getTotalElements()}"></span> уведомлений
+            </p>
+        </nav>
     </div>
 </div>
 

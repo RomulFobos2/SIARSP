@@ -80,7 +80,7 @@
                     th:data-status-display="${request.getStatus().getDisplayName()}"
                     th:data-date="${request.getRequestDate()}">
                     <td th:text="${request.getId()}"></td>
-                    <td th:text="${request.getRequestDate()}"></td>
+                    <td th:text="${#temporals.format(request.getRequestDate(), 'dd.MM.yyyy')}"></td>
                     <td th:text="${request.getSupplierName()}"></td>
                     <td>
                         <span class="badge"

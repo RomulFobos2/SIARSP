@@ -1,0 +1,271 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Товары | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container my-5">
+    <div class="profile-card mb-4">
+        <div class="profile-actions">
+            <a th:href="'/'" class="btn btn-secondary btn-profile">← Главная</a>
+        </div>
+    </div>
+
+    <div class="profile-card p-4">
+        <h2 class="h3 mb-4 fw-bold">Список товаров</h2>
+
+        <!-- Поиск и фильтры -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <input type="text" id="searchInput" class="form-control" placeholder="Поиск по наименованию или артикулу...">
+                    <button class="btn btn-outline-secondary" type="button" onclick="applyFilters()">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select id="stockFilter" class="form-select" onchange="applyFilters()">
+                    <option value="all">Все товары</option>
+                    <option value="in-stock">В наличии</option>
+                    <option value="out-of-stock">Нет в наличии</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select id="categoryFilter" class="form-select" onchange="applyFilters()">
+                    <option value="all">Все категории</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Активные фильтры -->
+        <div id="activeFilters" class="mb-3" style="display: none;">
+            <span class="text-muted me-2">Активные фильтры:</span>
+            <span id="filterBadges"></span>
+            <button class="btn btn-sm btn-outline-secondary ms-2" onclick="resetFilters()">Сбросить</button>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-modern" id="productsTable">
+                <thead>
+                <tr>
+                    <th>Фото</th>
+                    <th>Артикул</th>
+                    <th>Наименование</th>
+                    <th>Категория</th>
+                    <th>Тип склада</th>
+                    <th>Остаток</th>
+                    <th>Доступно</th>
+                    <th>Атрибуты</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="product : ${allProducts}"
+                    th:data-name="${product.getName()}"
+                    th:data-article="${product.getArticle()}"
+                    th:data-stock="${product.getStockQuantity()}"
+                    th:data-category="${product.getCategoryName()}">
+                    <td>
+                        <img th:src="@{'/image/' + ${product.getId()}}"
+                             alt="Фото"
+                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;">
+                    </td>
+                    <td>
+                        <a th:text="${product.getArticle()}"
+                           th:href="'/employee/accounter/products/detailsProduct/' + ${product.getId()}"></a>
+                    </td>
+                    <td th:text="${product.getName()}"></td>
+                    <td th:text="${product.getCategoryName()}"></td>
+                    <td th:text="${product.getWarehouseType().getDisplayName()}"></td>
+                    <td th:text="${product.getStockQuantity()}"></td>
+                    <td th:text="${product.getAvailableQuantity()}"></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary"
+                                th:data-productid="${product.getId()}"
+                                onclick="loadAttributes(this)">
+                            <i class="bi bi-list-ul"></i>
+                        </button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Сообщение "Товары не найдены" -->
+        <div id="noResults" class="text-center text-muted py-4" style="display: none;">
+            <i class="bi bi-search" style="font-size: 2rem;"></i>
+            <p class="mt-2">Товары не найдены</p>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для атрибутов товара -->
+<div class="modal fade" id="attributesModal" tabindex="-1" aria-labelledby="attributesModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="attributesModalLabel">Характеристики товара</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <div id="attributesLoading" class="text-center py-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                </div>
+                <div id="attributesContent" style="display: none;">
+                    <table class="table table-sm">
+                        <thead>
+                        <tr>
+                            <th>Атрибут</th>
+                            <th>Значение</th>
+                            <th>Ед. изм.</th>
+                        </tr>
+                        </thead>
+                        <tbody id="attributesTableBody">
+                        </tbody>
+                    </table>
+                </div>
+                <div id="attributesEmpty" class="text-center text-muted py-3" style="display: none;">
+                    У данного товара нет характеристик
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const rows = document.querySelectorAll('#productsTable tbody tr');
+        const categories = new Set();
+        rows.forEach(function (row) {
+            const cat = row.getAttribute('data-category');
+            if (cat) categories.add(cat);
+        });
+        const categorySelect = document.getElementById('categoryFilter');
+        Array.from(categories).sort().forEach(function (cat) {
+            const option = document.createElement('option');
+            option.value = cat;
+            option.textContent = cat;
+            categorySelect.appendChild(option);
+        });
+
+        document.getElementById('searchInput').addEventListener('keyup', function (e) {
+            applyFilters();
+        });
+    });
+
+    function applyFilters() {
+        const search = document.getElementById('searchInput').value.trim().toLowerCase();
+        const stockFilter = document.getElementById('stockFilter').value;
+        const categoryFilter = document.getElementById('categoryFilter').value;
+        const rows = document.querySelectorAll('#productsTable tbody tr');
+        let visibleCount = 0;
+
+        rows.forEach(function (row) {
+            const name = (row.getAttribute('data-name') || '').toLowerCase();
+            const article = (row.getAttribute('data-article') || '').toLowerCase();
+            const stock = parseInt(row.getAttribute('data-stock') || '0');
+            const category = row.getAttribute('data-category') || '';
+
+            let show = true;
+            if (search && !name.includes(search) && !article.includes(search)) show = false;
+            if (stockFilter === 'in-stock' && stock <= 0) show = false;
+            if (stockFilter === 'out-of-stock' && stock > 0) show = false;
+            if (categoryFilter !== 'all' && category !== categoryFilter) show = false;
+
+            row.style.display = show ? '' : 'none';
+            if (show) visibleCount++;
+        });
+
+        document.getElementById('noResults').style.display = visibleCount === 0 ? '' : 'none';
+        updateActiveFilters(search, stockFilter, categoryFilter);
+    }
+
+    function updateActiveFilters(search, stockFilter, categoryFilter) {
+        const container = document.getElementById('activeFilters');
+        const badges = document.getElementById('filterBadges');
+        badges.innerHTML = '';
+        let hasFilters = false;
+
+        if (search) {
+            badges.innerHTML += '<span class="badge bg-primary me-1">Поиск: ' + search + '</span>';
+            hasFilters = true;
+        }
+        if (stockFilter !== 'all') {
+            const label = stockFilter === 'in-stock' ? 'В наличии' : 'Нет в наличии';
+            badges.innerHTML += '<span class="badge bg-info me-1">' + label + '</span>';
+            hasFilters = true;
+        }
+        if (categoryFilter !== 'all') {
+            badges.innerHTML += '<span class="badge bg-secondary me-1">' + categoryFilter + '</span>';
+            hasFilters = true;
+        }
+
+        container.style.display = hasFilters ? '' : 'none';
+    }
+
+    function resetFilters() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('stockFilter').value = 'all';
+        document.getElementById('categoryFilter').value = 'all';
+        applyFilters();
+    }
+
+    function loadAttributes(button) {
+        const productId = button.getAttribute('data-productid');
+        const modal = new bootstrap.Modal(document.getElementById('attributesModal'));
+
+        document.getElementById('attributesLoading').style.display = '';
+        document.getElementById('attributesContent').style.display = 'none';
+        document.getElementById('attributesEmpty').style.display = 'none';
+
+        modal.show();
+
+        fetch('/employee/general/productAttributeValues/values-by-product?productId=' + productId)
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
+                document.getElementById('attributesLoading').style.display = 'none';
+
+                if (data.length === 0) {
+                    document.getElementById('attributesEmpty').style.display = '';
+                    return;
+                }
+
+                var tbody = document.getElementById('attributesTableBody');
+                tbody.innerHTML = '';
+                data.forEach(function (item) {
+                    var tr = document.createElement('tr');
+                    tr.innerHTML = '<td>' + escapeHtml(item.name) + '</td>' +
+                        '<td>' + escapeHtml(item.value) + '</td>' +
+                        '<td>' + escapeHtml(item.unit) + '</td>';
+                    tbody.appendChild(tr);
+                });
+                document.getElementById('attributesContent').style.display = '';
+            })
+            .catch(function () {
+                document.getElementById('attributesLoading').style.display = 'none';
+                document.getElementById('attributesEmpty').style.display = '';
+                document.getElementById('attributesEmpty').textContent = 'Ошибка при загрузке характеристик';
+            });
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(text));
+        return div.innerHTML;
+    }
+</script>
+</body>
+</html>
