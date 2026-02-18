@@ -8,6 +8,8 @@ import com.mai.siarsp.models.Notification;
 import com.mai.siarsp.repo.EmployeeRepository;
 import com.mai.siarsp.repo.NotificationRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -87,6 +89,32 @@ public class NotificationService {
     public List<NotificationDTO> getNotificationsForEmployee(Long employeeId) {
         List<Notification> notifications = notificationRepository.findByRecipientIdOrderByCreatedAtDesc(employeeId);
         return NotificationMapper.INSTANCE.toDTOList(notifications);
+    }
+
+    /**
+     * Возвращает уведомления сотрудника с пагинацией и фильтрацией
+     *
+     * @param employeeId ID сотрудника
+     * @param status     фильтр по статусу (может быть null)
+     * @param search     поиск по тексту (может быть null или пустым)
+     * @param pageable   параметры пагинации
+     * @return страница NotificationDTO
+     */
+    public Page<NotificationDTO> getNotificationsForEmployee(Long employeeId, NotificationStatus status, String search, Pageable pageable) {
+        Page<Notification> page;
+        boolean hasSearch = search != null && !search.isBlank();
+
+        if (status != null && hasSearch) {
+            page = notificationRepository.findByRecipientIdAndStatusAndTextContainingIgnoreCaseOrderByCreatedAtDesc(employeeId, status, search, pageable);
+        } else if (status != null) {
+            page = notificationRepository.findByRecipientIdAndStatusOrderByCreatedAtDesc(employeeId, status, pageable);
+        } else if (hasSearch) {
+            page = notificationRepository.findByRecipientIdAndTextContainingIgnoreCaseOrderByCreatedAtDesc(employeeId, search, pageable);
+        } else {
+            page = notificationRepository.findByRecipientIdOrderByCreatedAtDesc(employeeId, pageable);
+        }
+
+        return page.map(NotificationMapper.INSTANCE::toDTO);
     }
 
     /**

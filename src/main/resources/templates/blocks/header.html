@@ -17,8 +17,8 @@
                 </span>
                 </div>
                 <div>
-                    <span class="me-3">📞 +7 (XXX) XXX-XX-XX</span>
-                    <span>✉ info@siarsp.ru</span>
+                    <span class="me-3">+7 (XXX) XXX-XX-XX</span>
+                    <span>info@siarsp.ru</span>
                 </div>
             </div>
         </div>
@@ -38,78 +38,91 @@
 
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-lg-center">
+
+                    <!-- ========== ADMIN ========== -->
                     <li class="nav-item" sec:authorize="hasRole('ROLE_EMPLOYEE_ADMIN')">
                         <a class="nav-link px-3" href="/employee/admin/administrationPanel">
                             Администрирование
                         </a>
                     </li>
 
-                    <li class="nav-item" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
-                        <a class="nav-link px-3" href="/employee/manager/clients/allClients">
-                            Клиенты
+                    <!-- ========== MANAGER ========== -->
+                    <!-- Dropdown: Справочники -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Справочники
                         </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/manager/clients/allClients">Клиенты</a></li>
+                            <li><a class="dropdown-item" href="/employee/manager/suppliers/allSuppliers">Поставщики</a></li>
+                            <li><a class="dropdown-item" href="/employee/manager/vehicles/allVehicles">Транспорт</a></li>
+                            <li><a class="dropdown-item" href="/employee/manager/products/allProducts">Товары</a></li>
+                        </ul>
+                    </li>
+                    <!-- Dropdown: Склад -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Склад
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/manager/warehouses/allWarehouses">Просмотр складов</a></li>
+                        </ul>
+                    </li>
+                    <!-- Dropdown: Закупки -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Закупки
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/manager/requestsForDelivery/allRequestsForDelivery">Заявки на поставку</a></li>
+                        </ul>
                     </li>
 
-                    <li class="nav-item" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
-                        <a class="nav-link px-3" href="/employee/manager/suppliers/allSuppliers">
-                            Поставщики
-                        </a>
-                    </li>
-
-                    <li class="nav-item" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
-                        <a class="nav-link px-3" href="/employee/manager/vehicles/allVehicles">
-                            Транспорт
-                        </a>
-                    </li>
-
-                    <li class="nav-item" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
-                        <a class="nav-link px-3" href="/employee/manager/products/allProducts">
+                    <!-- ========== WAREHOUSE_MANAGER ========== -->
+                    <!-- Dropdown: Товары -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             Товары
                         </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/globalProductCategories/allGlobalProductCategories">Глобальные категории</a></li>
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/productCategories/allProductCategories">Категории товаров</a></li>
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/productAttributes/allProductAttributes">Атрибуты товаров</a></li>
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/products/allProducts">Товары</a></li>
+                        </ul>
                     </li>
-
-                    <li class="nav-item" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
-                        <a class="nav-link px-3" href="/employee/warehouseManager/globalProductCategories/allGlobalProductCategories">
-                            Глобальные категории
+                    <!-- Dropdown: Склад -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Склад
                         </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/warehouses/allWarehouses">Склады</a></li>
+                        </ul>
                     </li>
-
-                    <li class="nav-item" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
-                        <a class="nav-link px-3" href="/employee/warehouseManager/productCategories/allProductCategories">
-                            Категории товаров
+                    <!-- Dropdown: Закупки -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Закупки
                         </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/requestsForDelivery/allRequestsForDelivery">Заявки на поставку</a></li>
+                        </ul>
                     </li>
 
-                    <li class="nav-item" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
-                        <a class="nav-link px-3" href="/employee/warehouseManager/productAttributes/allProductAttributes">
-                            Атрибуты товаров
+                    <!-- ========== ACCOUNTER ========== -->
+                    <!-- Dropdown: Закупки -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_ACCOUNTER')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Закупки
                         </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/accounter/requestsForDelivery/allRequestsForDelivery">Заявки на поставку</a></li>
+                            <li><a class="dropdown-item" href="/employee/accounter/products/allProducts">Товары</a></li>
+                        </ul>
                     </li>
 
-                    <li class="nav-item" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
-                        <a class="nav-link px-3" href="/employee/warehouseManager/products/allProducts">
-                            Товары
-                        </a>
-                    </li>
-
-                    <li class="nav-item" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
-                        <a class="nav-link px-3" href="/employee/warehouseManager/requestsForDelivery/allRequestsForDelivery">
-                            Заявки на поставку
-                        </a>
-                    </li>
-
-                    <li class="nav-item" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
-                        <a class="nav-link px-3" href="/employee/manager/requestsForDelivery/allRequestsForDelivery">
-                            Заявки на поставку
-                        </a>
-                    </li>
-
-                    <li class="nav-item" sec:authorize="hasRole('ROLE_EMPLOYEE_ACCOUNTER')">
-                        <a class="nav-link px-3" href="/employee/accounter/requestsForDelivery/allRequestsForDelivery">
-                            Заявки на поставку
-                        </a>
-                    </li>
-
+                    <!-- ========== УВЕДОМЛЕНИЯ (все роли) ========== -->
                     <li class="nav-item" sec:authorize="isAuthenticated()">
                         <a class="nav-link px-3 position-relative" href="/employee/notifications/">
                             Уведомления
@@ -119,6 +132,7 @@
                         </a>
                     </li>
 
+                    <!-- ========== ВХОД / ВЫХОД ========== -->
                     <li class="nav-item" sec:authorize="!isAuthenticated()">
                         <a class="nav-link px-3" href="/employee/login">Вход</a>
                     </li>

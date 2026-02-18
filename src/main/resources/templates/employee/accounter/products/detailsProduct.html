@@ -1,0 +1,111 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Информация о товаре | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+<header th:insert="~{blocks/header :: header}"></header>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+            <div class="profile-card p-4">
+        <h1 class="page-title">Информация о товаре</h1>
+        <p class="page-subtitle">Просмотр карточки товара</p>
+
+        <!-- Основная информация -->
+        <div class="mb-4">
+            <h6 class="form-section-title">Основная информация</h6>
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <label class="form-label text-muted">Наименование</label>
+                    <input type="text" class="form-control info-display" th:value="${productDTO.getName()}" disabled>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label text-muted">Артикул</label>
+                    <input type="text" class="form-control info-display" th:value="${productDTO.getArticle()}" disabled>
+                </div>
+            </div>
+            <div class="row g-3 mt-1">
+                <div class="col-12">
+                    <label class="form-label text-muted">Изображение</label>
+                    <div>
+                        <img th:src="@{'/image/' + ${productDTO.getId()}}"
+                             alt="Изображение товара"
+                             style="max-width: 400px; max-height: 400px; border-radius: 8px;
+                                    border: 2px solid #dee2e6; object-fit: contain;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Категория и склад -->
+        <div class="mb-4">
+            <h6 class="form-section-title">Категория и склад</h6>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label text-muted">Категория</label>
+                    <input type="text" class="form-control info-display" th:value="${productDTO.getCategoryName()}" disabled>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted">Тип склада</label>
+                    <input type="text" class="form-control info-display" th:value="${productDTO.getWarehouseType().getDisplayName()}" disabled>
+                </div>
+            </div>
+            <div class="row g-3 mt-1">
+                <div class="col-md-3">
+                    <label class="form-label text-muted">Остаток на складе</label>
+                    <input type="text" class="form-control info-display" th:value="${productDTO.getStockQuantity()}" disabled>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-muted">К размещению</label>
+                    <input type="text" class="form-control info-display" th:value="${productDTO.getQuantityForStock()}" disabled>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-muted">Зарезервировано</label>
+                    <input type="text" class="form-control info-display" th:value="${productDTO.getReservedQuantity()}" disabled>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-muted">Доступно</label>
+                    <input type="text" class="form-control info-display" th:value="${productDTO.getAvailableQuantity()}" disabled>
+                </div>
+            </div>
+        </div>
+
+        <!-- Характеристики -->
+        <div class="mb-4" th:if="${productDTO.getAttributeValues() != null and !productDTO.getAttributeValues().isEmpty()}">
+            <h6 class="form-section-title">Характеристики</h6>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                    <tr>
+                        <th>Атрибут</th>
+                        <th>Значение</th>
+                        <th>Ед. изм.</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="av : ${productDTO.getAttributeValues()}">
+                        <td th:text="${av.getAttributeName()}"></td>
+                        <td th:text="${av.getFormattedValue()}"></td>
+                        <td th:text="${av.getAttributeUnit() != null ? av.getAttributeUnit() : ''}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="link-section">
+            <a th:href="'/employee/accounter/products/allProducts'">← К списку товаров</a>
+        </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>

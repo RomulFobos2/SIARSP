@@ -27,7 +27,7 @@
 
         <div class="row mb-3">
             <div class="col-md-4"><strong>Дата создания:</strong></div>
-            <div class="col-md-8" th:text="${requestDTO.getRequestDate()}"></div>
+            <div class="col-md-8" th:text="${#temporals.format(requestDTO.getRequestDate(), 'dd.MM.yyyy')}"></div>
         </div>
         <div class="row mb-3">
             <div class="col-md-4"><strong>Поставщик:</strong></div>
@@ -53,7 +53,7 @@
         </div>
         <div th:if="${requestDTO.getReceivedDate() != null}" class="row mb-3">
             <div class="col-md-4"><strong>Дата получения:</strong></div>
-            <div class="col-md-8" th:text="${requestDTO.getReceivedDate()}"></div>
+            <div class="col-md-8" th:text="${#temporals.format(requestDTO.getReceivedDate(), 'dd.MM.yyyy')}"></div>
         </div>
 
         <h4 class="mt-4 mb-3">Позиции заявки</h4>
@@ -73,7 +73,10 @@
                 <tr th:each="item, iter : ${requestDTO.getRequestedProducts()}">
                     <td th:text="${iter.count}"></td>
                     <td th:text="${item.getProductArticle()}"></td>
-                    <td th:text="${item.getProductName()}"></td>
+                    <td>
+                        <a th:href="'/employee/warehouseManager/products/detailsProduct/' + ${item.getProductId()}"
+                           th:text="${item.getProductName()}"></a>
+                    </td>
                     <td th:text="${item.getQuantity()}"></td>
                     <td th:text="${#numbers.formatDecimal(item.getPurchasePrice(), 1, 2)} + ' руб.'"></td>
                     <td th:text="${#numbers.formatDecimal(item.getTotalPrice(), 1, 2)} + ' руб.'"></td>
