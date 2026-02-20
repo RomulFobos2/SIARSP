@@ -14,4 +14,7 @@ public class SupplyDTO {
     private Long productId;
     private String productName;
     private String productArticle;
+    private int deficitQuantity;
+    private String deficitReason;
+    private int orderedQuantity;
 }

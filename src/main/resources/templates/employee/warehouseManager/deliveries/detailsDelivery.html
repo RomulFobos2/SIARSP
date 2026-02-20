@@ -1,0 +1,116 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Детали поставки | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container my-5">
+    <div class="profile-card mb-4">
+        <div class="profile-actions">
+            <a th:href="'/employee/warehouseManager/deliveries/allDeliveries'" class="btn btn-secondary btn-profile">&larr; К поставкам</a>
+        </div>
+    </div>
+
+    <div class="profile-card p-4">
+        <h2 class="h3 mb-4 fw-bold">
+            Поставка №<span th:text="${delivery.getId()}"></span>
+        </h2>
+
+        <!-- Информация о поставке -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <strong>Дата приёмки:</strong>
+                <span th:text="${#temporals.format(delivery.getDeliveryDate(), 'dd.MM.yyyy')}"></span>
+            </div>
+            <div class="col-md-3">
+                <strong>Поставщик:</strong>
+                <span th:text="${delivery.getSupplierName()}"></span>
+            </div>
+            <div class="col-md-3" th:if="${requestDTO != null}">
+                <strong>Заявка:</strong>
+                <a th:href="'/employee/warehouseManager/requestsForDelivery/detailsRequestForDelivery/' + ${requestDTO.getId()}"
+                   class="text-decoration-none">
+                    №<span th:text="${requestDTO.getId()}"></span>
+                    (<span th:text="${requestDTO.getStatus().getDisplayName()}"></span>)
+                </a>
+            </div>
+            <div class="col-md-3">
+                <strong>Общая сумма:</strong>
+                <span class="fw-bold text-success" th:text="${delivery.getTotalCost()} + ' руб.'"></span>
+            </div>
+        </div>
+
+        <hr class="mb-4"/>
+
+        <!-- Таблица позиций -->
+        <h5 class="fw-bold mb-3">Позиции поставки</h5>
+        <div class="table-responsive">
+            <table class="table table-modern">
+                <thead>
+                <tr>
+                    <th>№</th>
+                    <th>Артикул</th>
+                    <th>Товар</th>
+                    <th>Заказано</th>
+                    <th>Принято</th>
+                    <th>Недостача</th>
+                    <th>Причина</th>
+                    <th>Цена (руб.)</th>
+                    <th>Сумма (руб.)</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="supply, stat : ${delivery.getSupplies()}"
+                    th:classappend="${supply.getDeficitQuantity() > 0} ? 'table-warning' : ''">
+                    <td th:text="${stat.index + 1}"></td>
+                    <td th:text="${supply.getProductArticle()}"></td>
+                    <td>
+                        <a th:href="'/employee/warehouseManager/products/detailsProduct/' + ${supply.getProductId()}"
+                           th:text="${supply.getProductName()}" class="text-decoration-none"></a>
+                    </td>
+                    <td th:text="${supply.getOrderedQuantity()}"></td>
+                    <td th:text="${supply.getQuantity()}"></td>
+                    <td>
+                        <span th:if="${supply.getDeficitQuantity() > 0}" class="text-danger fw-bold"
+                              th:text="${supply.getDeficitQuantity()}"></span>
+                        <span th:unless="${supply.getDeficitQuantity() > 0}" class="text-muted">0</span>
+                    </td>
+                    <td>
+                        <span th:if="${supply.getDeficitReason() != null and !supply.getDeficitReason().isEmpty()}"
+                              th:text="${supply.getDeficitReason()}" class="text-danger small"></span>
+                        <span th:unless="${supply.getDeficitReason() != null and !supply.getDeficitReason().isEmpty()}"
+                              class="text-muted">—</span>
+                    </td>
+                    <td th:text="${supply.getPurchasePrice()}"></td>
+                    <td th:text="${supply.getTotalPrice()}"></td>
+                </tr>
+                </tbody>
+                <tfoot>
+                <tr class="fw-bold">
+                    <td colspan="8" class="text-end">Итого:</td>
+                    <td th:text="${delivery.getTotalCost()} + ' руб.'"></td>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- Предупреждение о расхождениях -->
+        <div th:if="${delivery.getSupplies().stream().anyMatch(s -> s.getDeficitQuantity() > 0)}"
+             class="alert alert-warning mt-3">
+            <i class="bi bi-exclamation-triangle"></i>
+            <strong>Внимание:</strong> В данной поставке имеются расхождения с заявкой. Позиции с недостачей выделены жёлтым цветом.
+        </div>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>

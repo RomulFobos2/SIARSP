@@ -1,0 +1,134 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Редактировать склад | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container my-5">
+    <div class="profile-card mb-4">
+        <div class="profile-actions">
+            <a th:href="'/employee/warehouseManager/warehouses/detailsWarehouse/' + ${warehouse.getId()}"
+               class="btn btn-secondary btn-profile">&larr; Назад к деталям</a>
+        </div>
+    </div>
+
+    <!-- Flash-сообщения -->
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${successMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${warehouseError}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${warehouseError}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Секция 1: Редактирование адреса -->
+    <div class="profile-card p-4 mb-4">
+        <h2 class="h3 mb-4 fw-bold">Редактировать склад</h2>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Название</label>
+                <input type="text" class="form-control" th:value="${warehouse.getName()}" readonly disabled>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Тип</label>
+                <input type="text" class="form-control"
+                       th:value="${warehouse.getType().name() == 'REGULAR'} ? 'Обычный' : 'Холодильный'"
+                       readonly disabled>
+            </div>
+        </div>
+
+        <form method="post" th:action="@{'/employee/warehouseManager/warehouses/editWarehouse/' + ${warehouse.getId()}}">
+            <div class="mb-3">
+                <label for="address" class="form-label fw-semibold">Адрес</label>
+                <input type="text" id="address" name="address" class="form-control"
+                       th:value="${warehouse.getAddress()}"
+                       placeholder="Введите адрес склада">
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-lg"></i> Сохранить адрес
+            </button>
+        </form>
+    </div>
+
+    <!-- Секция 2: Добавление стеллажа -->
+    <div class="profile-card p-4">
+        <h4 class="mb-4 fw-bold">Добавить стеллаж</h4>
+        <p class="text-muted mb-3">
+            Текущее количество стеллажей: <strong th:text="${warehouse.getShelves().size()}"></strong>.
+            Новый стеллаж будет добавлен с автоматическим кодом.
+        </p>
+
+        <form method="post" th:action="@{'/employee/warehouseManager/warehouses/addShelf/' + ${warehouse.getId()}}">
+            <div class="row g-3 mb-3">
+                <div class="col-md-3">
+                    <label for="zonesPerShelf" class="form-label fw-semibold">Зон (полок) на стеллаже</label>
+                    <input type="number" id="zonesPerShelf" name="zonesPerShelf" class="form-control"
+                           min="1" value="4" required>
+                </div>
+            </div>
+
+            <h6 class="mb-3 text-muted">Габариты одной зоны хранения (полки) в см</h6>
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label for="zoneLength" class="form-label fw-semibold">Длина (см)</label>
+                    <input type="number" id="zoneLength" name="zoneLength" class="form-control"
+                           step="0.1" min="1" value="200" required>
+                </div>
+                <div class="col-md-4">
+                    <label for="zoneWidth" class="form-label fw-semibold">Ширина (см)</label>
+                    <input type="number" id="zoneWidth" name="zoneWidth" class="form-control"
+                           step="0.1" min="1" value="80" required>
+                </div>
+                <div class="col-md-4">
+                    <label for="zoneHeight" class="form-label fw-semibold">Высота (см)</label>
+                    <input type="number" id="zoneHeight" name="zoneHeight" class="form-control"
+                           step="0.1" min="1" value="40" required>
+                </div>
+            </div>
+
+            <div class="alert alert-info" id="volumeInfo">
+                Расчётный объём стеллажа будет вычислен автоматически.
+            </div>
+
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Добавить стеллаж
+            </button>
+        </form>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+
+<script>
+    function updateVolumeInfo() {
+        var zonesPerShelf = parseInt(document.getElementById('zonesPerShelf').value) || 0;
+        var zoneLength = parseFloat(document.getElementById('zoneLength').value) || 0;
+        var zoneWidth = parseFloat(document.getElementById('zoneWidth').value) || 0;
+        var zoneHeight = parseFloat(document.getElementById('zoneHeight').value) || 0;
+
+        if (zonesPerShelf > 0 && zoneLength > 0 && zoneWidth > 0 && zoneHeight > 0) {
+            var zoneVolume = (zoneLength * zoneWidth * zoneHeight) / 1000;
+            var totalVolume = zoneVolume * zonesPerShelf;
+            document.getElementById('volumeInfo').textContent =
+                'Объём нового стеллажа: ' + totalVolume.toFixed(1) + ' л ' +
+                '(' + zonesPerShelf + ' зон × ' + zoneVolume.toFixed(1) + ' л)';
+        }
+    }
+
+    ['zonesPerShelf', 'zoneLength', 'zoneWidth', 'zoneHeight'].forEach(function(id) {
+        document.getElementById(id).addEventListener('input', updateVolumeInfo);
+    });
+    updateVolumeInfo();
+</script>
+</body>
+</html>

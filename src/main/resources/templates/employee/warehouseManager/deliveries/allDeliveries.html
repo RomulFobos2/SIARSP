@@ -1,0 +1,143 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Приёмка поставок | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container my-5">
+    <div class="profile-card mb-4">
+        <div class="profile-actions">
+            <a th:href="'/'" class="btn btn-secondary btn-profile">&larr; Главная</a>
+            <a th:href="'/employee/warehouseManager/deliveries/addDelivery'" class="btn btn-success btn-profile">+ Оформить приёмку</a>
+        </div>
+    </div>
+
+    <!-- Flash-сообщения -->
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${successMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${deliveryError}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${deliveryError}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="profile-card p-4">
+        <h2 class="h3 mb-4 fw-bold">Приёмка поставок</h2>
+
+        <!-- Поиск -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <input type="text" id="searchInput" class="form-control" placeholder="Поиск по поставщику...">
+            </div>
+            <div class="col-md-2">
+                <input type="date" id="dateFromFilter" class="form-control" onchange="applyFilters()" title="Дата от">
+            </div>
+            <div class="col-md-2">
+                <input type="date" id="dateToFilter" class="form-control" onchange="applyFilters()" title="Дата до">
+            </div>
+            <div class="col-md-1 d-flex align-items-start">
+                <button class="btn btn-outline-secondary" onclick="resetFilters()">Сбросить</button>
+            </div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(allDeliveries)}" class="text-center text-muted py-4">
+            <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+            <p class="mt-2">Поставки отсутствуют</p>
+        </div>
+
+        <div th:unless="${#lists.isEmpty(allDeliveries)}" class="table-responsive">
+            <table class="table table-modern" id="deliveriesTable">
+                <thead>
+                <tr>
+                    <th>№</th>
+                    <th>Дата</th>
+                    <th>Поставщик</th>
+                    <th>Позиций</th>
+                    <th>Сумма</th>
+                    <th>Заявка №</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="delivery : ${allDeliveries}"
+                    th:data-id="${delivery.getId()}"
+                    th:data-supplier="${delivery.getSupplierName()}"
+                    th:data-date="${delivery.getDeliveryDate()}">
+                    <td th:text="${delivery.getId()}"></td>
+                    <td th:text="${#temporals.format(delivery.getDeliveryDate(), 'dd.MM.yyyy')}"></td>
+                    <td th:text="${delivery.getSupplierName()}"></td>
+                    <td th:text="${delivery.getSupplies() != null ? delivery.getSupplies().size() : 0}"></td>
+                    <td th:text="${delivery.getTotalCost()} + ' руб.'"></td>
+                    <td>
+                        <a th:if="${delivery.getRequestId() != null}"
+                           th:href="'/employee/warehouseManager/requestsForDelivery/detailsRequestForDelivery/' + ${delivery.getRequestId()}"
+                           th:text="'№' + ${delivery.getRequestId()}" class="text-decoration-none"></a>
+                        <span th:unless="${delivery.getRequestId() != null}" class="text-muted">—</span>
+                    </td>
+                    <td>
+                        <a th:href="'/employee/warehouseManager/deliveries/detailsDelivery/' + ${delivery.getId()}"
+                           class="btn btn-sm btn-outline-primary">Подробнее</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="noResults" class="text-center text-muted py-4" style="display: none;">
+            <i class="bi bi-search" style="font-size: 2rem;"></i>
+            <p class="mt-2">Поставки не найдены</p>
+        </div>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.getElementById('searchInput').addEventListener('keyup', function () {
+            applyFilters();
+        });
+    });
+
+    function applyFilters() {
+        var search = document.getElementById('searchInput').value.trim().toLowerCase();
+        var dateFrom = document.getElementById('dateFromFilter').value;
+        var dateTo = document.getElementById('dateToFilter').value;
+        var rows = document.querySelectorAll('#deliveriesTable tbody tr');
+        var visibleCount = 0;
+
+        rows.forEach(function (row) {
+            var supplier = (row.getAttribute('data-supplier') || '').toLowerCase();
+            var id = (row.getAttribute('data-id') || '').toLowerCase();
+            var date = row.getAttribute('data-date') || '';
+            var show = true;
+
+            if (search && !supplier.includes(search) && !id.includes(search)) show = false;
+            if (dateFrom && date < dateFrom) show = false;
+            if (dateTo && date > dateTo) show = false;
+
+            row.style.display = show ? '' : 'none';
+            if (show) visibleCount++;
+        });
+
+        document.getElementById('noResults').style.display = visibleCount === 0 ? '' : 'none';
+    }
+
+    function resetFilters() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('dateFromFilter').value = '';
+        document.getElementById('dateToFilter').value = '';
+        applyFilters();
+    }
+</script>
+</body>
+</html>
