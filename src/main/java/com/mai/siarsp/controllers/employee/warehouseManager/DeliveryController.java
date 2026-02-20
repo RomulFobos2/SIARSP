@@ -165,7 +165,10 @@ public class DeliveryController {
                     RequestForDeliveryMapper.INSTANCE.toDTO(delivery.getRequest()));
         }
 
+        boolean hasDeficit = deliveryDTO.getSupplies().stream()
+                .anyMatch(s -> s.getDeficitQuantity() > 0);
         model.addAttribute("delivery", deliveryDTO);
+        model.addAttribute("hasDeficit", hasDeficit);
         return "employee/warehouseManager/deliveries/detailsDelivery";
     }
 }
