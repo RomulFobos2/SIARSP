@@ -1,0 +1,71 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Оформить приёмку | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container my-5">
+    <div class="profile-card mb-4">
+        <div class="profile-actions">
+            <a th:href="'/employee/warehouseManager/deliveries/allDeliveries'" class="btn btn-secondary btn-profile">&larr; К поставкам</a>
+        </div>
+    </div>
+
+    <!-- Flash-сообщения -->
+    <div th:if="${deliveryError}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${deliveryError}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="profile-card p-4">
+        <h2 class="h3 mb-4 fw-bold">Шаг 1: Выбор заявки для приёмки</h2>
+        <p class="text-muted mb-4">Выберите согласованную заявку, по которой необходимо оформить приёмку товара.</p>
+
+        <div th:if="${#lists.isEmpty(approvedRequests)}" class="text-center text-muted py-4">
+            <i class="bi bi-check-circle" style="font-size: 2rem;"></i>
+            <p class="mt-2">Нет согласованных заявок для приёмки</p>
+            <a th:href="'/employee/warehouseManager/requestsForDelivery/allRequestsForDelivery'"
+               class="btn btn-outline-primary mt-2">Перейти к заявкам</a>
+        </div>
+
+        <div th:unless="${#lists.isEmpty(approvedRequests)}" class="table-responsive">
+            <table class="table table-modern">
+                <thead>
+                <tr>
+                    <th>№</th>
+                    <th>Дата заявки</th>
+                    <th>Поставщик</th>
+                    <th>Позиций</th>
+                    <th>Сумма</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="request : ${approvedRequests}">
+                    <td th:text="${request.getId()}"></td>
+                    <td th:text="${#temporals.format(request.getRequestDate(), 'dd.MM.yyyy')}"></td>
+                    <td th:text="${request.getSupplierName()}"></td>
+                    <td th:text="${request.getRequestedProducts() != null ? request.getRequestedProducts().size() : 0}"></td>
+                    <td th:text="${request.getTotalCost()} + ' руб.'"></td>
+                    <td>
+                        <a th:href="'/employee/warehouseManager/deliveries/addDeliveryFromRequest/' + ${request.getId()}"
+                           class="btn btn-sm btn-success">Оформить приёмку</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>

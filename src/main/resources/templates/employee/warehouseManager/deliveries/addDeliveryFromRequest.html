@@ -1,0 +1,206 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Приёмка товара | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container my-5">
+    <div class="profile-card mb-4">
+        <div class="profile-actions">
+            <a th:href="'/employee/warehouseManager/deliveries/addDelivery'" class="btn btn-secondary btn-profile">&larr; Назад к выбору заявки</a>
+        </div>
+    </div>
+
+    <!-- Flash-сообщения -->
+    <div th:if="${deliveryError}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${deliveryError}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="profile-card p-4">
+        <h2 class="h3 mb-4 fw-bold">Шаг 2: Приёмка товара</h2>
+
+        <!-- Информация о заявке -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <strong>Заявка №:</strong>
+                <span th:text="${request.getId()}"></span>
+            </div>
+            <div class="col-md-3">
+                <strong>Поставщик:</strong>
+                <span th:text="${request.getSupplierName()}"></span>
+            </div>
+            <div class="col-md-3">
+                <strong>Склад:</strong>
+                <span th:text="${request.getWarehouseName() != null ? request.getWarehouseName() : '—'}"></span>
+            </div>
+            <div class="col-md-3">
+                <strong>Дата заявки:</strong>
+                <span th:text="${#temporals.format(request.getRequestDate(), 'dd.MM.yyyy')}"></span>
+            </div>
+        </div>
+
+        <hr class="mb-4"/>
+
+        <form method="post" th:action="@{/employee/warehouseManager/deliveries/addDelivery}" id="deliveryForm">
+            <input type="hidden" name="requestId" th:value="${request.getId()}"/>
+
+            <!-- Дата приёмки -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <label for="deliveryDate" class="form-label fw-bold">Дата приёмки</label>
+                    <input type="date" id="deliveryDate" name="deliveryDate" class="form-control"
+                           th:value="${deliveryDate}" required/>
+                </div>
+            </div>
+
+            <!-- Таблица позиций -->
+            <h5 class="fw-bold mb-3">Позиции товаров</h5>
+            <div class="table-responsive">
+                <table class="table table-modern">
+                    <thead>
+                    <tr>
+                        <th>№</th>
+                        <th>Товар</th>
+                        <th>Артикул</th>
+                        <th>Заказано</th>
+                        <th>Принято</th>
+                        <th>Цена (руб.)</th>
+                        <th>Недостача</th>
+                        <th>Причина недостачи</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="rp, stat : ${requestedProducts}">
+                        <!-- Hidden fields -->
+                        <input type="hidden" name="productIds" th:value="${rp.getProduct().getId()}"/>
+                        <input type="hidden" name="purchasePrices"
+                               th:value="${rp.getPurchasePrice() != null ? rp.getPurchasePrice() : 0}"/>
+
+                        <td th:text="${stat.index + 1}"></td>
+                        <td>
+                            <a th:href="'/employee/warehouseManager/products/detailsProduct/' + ${rp.getProduct().getId()}"
+                               th:text="${rp.getProduct().getName()}" class="text-decoration-none"></a>
+                        </td>
+                        <td th:text="${rp.getProduct().getArticle()}"></td>
+                        <td>
+                            <input type="hidden" th:id="'ordered_' + ${stat.index}" th:value="${rp.getQuantity()}"/>
+                            <span th:text="${rp.getQuantity()}"></span>
+                        </td>
+                        <td>
+                            <input type="number" name="quantities" class="form-control form-control-sm"
+                                   th:id="'quantity_' + ${stat.index}"
+                                   th:value="${rp.getQuantity()}"
+                                   min="0" th:max="${rp.getQuantity()}"
+                                   th:onchange="'updateDeficit(' + ${stat.index} + ')'"
+                                   th:oninput="'updateDeficit(' + ${stat.index} + ')'"
+                                   required style="width: 100px;"/>
+                        </td>
+                        <td>
+                            <span th:text="${rp.getPurchasePrice() != null ? rp.getPurchasePrice() : '—'}"></span>
+                        </td>
+                        <td>
+                            <span th:id="'deficit_' + ${stat.index}" class="fw-bold">0</span>
+                        </td>
+                        <td>
+                            <div th:id="'reasonBlock_' + ${stat.index}" style="display: none;">
+                                <textarea name="deficitReasons" class="form-control form-control-sm"
+                                          rows="2" maxlength="500"
+                                          placeholder="Укажите причину недостачи..."></textarea>
+                            </div>
+                            <!-- placeholder для позиций без дефицита, чтобы список deficitReasons совпадал по индексам -->
+                            <input type="hidden" th:id="'hiddenReason_' + ${stat.index}" name="deficitReasons" value=""/>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-success btn-lg" id="submitBtn">
+                    <i class="bi bi-check-circle"></i> Сохранить поставку
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+
+<script>
+    function updateDeficit(index) {
+        var ordered = parseInt(document.getElementById('ordered_' + index).value) || 0;
+        var actual = parseInt(document.getElementById('quantity_' + index).value) || 0;
+
+        // Валидация: не больше заказанного, не меньше 0
+        if (actual < 0) {
+            actual = 0;
+            document.getElementById('quantity_' + index).value = 0;
+        }
+        if (actual > ordered) {
+            actual = ordered;
+            document.getElementById('quantity_' + index).value = ordered;
+        }
+
+        var deficit = ordered - actual;
+        document.getElementById('deficit_' + index).textContent = deficit;
+
+        var reasonBlock = document.getElementById('reasonBlock_' + index);
+        var hiddenReason = document.getElementById('hiddenReason_' + index);
+        var textarea = reasonBlock.querySelector('textarea');
+
+        if (deficit > 0) {
+            // Показать textarea, скрыть hidden input
+            reasonBlock.style.display = '';
+            hiddenReason.disabled = true;
+            textarea.required = true;
+            textarea.name = 'deficitReasons';
+
+            // Подсветить строку
+            document.getElementById('quantity_' + index).closest('tr').classList.add('table-warning');
+            document.getElementById('deficit_' + index).classList.add('text-danger');
+        } else {
+            // Скрыть textarea, активировать hidden input
+            reasonBlock.style.display = 'none';
+            hiddenReason.disabled = false;
+            textarea.required = false;
+            textarea.name = '';
+            textarea.value = '';
+
+            // Убрать подсветку
+            document.getElementById('quantity_' + index).closest('tr').classList.remove('table-warning');
+            document.getElementById('deficit_' + index).classList.remove('text-danger');
+        }
+    }
+
+    // Валидация формы перед отправкой
+    document.getElementById('deliveryForm').addEventListener('submit', function (e) {
+        var rows = document.querySelectorAll('#deliveryForm tbody tr');
+        for (var i = 0; i < rows.length; i++) {
+            var ordered = parseInt(document.getElementById('ordered_' + i).value) || 0;
+            var actual = parseInt(document.getElementById('quantity_' + i).value) || 0;
+            var deficit = ordered - actual;
+
+            if (deficit > 0) {
+                var reasonBlock = document.getElementById('reasonBlock_' + i);
+                var textarea = reasonBlock.querySelector('textarea');
+                if (!textarea.value.trim()) {
+                    e.preventDefault();
+                    textarea.focus();
+                    alert('Укажите причину недостачи для позиции №' + (i + 1));
+                    return;
+                }
+            }
+        }
+    });
+</script>
+</body>
+</html>

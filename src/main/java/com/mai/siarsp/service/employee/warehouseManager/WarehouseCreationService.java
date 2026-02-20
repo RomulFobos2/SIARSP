@@ -146,6 +146,89 @@ public class WarehouseCreationService {
     }
 
     /**
+     * Обновляет адрес склада.
+     *
+     * @param warehouseId ID склада
+     * @param newAddress  новый адрес
+     * @return true если адрес обновлён, false при ошибке
+     */
+    @Transactional
+    public boolean updateWarehouseAddress(Long warehouseId, String newAddress) {
+        try {
+            Optional<Warehouse> opt = warehouseRepository.findById(warehouseId);
+            if (opt.isEmpty()) {
+                log.error("Склад с ID {} не найден", warehouseId);
+                return false;
+            }
+            Warehouse warehouse = opt.get();
+            warehouse.setAddress(newAddress);
+            warehouseRepository.save(warehouse);
+            log.info("Адрес склада '{}' (ID {}) обновлён: {}", warehouse.getName(), warehouseId, newAddress);
+            return true;
+        } catch (Exception e) {
+            log.error("Ошибка при обновлении адреса склада ID {}: {}", warehouseId, e.getMessage(), e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return false;
+        }
+    }
+
+    /**
+     * Добавляет новый стеллаж к существующему складу.
+     *
+     * Автоматически определяет код стеллажа (A, B, ..., Z, ST-27, ...),
+     * создаёт указанное количество зон хранения и пересчитывает объём склада.
+     *
+     * @param warehouseId   ID склада
+     * @param zonesPerShelf количество зон (полок) на стеллаже
+     * @param zoneLength    длина зоны в см
+     * @param zoneWidth     ширина зоны в см
+     * @param zoneHeight    высота зоны в см
+     * @return true если стеллаж добавлен, false при ошибке
+     */
+    @Transactional
+    public boolean addShelfToWarehouse(Long warehouseId, int zonesPerShelf,
+                                        double zoneLength, double zoneWidth, double zoneHeight) {
+        try {
+            Optional<Warehouse> opt = warehouseRepository.findById(warehouseId);
+            if (opt.isEmpty()) {
+                log.error("Склад с ID {} не найден", warehouseId);
+                return false;
+            }
+            Warehouse warehouse = opt.get();
+
+            // Определить код нового стеллажа
+            int nextIndex = warehouse.getShelves().size();
+            String shelfCode = generateShelfCode(nextIndex);
+            while (shelfRepository.existsByWarehouseAndCode(warehouse, shelfCode)) {
+                nextIndex++;
+                shelfCode = generateShelfCode(nextIndex);
+            }
+
+            Shelf shelf = new Shelf(shelfCode, warehouse);
+            shelf = shelfRepository.save(shelf);
+
+            for (int j = 1; j <= zonesPerShelf; j++) {
+                String zoneLabel = shelfCode + "-" + j;
+                StorageZone zone = new StorageZone(zoneLabel, zoneLength, zoneWidth, zoneHeight, shelf);
+                storageZoneRepository.save(zone);
+            }
+
+            // Пересчитать общий объём
+            double newVolume = (zoneLength * zoneWidth * zoneHeight) / 1000.0 * zonesPerShelf;
+            warehouse.setTotalVolume(warehouse.getTotalVolume() + newVolume);
+            warehouseRepository.save(warehouse);
+
+            log.info("Стеллаж '{}' добавлен к складу '{}' (ID {}): {} зон, доп. объём {} л",
+                    shelfCode, warehouse.getName(), warehouseId, zonesPerShelf, newVolume);
+            return true;
+        } catch (Exception e) {
+            log.error("Ошибка при добавлении стеллажа к складу ID {}: {}", warehouseId, e.getMessage(), e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return false;
+        }
+    }
+
+    /**
      * Рассчитывает общий объём склада в литрах.
      * Формула: (zoneL × zoneW × zoneH) / 1_000_000 × shelfCount × zonesPerShelf
      */

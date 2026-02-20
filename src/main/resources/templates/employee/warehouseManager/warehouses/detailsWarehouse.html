@@ -91,7 +91,11 @@
         </div>
 
         <!-- Кнопки -->
-        <div class="mt-3">
+        <div class="mt-3 d-flex gap-2">
+            <a th:href="'/employee/warehouseManager/warehouses/editWarehouse/' + ${warehouse.getId()}"
+               class="btn btn-warning btn-sm">
+                <i class="bi bi-pencil"></i> Редактировать
+            </a>
             <a th:href="'/employee/warehouseManager/warehouses/deleteWarehouse/' + ${warehouse.getId()}"
                class="btn btn-outline-danger btn-sm"
                onclick="return confirm('Удалить склад? Это действие необратимо.');">

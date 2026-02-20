@@ -151,6 +151,50 @@ public class WarehouseManagerController {
         return "redirect:/employee/warehouseManager/warehouses/detailsWarehouse/" + warehouseId;
     }
 
+    // ========== РЕДАКТИРОВАНИЕ СКЛАДА ==========
+
+    @Transactional(readOnly = true)
+    @GetMapping("/editWarehouse/{id}")
+    public String editWarehouse(@PathVariable Long id, Model model) {
+        Optional<Warehouse> opt = warehouseRepository.findById(id);
+        if (opt.isEmpty()) {
+            return "redirect:/employee/warehouseManager/warehouses/allWarehouses";
+        }
+        model.addAttribute("warehouse", opt.get());
+        return "employee/warehouseManager/warehouses/editWarehouse";
+    }
+
+    @PostMapping("/editWarehouse/{id}")
+    public String saveWarehouseAddress(@PathVariable Long id,
+                                        @RequestParam String address,
+                                        RedirectAttributes redirectAttributes) {
+        if (!creationService.updateWarehouseAddress(id, address)) {
+            redirectAttributes.addFlashAttribute("warehouseError", "Ошибка при обновлении адреса склада.");
+            return "redirect:/employee/warehouseManager/warehouses/editWarehouse/" + id;
+        }
+        redirectAttributes.addFlashAttribute("successMessage", "Адрес склада успешно обновлён.");
+        return "redirect:/employee/warehouseManager/warehouses/detailsWarehouse/" + id;
+    }
+
+    @PostMapping("/addShelf/{warehouseId}")
+    public String addShelf(@PathVariable Long warehouseId,
+                            @RequestParam int zonesPerShelf,
+                            @RequestParam double zoneLength,
+                            @RequestParam double zoneWidth,
+                            @RequestParam double zoneHeight,
+                            RedirectAttributes redirectAttributes) {
+        if (zonesPerShelf < 1) {
+            redirectAttributes.addFlashAttribute("warehouseError", "Количество зон должно быть не менее 1.");
+            return "redirect:/employee/warehouseManager/warehouses/editWarehouse/" + warehouseId;
+        }
+        if (!creationService.addShelfToWarehouse(warehouseId, zonesPerShelf, zoneLength, zoneWidth, zoneHeight)) {
+            redirectAttributes.addFlashAttribute("warehouseError", "Ошибка при добавлении стеллажа.");
+            return "redirect:/employee/warehouseManager/warehouses/editWarehouse/" + warehouseId;
+        }
+        redirectAttributes.addFlashAttribute("successMessage", "Стеллаж успешно добавлен.");
+        return "redirect:/employee/warehouseManager/warehouses/detailsWarehouse/" + warehouseId;
+    }
+
     // ========== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ==========
 
     private WarehouseStat buildWarehouseStat(Warehouse wh) {
