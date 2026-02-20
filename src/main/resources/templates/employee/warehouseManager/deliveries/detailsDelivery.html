@@ -103,7 +103,7 @@
         </div>
 
         <!-- Предупреждение о расхождениях -->
-        <div th:if="${delivery.getSupplies().stream().anyMatch(s -> s.getDeficitQuantity() > 0)}"
+        <div th:if="${hasDeficit}"
              class="alert alert-warning mt-3">
             <i class="bi bi-exclamation-triangle"></i>
             <strong>Внимание:</strong> В данной поставке имеются расхождения с заявкой. Позиции с недостачей выделены жёлтым цветом.

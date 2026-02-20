@@ -160,7 +160,10 @@ public class WarehouseManagerController {
         if (opt.isEmpty()) {
             return "redirect:/employee/warehouseManager/warehouses/allWarehouses";
         }
-        model.addAttribute("warehouse", opt.get());
+        Warehouse warehouse = opt.get();
+        int shelvesCount = warehouse.getShelves().size(); // принудительная инициализация LAZY-коллекции
+        model.addAttribute("warehouse", warehouse);
+        model.addAttribute("shelvesCount", shelvesCount);
         return "employee/warehouseManager/warehouses/editWarehouse";
     }
 
