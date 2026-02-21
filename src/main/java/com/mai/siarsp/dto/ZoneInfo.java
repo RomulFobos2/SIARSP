@@ -56,7 +56,8 @@ public class ZoneInfo {
             String productName,
             String productArticle,
             int quantity,
-            String orientationLabel
+            String orientationLabel,
+            double volumeM3
     ) {
     }
 }

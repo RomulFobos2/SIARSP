@@ -5,6 +5,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
     <link href="/css/style.css" rel="stylesheet">
     <script src="/js/bootstrap.bundle.min.js"></script>
 </head>
@@ -19,6 +20,11 @@
             <p class="page-subtitle">Измените параметры товарной позиции</p>
 
             <div th:if="${productError}" class="alert alert-danger" th:text="${productError}"></div>
+
+            <div th:if="${isInWarehouse}" class="alert alert-warning d-flex align-items-center gap-2 mb-3">
+                <i class="bi bi-lock-fill"></i>
+                <span>Товар размещён на складе. <strong>Габариты упаковки заблокированы</strong> для редактирования.</span>
+            </div>
 
             <div class="mb-4">
                 <h6 class="form-section-title">Основные данные</h6>
@@ -113,6 +119,8 @@
         const submitButton = document.getElementById('submitBtn');
         const productId = [[${productDTO.getId()}]];
         const categorySelect = document.getElementById('inputCategoryId');
+        const isInWarehouse = [[${isInWarehouse}]];
+        const GABARITE_NAMES = ['Длина упаковки', 'Ширина упаковки', 'Высота упаковки'];
 
         const fileInput = document.getElementById('inputFileField');
         const imagePreview = document.getElementById('imagePreview');
@@ -202,7 +210,22 @@
                             input.value = attr.value;
                         }
 
+                        var isGabarite = GABARITE_NAMES.includes(attr.name);
+                        if (isInWarehouse && isGabarite) {
+                            input.disabled = true;
+                            input.title = 'Нельзя изменить: товар размещён на складе';
+                            input.classList.add('text-muted');
+                            input.required = false;
+                        }
+
                         col.appendChild(label);
+                        if (isInWarehouse && isGabarite) {
+                            var lockIcon = document.createElement('span');
+                            lockIcon.className = 'text-warning ms-1';
+                            lockIcon.title = 'Заблокировано';
+                            lockIcon.innerHTML = '<i class="bi bi-lock-fill"></i>';
+                            label.appendChild(lockIcon);
+                        }
                         col.appendChild(input);
                         container.appendChild(col);
                     });

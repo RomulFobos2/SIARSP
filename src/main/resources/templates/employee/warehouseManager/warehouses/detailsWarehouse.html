@@ -190,11 +190,17 @@
                                                    th:text="${#numbers.formatDecimal(zone.getOccupancyPercentage(), 1, 1)} + '%'"></small>
                                         </div>
                                     </td>
-                                    <td class="small">
+                                    <td>
                                         <span th:if="${zone.getProducts().isEmpty()}" class="text-muted">—</span>
-                                        <span th:each="zp, zpIter : ${zone.getProducts()}">
-                                            <span th:text="${zp.getProduct().getName()} + ' ' + ${zp.getQuantity()} + ' шт.'"></span><span th:unless="${zpIter.last}">, </span>
-                                        </span>
+                                        <button th:unless="${zone.getProducts().isEmpty()}"
+                                                type="button"
+                                                class="btn btn-sm btn-outline-primary"
+                                                th:attr="data-zone-id=${zone.getId()}"
+                                                onclick="showZoneModal(this.dataset.zoneId)">
+                                            <i class="bi bi-eye"></i> Просмотреть
+                                            <span class="badge bg-primary ms-1"
+                                                  th:text="${zone.getProducts().size()}"></span>
+                                        </button>
                                     </td>
                                 </tr>
                                 </tbody>
@@ -216,5 +222,149 @@
 </div>
 
 <div th:insert="~{blocks/footer :: footer}"></div>
+
+<!-- Модальное окно содержимого полки -->
+<div class="modal fade" id="zoneModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-box-seam me-2"></i><span id="zoneModalLabel"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="zoneModalBody">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    var zoneChart = null;
+
+    function showZoneModal(zoneId) {
+        var modal = new bootstrap.Modal(document.getElementById('zoneModal'));
+        document.getElementById('zoneModalBody').innerHTML =
+            '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+        modal.show();
+
+        fetch('/employee/api/warehouse/zone-info?zoneId=' + zoneId)
+            .then(function(r) { return r.json(); })
+            .then(function(response) {
+                if (response.success && response.data) {
+                    renderZoneModal(response.data);
+                } else {
+                    document.getElementById('zoneModalBody').innerHTML =
+                        '<div class="alert alert-danger">Ошибка загрузки данных</div>';
+                }
+            })
+            .catch(function() {
+                document.getElementById('zoneModalBody').innerHTML =
+                    '<div class="alert alert-danger">Ошибка загрузки данных</div>';
+            });
+    }
+
+    function renderZoneModal(zone) {
+        document.getElementById('zoneModalLabel').textContent =
+            'Полка ' + zone.label + ' — ' + zone.shelfCode + ' (' + zone.warehouseName + ')';
+
+        var freeVol  = Math.max(0, zone.capacityVolume - zone.usedVolume);
+        var occ      = zone.occupancyPercent.toFixed(1);
+        var occColor = zone.occupancyPercent >= 85 ? 'danger' :
+                       zone.occupancyPercent >= 60 ? 'warning' : 'success';
+
+        var rows = zone.products.map(function(p) {
+            var pct = zone.capacityVolume > 0
+                ? ((p.volumeM3 / zone.capacityVolume) * 100).toFixed(1) : '0.0';
+            return '<tr>' +
+                '<td><strong>' + p.productName + '</strong><br>' +
+                    '<small class="text-muted">' + p.productArticle + '</small></td>' +
+                '<td class="text-center">' + p.quantity + ' шт.</td>' +
+                '<td class="text-center">' + p.orientationLabel + '</td>' +
+                '<td class="text-center">' + p.volumeM3.toFixed(4) + '</td>' +
+                '<td style="min-width:100px">' +
+                    '<div class="progress" style="height:6px">' +
+                        '<div class="progress-bar bg-primary" style="width:' + pct + '%"></div>' +
+                    '</div>' +
+                    '<small class="text-muted">' + pct + '%</small>' +
+                '</td>' +
+            '</tr>';
+        }).join('');
+
+        var chartLabels = zone.products.map(function(p) { return p.productName; });
+        chartLabels.push('Свободно');
+        var chartData = zone.products.map(function(p) { return p.volumeM3; });
+        chartData.push(freeVol);
+        var palette = ['#0d6efd','#6610f2','#fd7e14','#20c997','#dc3545','#ffc107','#6f42c1','#0dcaf0'];
+        var chartColors = zone.products.map(function(_, i) { return palette[i % palette.length]; });
+        chartColors.push('#e9ecef');
+
+        document.getElementById('zoneModalBody').innerHTML =
+            '<div class="row g-2 mb-3">' +
+                '<div class="col-6 col-md-3">' +
+                    '<div class="card text-center border-0 bg-light h-100"><div class="card-body py-2">' +
+                        '<div class="fs-5 fw-bold text-' + occColor + '">' + occ + '%</div>' +
+                        '<small class="text-muted">Заполненность</small>' +
+                    '</div></div>' +
+                '</div>' +
+                '<div class="col-6 col-md-3">' +
+                    '<div class="card text-center border-0 bg-light h-100"><div class="card-body py-2">' +
+                        '<div class="fs-5 fw-bold">' + zone.products.length + '</div>' +
+                        '<small class="text-muted">Наименований</small>' +
+                    '</div></div>' +
+                '</div>' +
+                '<div class="col-6 col-md-3">' +
+                    '<div class="card text-center border-0 bg-light h-100"><div class="card-body py-2">' +
+                        '<div class="fs-5 fw-bold">' + zone.usedVolume.toFixed(4) + '</div>' +
+                        '<small class="text-muted">Занято (м\u00b3)</small>' +
+                    '</div></div>' +
+                '</div>' +
+                '<div class="col-6 col-md-3">' +
+                    '<div class="card text-center border-0 bg-light h-100"><div class="card-body py-2">' +
+                        '<div class="fs-5 fw-bold text-success">' + freeVol.toFixed(4) + '</div>' +
+                        '<small class="text-muted">Свободно (м\u00b3)</small>' +
+                    '</div></div>' +
+                '</div>' +
+            '</div>' +
+            '<div class="row g-3">' +
+                '<div class="col-md-4 d-flex align-items-center justify-content-center">' +
+                    '<canvas id="zoneChart" style="max-height:220px"></canvas>' +
+                '</div>' +
+                '<div class="col-md-8">' +
+                    '<table class="table table-sm table-hover mb-0">' +
+                        '<thead class="table-light"><tr>' +
+                            '<th>Товар</th><th class="text-center">Кол-во</th>' +
+                            '<th class="text-center">Ориентация</th>' +
+                            '<th class="text-center">Объём (м\u00b3)</th><th>% зоны</th>' +
+                        '</tr></thead>' +
+                        '<tbody>' + rows + '</tbody>' +
+                    '</table>' +
+                '</div>' +
+            '</div>';
+
+        if (zoneChart) zoneChart.destroy();
+        zoneChart = new Chart(document.getElementById('zoneChart'), {
+            type: 'doughnut',
+            data: {
+                labels: chartLabels,
+                datasets: [{
+                    data: chartData,
+                    backgroundColor: chartColors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { boxWidth: 12, font: { size: 11 } }
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+    }
+</script>
 </body>
 </html>
