@@ -93,11 +93,9 @@
                             </td>
                             <td class="text-center" th:text="${product.getStockQuantity()}"></td>
                             <td class="text-center small text-muted">
-                                <span th:if="${product.getPackageLength() != null}"
-                                      th:text="${#numbers.formatDecimal(product.getPackageLength(), 1, 0)}
-                                               + '×' + ${#numbers.formatDecimal(product.getPackageWidth(), 1, 0)}
-                                               + '×' + ${#numbers.formatDecimal(product.getPackageHeight(), 1, 0)}"></span>
-                                <span th:if="${product.getPackageLength() == null}" class="text-danger">
+                                <span th:if="${hasPackageDims[product.id]}"
+                                      th:text="${packageDimsStr[product.id]}"></span>
+                                <span th:if="${!hasPackageDims[product.id]}" class="text-danger">
                                     <i class="bi bi-exclamation-circle" title="Габариты не указаны"></i>
                                 </span>
                             </td>
@@ -106,8 +104,8 @@
                                         th:onclick="'selectProduct(' + ${product.getId()}
                                                     + ', \'' + ${product.getName().replace('\'', '\\\'')} + '\''
                                                     + ', ' + ${product.getQuantityForStock()}
-                                                    + ', ' + ${product.getPackageLength() != null} + ')'"
-                                        th:disabled="${product.getPackageLength() == null}">
+                                                    + ', ' + ${hasPackageDims[product.id]} + ')'"
+                                        th:disabled="${!hasPackageDims[product.id]}">
                                     <i class="bi bi-box-arrow-in-down"></i> Разместить
                                 </button>
                             </td>
