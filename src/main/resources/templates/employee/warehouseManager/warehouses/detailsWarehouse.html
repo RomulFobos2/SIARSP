@@ -13,11 +13,13 @@
 <header th:insert="~{blocks/header :: header}"></header>
 
 <div class="container my-5">
-    <div class="profile-card mb-4">
-        <div class="profile-actions">
-            <a th:href="'/employee/warehouseManager/warehouses/allWarehouses'" class="btn btn-secondary btn-profile">← Назад к складам</a>
-        </div>
-    </div>
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="'/employee/warehouseManager/warehouses/allWarehouses'">Склады</a></li>
+            <li class="breadcrumb-item active" th:text="${warehouse.getName()}"></li>
+        </ol>
+    </nav>
 
     <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
     <div th:if="${deleteError}" class="alert alert-danger" th:text="${deleteError}"></div>
@@ -25,20 +27,21 @@
     <!-- Информация о складе -->
     <div class="profile-card p-4 mb-4">
         <div class="d-flex justify-content-between align-items-start mb-3">
-            <h2 class="h3 fw-bold mb-0" th:text="${warehouse.getName()}"></h2>
+            <div>
+                <h2 class="h3 fw-bold mb-1" th:text="${warehouse.getName()}"></h2>
+                <p class="text-muted mb-0">
+                    <i class="bi bi-geo-alt"></i>
+                    <span th:text="${warehouse.getAddress() != null ? warehouse.getAddress() : '—'}"></span>
+                </p>
+            </div>
             <span class="badge fs-6"
                   th:classappend="${warehouse.getType().name() == 'REFRIGERATOR'} ? 'bg-info text-dark' : 'bg-secondary'"
                   th:text="${warehouse.getType().name() == 'REFRIGERATOR'} ? 'Холодильный' : 'Обычный'"></span>
         </div>
 
-        <div class="row mb-3">
-            <div class="col-md-4"><strong>Адрес:</strong></div>
-            <div class="col-md-8" th:text="${warehouse.getAddress() != null ? warehouse.getAddress() : '—'}"></div>
-        </div>
-
         <!-- Stat-карточки -->
         <div class="row g-3 mb-4">
-            <div class="col-md-3">
+            <div class="col-6 col-md-3">
                 <div class="card text-center border-0 bg-light">
                     <div class="card-body py-3">
                         <div class="h4 mb-1 fw-bold text-primary" th:text="${whStat.shelfCount()}"></div>
@@ -46,7 +49,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-6 col-md-3">
                 <div class="card text-center border-0 bg-light">
                     <div class="card-body py-3">
                         <div class="h4 mb-1 fw-bold text-primary" th:text="${whStat.zoneCount()}"></div>
@@ -54,16 +57,16 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-6 col-md-3">
                 <div class="card text-center border-0 bg-light">
                     <div class="card-body py-3">
-                        <div class="h4 mb-1 fw-bold text-primary"
-                             th:text="${#numbers.formatDecimal(whStat.usedVolume(), 1, 1)} + ' / ' + ${#numbers.formatDecimal(whStat.totalCapacity(), 1, 1)} + ' л'"></div>
+                        <div class="h5 mb-1 fw-bold text-primary"
+                             th:text="${#numbers.formatDecimal(whStat.usedVolume(), 1, 3)} + ' / ' + ${#numbers.formatDecimal(whStat.totalCapacity(), 1, 3)} + ' м³'"></div>
                         <div class="small text-muted">Объём (занято/макс.)</div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-6 col-md-3">
                 <div class="card text-center border-0 bg-light">
                     <div class="card-body py-3">
                         <div class="h4 mb-1 fw-bold"
@@ -76,7 +79,7 @@
         </div>
 
         <!-- Общий progressbar -->
-        <div class="mb-3">
+        <div class="mb-4">
             <div class="d-flex justify-content-between mb-1">
                 <small class="fw-semibold">Использование склада</small>
                 <small th:text="${#numbers.formatDecimal(whStat.occupancyPercent(), 1, 1)} + '%'"></small>
@@ -90,8 +93,16 @@
             </div>
         </div>
 
-        <!-- Кнопки -->
-        <div class="mt-3 d-flex gap-2">
+        <!-- Кнопки управления -->
+        <div class="d-flex flex-wrap gap-2">
+            <a th:href="'/employee/warehouseManager/warehouse-management/place-product'"
+               class="btn btn-primary btn-sm">
+                <i class="bi bi-box-arrow-in-down"></i> Разместить товар
+            </a>
+            <a th:href="'/employee/warehouseManager/warehouse-management/analytics/' + ${warehouse.getId()}"
+               class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-bar-chart-line"></i> Аналитика
+            </a>
             <a th:href="'/employee/warehouseManager/warehouses/editWarehouse/' + ${warehouse.getId()}"
                class="btn btn-warning btn-sm">
                 <i class="bi bi-pencil"></i> Редактировать
@@ -104,7 +115,7 @@
         </div>
     </div>
 
-    <!-- Таблица стеллажей -->
+    <!-- Аккордеон стеллажей -->
     <div class="profile-card p-4">
         <h4 class="mb-3 fw-bold">Стеллажи</h4>
 
@@ -113,46 +124,93 @@
             <p class="mt-2">Стеллажи не добавлены</p>
         </div>
 
-        <div th:if="${!shelfStats.isEmpty()}" class="table-responsive">
-            <table class="table table-modern">
-                <thead>
-                <tr>
-                    <th>Код</th>
-                    <th>Зон</th>
-                    <th>Объём (занято / макс.)</th>
-                    <th>Заполненность</th>
-                    <th>Действия</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="entry : ${shelfStats}">
-                    <th:block th:with="stat=${entry.value}">
-                    <td class="fw-semibold" th:text="${stat.shelf().getCode()}"></td>
-                    <td th:text="${stat.zoneCount()}"></td>
-                    <td th:text="${#numbers.formatDecimal(stat.usedVolume(), 1, 1)} + ' / ' + ${#numbers.formatDecimal(stat.capacity(), 1, 1)} + ' л'"></td>
-                    <td style="min-width: 160px;">
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="progress flex-grow-1" style="height: 8px;">
-                                <div class="progress-bar"
-                                     th:classappend="${stat.occupancyPercent() >= 85} ? 'bg-danger' : (${stat.occupancyPercent() >= 60} ? 'bg-warning' : 'bg-success')"
-                                     role="progressbar"
-                                     th:style="'width: ' + ${#numbers.formatDecimal(stat.occupancyPercent(), 1, 0)} + '%'"
-                                     aria-valuemin="0" aria-valuemax="100"></div>
+        <div th:if="${!shelfStats.isEmpty()}" class="accordion" id="shelvesAccordion">
+            <div th:each="entry : ${shelfStats}" class="accordion-item border mb-2 rounded overflow-hidden">
+                <th:block th:with="stat=${entry.value}">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            th:attr="data-bs-target='#shelf-' + ${entry.key},
+                                     aria-controls='shelf-' + ${entry.key}"
+                            aria-expanded="false">
+                        <div class="d-flex align-items-center gap-3 w-100 pe-2">
+                            <span class="fw-bold" th:text="'Стеллаж ' + ${stat.shelf().getCode()}"></span>
+                            <span class="badge bg-light text-dark border small"
+                                  th:text="${stat.zoneCount()} + ' зон'"></span>
+                            <div class="d-flex align-items-center gap-2 ms-auto" style="min-width: 120px;">
+                                <div class="progress flex-grow-1" style="height: 8px;">
+                                    <div class="progress-bar"
+                                         th:classappend="${stat.occupancyPercent() >= 85} ? 'bg-danger' : (${stat.occupancyPercent() >= 60} ? 'bg-warning' : 'bg-success')"
+                                         role="progressbar"
+                                         th:style="'width: ' + ${#numbers.formatDecimal(stat.occupancyPercent(), 1, 0)} + '%'"
+                                         aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <small th:text="${#numbers.formatDecimal(stat.occupancyPercent(), 1, 1)} + '%'"
+                                       class="text-muted"></small>
                             </div>
-                            <small th:text="${#numbers.formatDecimal(stat.occupancyPercent(), 1, 1)} + '%'" class="text-muted"></small>
                         </div>
-                    </td>
-                    <td>
-                        <a th:href="'/employee/warehouseManager/warehouses/deleteShelf/' + ${entry.key} + '?warehouseId=' + ${warehouse.getId()}"
-                           class="btn btn-sm btn-outline-danger"
-                           onclick="return confirm('Удалить стеллаж? Это действие необратимо.');">
-                            <i class="bi bi-trash"></i>
-                        </a>
-                    </td>
-                    </th:block>
-                </tr>
-                </tbody>
-            </table>
+                    </button>
+                </h2>
+                <div th:id="'shelf-' + ${entry.key}" class="accordion-collapse collapse">
+                    <div class="accordion-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0">
+                                <thead class="table-light">
+                                <tr>
+                                    <th>Полка</th>
+                                    <th>Размеры (см)</th>
+                                    <th>Объём (м³)</th>
+                                    <th>Заполненность</th>
+                                    <th>Товары на полке</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="zone : ${stat.shelf().getStorageZones()}">
+                                    <td class="fw-semibold" th:text="${zone.getLabel()}"></td>
+                                    <td class="text-muted small"
+                                        th:text="${#numbers.formatDecimal(zone.getLength(), 1, 0)}
+                                                 + '×' + ${#numbers.formatDecimal(zone.getWidth(), 1, 0)}
+                                                 + '×' + ${#numbers.formatDecimal(zone.getHeight(), 1, 0)}"></td>
+                                    <td class="small" th:text="${#numbers.formatDecimal(zone.getCapacityVolume(), 1, 4)}"></td>
+                                    <td style="min-width: 130px;">
+                                        <div class="d-flex align-items-center gap-1">
+                                            <span class="rounded-circle d-inline-block flex-shrink-0"
+                                                  th:style="'width:8px;height:8px;background-color:' +
+                                                            (${zone.getOccupancyPercentage() >= 85} ? '#dc3545' :
+                                                            (${zone.getOccupancyPercentage() >= 60} ? '#ffc107' : '#198754'))"></span>
+                                            <div class="progress flex-grow-1" style="height: 6px;">
+                                                <div class="progress-bar"
+                                                     th:classappend="${zone.getOccupancyPercentage() >= 85} ? 'bg-danger' : (${zone.getOccupancyPercentage() >= 60} ? 'bg-warning' : 'bg-success')"
+                                                     role="progressbar"
+                                                     th:style="'width: ' + ${#numbers.formatDecimal(zone.getOccupancyPercentage(), 1, 0)} + '%'"
+                                                     aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
+                                            <small class="text-muted"
+                                                   th:text="${#numbers.formatDecimal(zone.getOccupancyPercentage(), 1, 1)} + '%'"></small>
+                                        </div>
+                                    </td>
+                                    <td class="small">
+                                        <span th:if="${zone.getProducts().isEmpty()}" class="text-muted">—</span>
+                                        <span th:each="zp, zpIter : ${zone.getProducts()}">
+                                            <span th:text="${zp.getProduct().getName()} + ' ' + ${zp.getQuantity()} + ' шт.'"></span><span th:unless="${zpIter.last}">, </span>
+                                        </span>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="p-3 border-top">
+                            <a th:href="'/employee/warehouseManager/warehouses/deleteShelf/' + ${entry.key} + '?warehouseId=' + ${warehouse.getId()}"
+                               class="btn btn-sm btn-outline-danger"
+                               onclick="return confirm('Удалить стеллаж? Это действие необратимо.');">
+                                <i class="bi bi-trash"></i> Удалить стеллаж
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                </th:block>
+            </div>
         </div>
     </div>
 </div>
