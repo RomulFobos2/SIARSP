@@ -16,7 +16,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -64,10 +66,32 @@ public class WarehouseManagementController {
         List<Product> negativeStockProducts = productRepository.findByQuantityForStockLessThan(0);
         List<Warehouse> warehouses = warehouseRepository.findAll();
 
+        // Pre-compute габариты упаковки пока JPA-транзакция ещё открыта
+        // (attributeValues — lazy collection, недоступна после закрытия транзакции)
+        Map<Long, Boolean> hasPackageDims = new HashMap<>();
+        Map<Long, String>  packageDimsStr = new HashMap<>();
+        for (Product p : products.getContent()) {
+            try {
+                Double l = p.getPackageLength();
+                Double w = p.getPackageWidth();
+                Double h = p.getPackageHeight();
+                boolean has = (l != null && w != null && h != null);
+                hasPackageDims.put(p.getId(), has);
+                if (has) {
+                    packageDimsStr.put(p.getId(),
+                            (int) Math.round(l) + "×" + (int) Math.round(w) + "×" + (int) Math.round(h));
+                }
+            } catch (Exception e) {
+                hasPackageDims.put(p.getId(), false);
+            }
+        }
+
         model.addAttribute("products", products);
         model.addAttribute("negativeStockProducts", negativeStockProducts);
         model.addAttribute("warehouses", warehouses);
         model.addAttribute("search", search);
+        model.addAttribute("hasPackageDims", hasPackageDims);
+        model.addAttribute("packageDimsStr", packageDimsStr);
         return "employee/warehouseManager/warehouses/placeProduct";
     }
 
