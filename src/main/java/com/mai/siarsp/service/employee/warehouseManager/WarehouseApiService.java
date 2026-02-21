@@ -186,7 +186,8 @@ public class WarehouseApiService {
                             zp.getProduct().getName(),
                             zp.getProduct().getArticle(),
                             zp.getQuantity(),
-                            orientationLabel(zp.getOrientation())
+                            orientationLabel(zp.getOrientation()),
+                            zp.getTotalVolume()
                     ))
                     .toList();
             return new ZoneInfo(

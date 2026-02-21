@@ -6,6 +6,8 @@ import com.mai.siarsp.enumeration.WarehouseType;
 import com.mai.siarsp.mapper.ProductMapper;
 import com.mai.siarsp.models.Product;
 import com.mai.siarsp.models.ProductCategory;
+import com.mai.siarsp.repo.ProductAttributeRepository;
+import com.mai.siarsp.repo.ZoneProductRepository;
 import com.mai.siarsp.service.employee.warehouseManager.ProductService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -21,15 +23,27 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Controller("warehouseManagerProductController")
 @Slf4j
 public class ProductController {
 
-    private final ProductService productService;
+    private static final List<String> GABARITE_ATTR_NAMES = List.of(
+            "Длина упаковки", "Ширина упаковки", "Высота упаковки"
+    );
 
-    public ProductController(ProductService productService) {
+    private final ProductService productService;
+    private final ZoneProductRepository zoneProductRepository;
+    private final ProductAttributeRepository productAttributeRepository;
+
+    public ProductController(ProductService productService,
+                             ZoneProductRepository zoneProductRepository,
+                             ProductAttributeRepository productAttributeRepository) {
         this.productService = productService;
+        this.zoneProductRepository = zoneProductRepository;
+        this.productAttributeRepository = productAttributeRepository;
     }
 
     @GetMapping("/employee/warehouseManager/products/check-article")
@@ -110,12 +124,15 @@ public class ProductController {
 
         Product product = productService.getProductRepository().findById(id).get();
         ProductDTO productDTO = ProductMapper.INSTANCE.toDTO(product);
+        boolean isInWarehouse = !zoneProductRepository.findByProduct(product).isEmpty();
         model.addAttribute("productDTO", productDTO);
+        model.addAttribute("isInWarehouse", isInWarehouse);
         model.addAttribute("warehouseTypes", WarehouseType.values());
         populateCategories(model);
         return "employee/warehouseManager/products/editProduct";
     }
 
+    @Transactional
     @PostMapping("/employee/warehouseManager/products/editProduct/{id}")
     public String editProduct(@PathVariable(value = "id") long id,
                               @RequestParam String inputName,
@@ -128,6 +145,17 @@ public class ProductController {
                               @RequestParam Map<String, String> allParams,
                               RedirectAttributes redirectAttributes) {
         Map<String, String> attributeValues = extractAttributeValues(allParams);
+
+        // Серверная защита: если товар размещён на складе — убрать габаритные атрибуты
+        Optional<Product> optProduct = productService.getProductRepository().findById(id);
+        if (optProduct.isPresent() && !zoneProductRepository.findByProduct(optProduct.get()).isEmpty()) {
+            Set<String> gabariteAttrIds = GABARITE_ATTR_NAMES.stream()
+                    .map(productAttributeRepository::findByName)
+                    .filter(Optional::isPresent)
+                    .map(opt -> String.valueOf(opt.get().getId()))
+                    .collect(Collectors.toSet());
+            attributeValues.keySet().removeAll(gabariteAttrIds);
+        }
 
         Optional<Long> editedProductId = productService.editProduct(id, inputName, inputArticle, inputStockQuantity,
                 inputQuantityForStock, inputWarehouseType, inputCategoryId, inputFileField, attributeValues);
