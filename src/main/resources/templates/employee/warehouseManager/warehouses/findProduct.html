@@ -1,0 +1,155 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Поиск товара на складе | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container my-5">
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="'/employee/warehouseManager/warehouses/allWarehouses'">Склады</a></li>
+            <li class="breadcrumb-item active">Поиск товара</li>
+        </ol>
+    </nav>
+
+    <!-- Форма поиска -->
+    <div class="profile-card p-4 mb-4">
+        <h4 class="fw-bold mb-3">Поиск товара на складе</h4>
+        <form method="get" th:action="@{/employee/warehouseManager/warehouse-management/find-product}">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-9">
+                    <label class="form-label fw-semibold">Товар</label>
+                    <select name="productId" class="form-select">
+                        <option value="">— Выберите товар —</option>
+                        <option th:each="product : ${allProducts}"
+                                th:value="${product.getId()}"
+                                th:text="${product.getName()} + ' (арт. ' + ${product.getArticle()} + ')'"
+                                th:selected="${selectedProduct != null and selectedProduct.getId() == product.getId()}"></option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> Найти
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Результаты поиска -->
+    <div th:if="${selectedProduct != null}">
+        <!-- Карточка товара -->
+        <div class="profile-card p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h5 class="fw-bold mb-1" th:text="${selectedProduct.getName()}"></h5>
+                    <p class="text-muted small mb-2"
+                       th:text="'Артикул: ' + ${selectedProduct.getArticle()}"></p>
+                </div>
+                <span class="badge"
+                      th:classappend="${selectedProduct.getWarehouseType() != null and selectedProduct.getWarehouseType().name() == 'REFRIGERATED'} ? 'bg-info text-dark' : 'bg-secondary'"
+                      th:text="${selectedProduct.getWarehouseType() != null and selectedProduct.getWarehouseType().name() == 'REFRIGERATED'} ? 'Холодильный' : 'Обычный'"></span>
+            </div>
+
+            <div class="row g-3 mt-1">
+                <div class="col-md-4">
+                    <div class="card border-0 bg-light text-center">
+                        <div class="card-body py-2">
+                            <div class="h5 mb-0 fw-bold text-primary" th:text="${selectedProduct.getStockQuantity()}"></div>
+                            <small class="text-muted">На складе (всего)</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 bg-light text-center">
+                        <div class="card-body py-2">
+                            <div class="h5 mb-0 fw-bold"
+                                 th:classappend="${selectedProduct.getQuantityForStock() < 0} ? 'text-danger' : 'text-success'"
+                                 th:text="${selectedProduct.getQuantityForStock()}"></div>
+                            <small class="text-muted">К размещению</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 bg-light text-center">
+                        <div class="card-body py-2">
+                            <div class="h5 mb-0 fw-bold text-info" th:text="${totalQuantity}"></div>
+                            <small class="text-muted">Размещено на полках</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div th:if="${selectedProduct.getQuantityForStock() < 0}" class="alert alert-danger mt-3 mb-0 py-2">
+                <i class="bi bi-exclamation-octagon-fill"></i>
+                Отрицательный остаток «К размещению» — возможна ошибка учёта.
+            </div>
+        </div>
+
+        <!-- Таблица местонахождений -->
+        <div class="profile-card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">Местонахождение на складах</h5>
+                <a th:href="'/employee/warehouseManager/warehouse-management/place-product'"
+                   class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-box-arrow-in-down"></i> Разместить ещё
+                </a>
+            </div>
+
+            <div th:if="${locations.isEmpty()}" class="text-center text-muted py-4">
+                <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                <p class="mt-2">Товар не размещён ни на одном складе</p>
+            </div>
+
+            <div th:if="${!locations.isEmpty()}" class="table-responsive">
+                <table class="table table-modern">
+                    <thead>
+                    <tr>
+                        <th>Склад</th>
+                        <th>Стеллаж</th>
+                        <th>Полка</th>
+                        <th class="text-center">Кол-во</th>
+                        <th>Ориентация</th>
+                        <th class="text-end">Объём (м³)</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="loc : ${locations}">
+                        <td th:text="${loc.warehouseName()}"></td>
+                        <td th:text="${loc.shelfCode()}"></td>
+                        <td class="fw-semibold" th:text="${loc.zoneLabel()}"></td>
+                        <td class="text-center">
+                            <span class="badge bg-primary" th:text="${loc.quantity()}"></span>
+                        </td>
+                        <td class="small text-muted" th:text="${loc.orientationLabel()}"></td>
+                        <td class="text-end small" th:text="${#numbers.formatDecimal(loc.totalVolume(), 1, 5)}"></td>
+                    </tr>
+                    </tbody>
+                    <tfoot class="table-light fw-bold">
+                    <tr>
+                        <td colspan="3">Итого</td>
+                        <td class="text-center">
+                            <span class="badge bg-dark" th:text="${totalQuantity}"></span>
+                        </td>
+                        <td></td>
+                        <td class="text-end small" th:text="${#numbers.formatDecimal(totalVolume, 1, 5)}"></td>
+                    </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>

@@ -1,0 +1,401 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Размещение товара | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container-fluid my-4 px-4">
+    <!-- Заголовок и хлебные крошки -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="'/employee/warehouseManager/warehouses/allWarehouses'">Склады</a></li>
+            <li class="breadcrumb-item active">Размещение товара</li>
+        </ol>
+    </nav>
+
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${successMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${errorMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Предупреждение о товарах с отрицательным остатком -->
+    <div th:if="${!negativeStockProducts.isEmpty()}" class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <strong>Внимание!</strong> Есть товары с отрицательным значением «К размещению»:
+        <span th:each="p, i : ${negativeStockProducts}">
+            <strong th:text="${p.getName()}"></strong><span th:unless="${i.last}">, </span>
+        </span>
+    </div>
+
+    <div class="row g-4">
+        <!-- ===== ЛЕВАЯ КОЛОНКА: Список товаров ===== -->
+        <div class="col-lg-7">
+            <div class="profile-card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="fw-bold mb-0">Товары для размещения</h4>
+                    <span class="badge bg-primary" th:text="${products.totalElements} + ' шт.'"></span>
+                </div>
+
+                <!-- Поиск -->
+                <form method="get" th:action="@{/employee/warehouseManager/warehouse-management/place-product}" class="mb-3">
+                    <div class="input-group">
+                        <input type="text" name="search" class="form-control"
+                               placeholder="Поиск по названию..."
+                               th:value="${search}">
+                        <button type="submit" class="btn btn-outline-secondary">
+                            <i class="bi bi-search"></i>
+                        </button>
+                        <a th:if="${search != null and !search.isBlank()}"
+                           th:href="@{/employee/warehouseManager/warehouse-management/place-product}"
+                           class="btn btn-outline-danger">
+                            <i class="bi bi-x"></i>
+                        </a>
+                    </div>
+                </form>
+
+                <!-- Таблица товаров -->
+                <div th:if="${products.isEmpty()}" class="text-center text-muted py-4">
+                    <i class="bi bi-box-seam" style="font-size: 2rem;"></i>
+                    <p class="mt-2">Нет товаров для размещения</p>
+                </div>
+
+                <div th:if="${!products.isEmpty()}" class="table-responsive">
+                    <table class="table table-modern table-hover">
+                        <thead>
+                        <tr>
+                            <th>Наименование</th>
+                            <th class="text-center">К размещению</th>
+                            <th class="text-center">На складе</th>
+                            <th class="text-center">Габариты (см)</th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="product : ${products}">
+                            <td>
+                                <div class="fw-semibold" th:text="${product.getName()}"></div>
+                                <small class="text-muted" th:text="'Арт. ' + ${product.getArticle()}"></small>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-info text-dark" th:text="${product.getQuantityForStock()}"></span>
+                            </td>
+                            <td class="text-center" th:text="${product.getStockQuantity()}"></td>
+                            <td class="text-center small text-muted">
+                                <span th:if="${product.getPackageLength() != null}"
+                                      th:text="${#numbers.formatDecimal(product.getPackageLength(), 1, 0)}
+                                               + '×' + ${#numbers.formatDecimal(product.getPackageWidth(), 1, 0)}
+                                               + '×' + ${#numbers.formatDecimal(product.getPackageHeight(), 1, 0)}"></span>
+                                <span th:if="${product.getPackageLength() == null}" class="text-danger">
+                                    <i class="bi bi-exclamation-circle" title="Габариты не указаны"></i>
+                                </span>
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-primary"
+                                        th:onclick="'selectProduct(' + ${product.getId()}
+                                                    + ', \'' + ${product.getName().replace('\'', '\\\'')} + '\''
+                                                    + ', ' + ${product.getQuantityForStock()}
+                                                    + ', ' + ${product.getPackageLength() != null} + ')'"
+                                        th:disabled="${product.getPackageLength() == null}">
+                                    <i class="bi bi-box-arrow-in-down"></i> Разместить
+                                </button>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Пагинация -->
+                <nav th:if="${products.totalPages > 1}" class="mt-3">
+                    <ul class="pagination pagination-sm justify-content-center">
+                        <li class="page-item" th:classappend="${products.first} ? 'disabled'">
+                            <a class="page-link"
+                               th:href="@{/employee/warehouseManager/warehouse-management/place-product(page=${products.number - 1}, search=${search})}">«</a>
+                        </li>
+                        <li th:each="i : ${#numbers.sequence(0, products.totalPages - 1)}"
+                            class="page-item" th:classappend="${i == products.number} ? 'active'">
+                            <a class="page-link"
+                               th:href="@{/employee/warehouseManager/warehouse-management/place-product(page=${i}, search=${search})}"
+                               th:text="${i + 1}"></a>
+                        </li>
+                        <li class="page-item" th:classappend="${products.last} ? 'disabled'">
+                            <a class="page-link"
+                               th:href="@{/employee/warehouseManager/warehouse-management/place-product(page=${products.number + 1}, search=${search})}">»</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+
+        <!-- ===== ПРАВАЯ КОЛОНКА: Панель размещения ===== -->
+        <div class="col-lg-5">
+            <div id="placementPanel" class="profile-card p-4" style="display:none;">
+                <h4 class="fw-bold mb-1">Размещение товара</h4>
+                <p class="text-muted mb-3" id="selectedProductName">—</p>
+
+                <!-- Поле количества -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Количество</label>
+                    <input type="number" id="quantityInput" class="form-control"
+                           min="1" value="1" placeholder="Введите количество">
+                    <div class="form-text" id="maxQtyHint"></div>
+                </div>
+
+                <!-- Предупреждение: нет габаритов -->
+                <div id="noDimsWarning" class="alert alert-warning d-none">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    Укажите габариты упаковки в карточке товара для автоматического размещения.
+                </div>
+
+                <hr>
+
+                <!-- Автоматическое размещение -->
+                <div id="autoPlacementSection">
+                    <h6 class="fw-bold mb-2">Автоматическое размещение</h6>
+                    <button type="button" class="btn btn-outline-primary btn-sm mb-2" onclick="checkAvailability()">
+                        <i class="bi bi-search"></i> Проверить доступность
+                    </button>
+                    <div id="availabilityResult" class="mb-3"></div>
+                    <form id="autoPlaceForm" method="post"
+                          th:action="@{/employee/warehouseManager/warehouse-management/place-product}">
+                        <input type="hidden" name="productId" id="autoProductId">
+                        <input type="hidden" name="quantity" id="autoQuantity">
+                        <button type="submit" class="btn btn-success btn-sm w-100">
+                            <i class="bi bi-magic"></i> Разместить автоматически
+                        </button>
+                    </form>
+                </div>
+
+                <hr>
+
+                <!-- Ручное размещение -->
+                <div id="manualPlacementSection">
+                    <h6 class="fw-bold mb-2">Ручное размещение</h6>
+
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold small">Склад</label>
+                        <select id="warehouseSelect" class="form-select form-select-sm" onchange="loadZones()">
+                            <option value="">— Выберите склад —</option>
+                            <option th:each="wh : ${warehouses}"
+                                    th:value="${wh.getId()}"
+                                    th:text="${wh.getName()}"></option>
+                        </select>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold small">Зона хранения</label>
+                        <select id="zoneSelect" class="form-select form-select-sm" onchange="loadZoneInfo()">
+                            <option value="">— Сначала выберите склад —</option>
+                        </select>
+                    </div>
+
+                    <div id="zoneInfoBlock" class="alert alert-light border small mb-3 d-none">
+                        <div><strong>Заполненность:</strong> <span id="zoneOccupancy">—</span></div>
+                        <div><strong>Свободно:</strong> <span id="zoneAvailable">—</span></div>
+                        <div id="zoneProducts"></div>
+                    </div>
+
+                    <form id="manualPlaceForm" method="post"
+                          th:action="@{/employee/warehouseManager/warehouse-management/place-product}">
+                        <input type="hidden" name="productId" id="manualProductId">
+                        <input type="hidden" name="quantity" id="manualQuantity">
+                        <input type="hidden" name="zoneId" id="manualZoneId">
+                        <button type="submit" class="btn btn-primary btn-sm w-100"
+                                id="manualPlaceBtn" disabled>
+                            <i class="bi bi-box-arrow-in-down"></i> Разместить в выбранную зону
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Заглушка когда товар не выбран -->
+            <div id="selectProductHint" class="profile-card p-4 text-center text-muted">
+                <i class="bi bi-hand-index-thumb" style="font-size: 2.5rem;"></i>
+                <p class="mt-3">Выберите товар в таблице слева для размещения на складе</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+
+<script>
+    var selectedProductId = null;
+    var selectedMaxQty = 0;
+    var debounceTimer = null;
+
+    function selectProduct(id, name, maxQty, hasDims) {
+        selectedProductId = id;
+        selectedMaxQty = maxQty;
+
+        document.getElementById('selectedProductName').textContent = name;
+        document.getElementById('quantityInput').max = maxQty;
+        document.getElementById('quantityInput').value = Math.min(1, maxQty);
+        document.getElementById('maxQtyHint').textContent = 'Максимум: ' + maxQty + ' шт.';
+        document.getElementById('autoProductId').value = id;
+        document.getElementById('manualProductId').value = id;
+
+        if (!hasDims) {
+            document.getElementById('noDimsWarning').classList.remove('d-none');
+            document.getElementById('autoPlacementSection').style.opacity = '0.5';
+            document.getElementById('autoPlacementSection').style.pointerEvents = 'none';
+        } else {
+            document.getElementById('noDimsWarning').classList.add('d-none');
+            document.getElementById('autoPlacementSection').style.opacity = '1';
+            document.getElementById('autoPlacementSection').style.pointerEvents = 'auto';
+        }
+
+        document.getElementById('availabilityResult').innerHTML = '';
+        document.getElementById('placementPanel').style.display = 'block';
+        document.getElementById('selectProductHint').style.display = 'none';
+
+        syncQuantity();
+    }
+
+    function syncQuantity() {
+        var qty = parseInt(document.getElementById('quantityInput').value) || 1;
+        document.getElementById('autoQuantity').value = qty;
+        document.getElementById('manualQuantity').value = qty;
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        document.getElementById('quantityInput').addEventListener('input', function () {
+            syncQuantity();
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function () {
+                if (selectedProductId) {
+                    checkAvailability();
+                }
+            }, 600);
+        });
+    });
+
+    function checkAvailability() {
+        var qty = parseInt(document.getElementById('quantityInput').value) || 1;
+        if (!selectedProductId) return;
+
+        var container = document.getElementById('availabilityResult');
+        container.innerHTML = '<div class="text-muted small"><i class="bi bi-hourglass-split"></i> Проверка...</div>';
+
+        fetch('/employee/warehouseManager/warehouse-management/check-placement?productId='
+            + selectedProductId + '&quantity=' + qty)
+            .then(function (r) { return r.json(); })
+            .then(function (zones) {
+                if (zones.length === 0) {
+                    container.innerHTML = '<div class="alert alert-warning py-2 small">'
+                        + '<i class="bi bi-x-circle"></i> Нет подходящих зон для размещения.</div>';
+                    return;
+                }
+                var html = '<div class="small"><strong>Подходящие зоны (' + zones.length + '):</strong></div>'
+                    + '<ul class="list-unstyled mt-1 small">';
+                for (var i = 0; i < Math.min(zones.length, 3); i++) {
+                    var z = zones[i];
+                    var color = z.occupancyPercent >= 85 ? 'danger' : (z.occupancyPercent >= 60 ? 'warning' : 'success');
+                    html += '<li class="mb-1 p-2 border rounded">'
+                        + '<div class="d-flex justify-content-between">'
+                        + '<span class="fw-semibold">' + z.warehouseName + ' / ' + z.shelfCode + '-' + z.zoneLabel + '</span>'
+                        + '<span class="badge bg-' + color + '">' + z.occupancyPercent.toFixed(1) + '%</span>'
+                        + '</div>'
+                        + '<div class="text-muted">Ориентация: ' + z.orientation
+                        + ' · Макс: ' + z.maxQuantity + ' шт.</div>'
+                        + '</li>';
+                }
+                if (zones.length > 3) {
+                    html += '<li class="text-muted">... и ещё ' + (zones.length - 3) + ' зон</li>';
+                }
+                html += '</ul>';
+                container.innerHTML = html;
+            })
+            .catch(function () {
+                container.innerHTML = '<div class="alert alert-danger py-2 small">Ошибка при проверке.</div>';
+            });
+    }
+
+    function loadZones() {
+        var warehouseId = document.getElementById('warehouseSelect').value;
+        var zoneSelect = document.getElementById('zoneSelect');
+        zoneSelect.innerHTML = '<option value="">Загрузка...</option>';
+        document.getElementById('zoneInfoBlock').classList.add('d-none');
+        document.getElementById('manualPlaceBtn').disabled = true;
+
+        if (!warehouseId) {
+            zoneSelect.innerHTML = '<option value="">— Сначала выберите склад —</option>';
+            return;
+        }
+
+        fetch('/employee/warehouseManager/warehouse-management/warehouse-zones/' + warehouseId)
+            .then(function (r) { return r.json(); })
+            .then(function (zones) {
+                if (zones.length === 0) {
+                    zoneSelect.innerHTML = '<option value="">Нет зон хранения</option>';
+                    return;
+                }
+                var html = '<option value="">— Выберите зону —</option>';
+                zones.forEach(function (z) {
+                    var pct = z.occupancyPercent.toFixed(1);
+                    html += '<option value="' + z.id + '">'
+                        + z.shelfCode + ' / ' + z.label
+                        + ' (' + pct + '% занято)'
+                        + '</option>';
+                });
+                zoneSelect.innerHTML = html;
+            })
+            .catch(function () {
+                zoneSelect.innerHTML = '<option value="">Ошибка загрузки</option>';
+            });
+    }
+
+    function loadZoneInfo() {
+        var zoneId = document.getElementById('zoneSelect').value;
+        var btn = document.getElementById('manualPlaceBtn');
+        var infoBlock = document.getElementById('zoneInfoBlock');
+
+        if (!zoneId) {
+            infoBlock.classList.add('d-none');
+            btn.disabled = true;
+            return;
+        }
+
+        document.getElementById('manualZoneId').value = zoneId;
+        btn.disabled = false;
+
+        fetch('/employee/warehouseManager/warehouse-management/zone-info/' + zoneId)
+            .then(function (r) { return r.json(); })
+            .then(function (zone) {
+                if (!zone) return;
+                var color = zone.occupancyPercent >= 85 ? 'danger' : (zone.occupancyPercent >= 60 ? 'warning' : 'success');
+                document.getElementById('zoneOccupancy').innerHTML =
+                    '<span class="text-' + color + ' fw-bold">' + zone.occupancyPercent.toFixed(1) + '%</span>';
+                document.getElementById('zoneAvailable').textContent =
+                    (zone.capacityVolume - zone.usedVolume).toFixed(4) + ' м³';
+
+                var prods = zone.products;
+                var prodsHtml = '';
+                if (prods && prods.length > 0) {
+                    prodsHtml = '<div><strong>Товары на полке:</strong> ';
+                    prods.forEach(function (p) {
+                        prodsHtml += p.productName + ' ' + p.quantity + ' шт.; ';
+                    });
+                    prodsHtml += '</div>';
+                }
+                document.getElementById('zoneProducts').innerHTML = prodsHtml;
+                infoBlock.classList.remove('d-none');
+            })
+            .catch(function () {
+                infoBlock.classList.add('d-none');
+            });
+    }
+</script>
+</body>
+</html>
