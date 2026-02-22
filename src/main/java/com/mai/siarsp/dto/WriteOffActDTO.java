@@ -1,5 +1,6 @@
 package com.mai.siarsp.dto;
 
+import com.mai.siarsp.enumeration.WriteOffActStatus;
 import com.mai.siarsp.enumeration.WriteOffReason;
 import lombok.Data;
 
@@ -11,8 +12,11 @@ public class WriteOffActDTO {
     private String actNumber;
     private LocalDate actDate;
     private WriteOffReason reason;
+    private WriteOffActStatus status;
+    private String statusDisplayName;
     private int quantity;
     private String comment;
+    private String directorComment;
     private Long productId;
     private String productName;
     private String productArticle;

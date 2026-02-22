@@ -19,6 +19,7 @@ public interface WriteOffActMapper {
     @Mapping(source = "product.article", target = "productArticle")
     @Mapping(source = "responsibleEmployee.id", target = "responsibleEmployeeId")
     @Mapping(source = "responsibleEmployee", target = "responsibleEmployeeFullName", qualifiedByName = "employeeFullName")
+    @Mapping(source = "status.displayName", target = "statusDisplayName")
     WriteOffActDTO toDTO(WriteOffAct writeOffAct);
 
     List<WriteOffActDTO> toDTOList(List<WriteOffAct> writeOffActs);

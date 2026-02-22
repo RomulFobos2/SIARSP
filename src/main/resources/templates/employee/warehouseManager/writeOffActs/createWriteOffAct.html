@@ -1,0 +1,99 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Создание акта списания | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container my-5">
+    <div class="profile-card mb-4">
+        <div class="profile-actions">
+            <a href="/employee/warehouseManager/writeOffActs/allWriteOffActs"
+               class="btn btn-secondary btn-profile">← Назад к актам</a>
+        </div>
+    </div>
+
+    <div class="profile-card p-4">
+        <h2 class="h3 mb-4 fw-bold">
+            <i class="bi bi-file-earmark-minus me-2"></i>Создание акта списания
+        </h2>
+
+        <form method="post" action="/employee/warehouseManager/writeOffActs/createWriteOffAct">
+            <!-- Выбор товара -->
+            <div class="mb-3">
+                <label for="productId" class="form-label fw-semibold">Товар <span class="text-danger">*</span></label>
+                <select id="productId" name="productId" class="form-select" required onchange="updateMaxQuantity()">
+                    <option value="">— Выберите товар —</option>
+                    <option th:each="product : ${products}"
+                            th:value="${product.id}"
+                            th:text="${product.name + ' (' + product.article + ') — на складе: ' + product.getAvailableQuantity() + ' шт.'}"
+                            th:attr="data-available=${product.getAvailableQuantity()}">
+                    </option>
+                </select>
+            </div>
+
+            <!-- Количество -->
+            <div class="mb-3">
+                <label for="quantity" class="form-label fw-semibold">Количество <span class="text-danger">*</span></label>
+                <input type="number" id="quantity" name="quantity" class="form-control"
+                       min="1" required placeholder="Укажите количество для списания">
+                <div class="form-text" id="quantityHint">Выберите товар для отображения доступного количества</div>
+            </div>
+
+            <!-- Причина -->
+            <div class="mb-3">
+                <label for="reason" class="form-label fw-semibold">Причина списания <span class="text-danger">*</span></label>
+                <select id="reason" name="reason" class="form-select" required>
+                    <option value="">— Выберите причину —</option>
+                    <option th:each="r : ${reasons}" th:value="${r.name()}" th:text="${r.displayName}"></option>
+                </select>
+            </div>
+
+            <!-- Комментарий -->
+            <div class="mb-4">
+                <label for="comment" class="form-label fw-semibold">Комментарий</label>
+                <textarea id="comment" name="comment" class="form-control" rows="3" maxlength="500"
+                          placeholder="Подробное описание обстоятельств списания..."></textarea>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-send me-1"></i> Отправить на подпись
+                </button>
+                <a href="/employee/warehouseManager/writeOffActs/allWriteOffActs"
+                   class="btn btn-outline-secondary">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+
+<script>
+    function updateMaxQuantity() {
+        var select = document.getElementById('productId');
+        var quantityInput = document.getElementById('quantity');
+        var hint = document.getElementById('quantityHint');
+        var selected = select.options[select.selectedIndex];
+
+        if (selected && selected.value) {
+            var available = parseInt(selected.getAttribute('data-available'));
+            quantityInput.max = available;
+            quantityInput.value = '';
+            hint.textContent = 'Доступно для списания: ' + available + ' шт.';
+        } else {
+            quantityInput.removeAttribute('max');
+            quantityInput.value = '';
+            hint.textContent = 'Выберите товар для отображения доступного количества';
+        }
+    }
+</script>
+</body>
+</html>
