@@ -1,5 +1,6 @@
 package com.mai.siarsp.models;
 
+import com.mai.siarsp.enumeration.WriteOffActStatus;
 import com.mai.siarsp.enumeration.WriteOffReason;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -116,12 +117,31 @@ public class WriteOffAct {
     private int quantity;
 
     /**
+     * Статус акта списания
+     *
+     * Жизненный цикл:
+     * - PENDING_DIRECTOR — на подписи у директора (после создания)
+     * - APPROVED — утверждён директором (товар списан)
+     * - REJECTED — отклонён директором
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private WriteOffActStatus status = WriteOffActStatus.PENDING_DIRECTOR;
+
+    /**
      * Комментарий к акту списания
      * Подробное описание обстоятельств и причин списания
      *
      */
     @Column(length = 500)
     private String comment;
+
+    /**
+     * Комментарий директора при отклонении акта
+     * Заполняется при переводе акта в статус REJECTED
+     */
+    @Column(length = 500)
+    private String directorComment;
 
     /**
      * Товар, подлежащий списанию

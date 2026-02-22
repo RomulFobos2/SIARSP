@@ -1,0 +1,87 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Акт списания | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container my-5">
+    <div class="profile-card mb-4">
+        <div class="profile-actions">
+            <a href="/employee/warehouseManager/writeOffActs/allWriteOffActs"
+               class="btn btn-secondary btn-profile">← Назад к актам</a>
+        </div>
+    </div>
+
+    <div class="profile-card p-4">
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <h2 class="h3 fw-bold mb-0">
+                <i class="bi bi-file-earmark-minus me-2"></i>Акт списания
+                <span th:text="${act.getActNumber()}"></span>
+            </h2>
+            <span class="badge fs-6"
+                  th:classappend="${act.getStatus().name() == 'PENDING_DIRECTOR'} ? 'bg-warning text-dark' : (${act.getStatus().name() == 'APPROVED'} ? 'bg-success' : 'bg-danger')"
+                  th:text="${act.getStatus().getDisplayName()}"></span>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="card border-0 bg-light h-100">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">Информация об акте</h6>
+                        <div class="mb-2">
+                            <strong>Номер:</strong> <span th:text="${act.getActNumber()}"></span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Дата:</strong> <span th:text="${#temporals.format(act.getActDate(), 'dd.MM.yyyy')}"></span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Причина:</strong> <span th:text="${act.getReason().getDisplayName()}"></span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Ответственный:</strong> <span th:text="${act.getResponsibleEmployee().getFullName()}"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-0 bg-light h-100">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">Товар</h6>
+                        <div class="mb-2">
+                            <strong>Наименование:</strong> <span th:text="${act.getProduct().getName()}"></span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Артикул:</strong> <span th:text="${act.getProduct().getArticle()}"></span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Количество списания:</strong>
+                            <span class="fw-bold text-danger" th:text="${act.getQuantity()} + ' шт.'"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${act.getComment() != null and !act.getComment().isEmpty()}" class="mb-4">
+            <h6 class="fw-semibold">Комментарий</h6>
+            <p class="text-muted" th:text="${act.getComment()}"></p>
+        </div>
+
+        <div th:if="${act.getDirectorComment() != null and !act.getDirectorComment().isEmpty()}" class="mb-4">
+            <h6 class="fw-semibold text-danger">Комментарий директора</h6>
+            <p class="text-muted" th:text="${act.getDirectorComment()}"></p>
+        </div>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>

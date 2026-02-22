@@ -13,29 +13,32 @@
 <header th:insert="~{blocks/header :: header}"></header>
 
 <div class="container my-5">
-    <div class="profile-card mb-4">
-        <div class="profile-actions">
-            <a th:href="'/employee/manager/warehouses/allWarehouses'" class="btn btn-secondary btn-profile">← Назад к складам</a>
-        </div>
-    </div>
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="'/employee/manager/warehouses/allWarehouses'">Склады</a></li>
+            <li class="breadcrumb-item active" th:text="${warehouse.getName()}"></li>
+        </ol>
+    </nav>
 
     <!-- Информация о складе -->
     <div class="profile-card p-4 mb-4">
         <div class="d-flex justify-content-between align-items-start mb-3">
-            <h2 class="h3 fw-bold mb-0" th:text="${warehouse.getName()}"></h2>
+            <div>
+                <h2 class="h3 fw-bold mb-1" th:text="${warehouse.getName()}"></h2>
+                <p class="text-muted mb-0">
+                    <i class="bi bi-geo-alt"></i>
+                    <span th:text="${warehouse.getAddress() != null ? warehouse.getAddress() : '—'}"></span>
+                </p>
+            </div>
             <span class="badge fs-6"
                   th:classappend="${warehouse.getType().name() == 'REFRIGERATOR'} ? 'bg-info text-dark' : 'bg-secondary'"
                   th:text="${warehouse.getType().name() == 'REFRIGERATOR'} ? 'Холодильный' : 'Обычный'"></span>
         </div>
 
-        <div class="row mb-3">
-            <div class="col-md-4"><strong>Адрес:</strong></div>
-            <div class="col-md-8" th:text="${warehouse.getAddress() != null ? warehouse.getAddress() : '—'}"></div>
-        </div>
-
         <!-- Stat-карточки -->
         <div class="row g-3 mb-4">
-            <div class="col-md-3">
+            <div class="col-6 col-md-3">
                 <div class="card text-center border-0 bg-light">
                     <div class="card-body py-3">
                         <div class="h4 mb-1 fw-bold text-primary" th:text="${whStat.shelfCount()}"></div>
@@ -43,7 +46,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-6 col-md-3">
                 <div class="card text-center border-0 bg-light">
                     <div class="card-body py-3">
                         <div class="h4 mb-1 fw-bold text-primary" th:text="${whStat.zoneCount()}"></div>
@@ -51,16 +54,16 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-6 col-md-3">
                 <div class="card text-center border-0 bg-light">
                     <div class="card-body py-3">
-                        <div class="h4 mb-1 fw-bold text-primary"
-                             th:text="${#numbers.formatDecimal(whStat.usedVolume(), 1, 1)} + ' / ' + ${#numbers.formatDecimal(whStat.totalCapacity(), 1, 1)} + ' л'"></div>
+                        <div class="h5 mb-1 fw-bold text-primary"
+                             th:text="${#numbers.formatDecimal(whStat.usedVolume(), 1, 3)} + ' / ' + ${#numbers.formatDecimal(whStat.totalCapacity(), 1, 3)} + ' м³'"></div>
                         <div class="small text-muted">Объём (занято/макс.)</div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-6 col-md-3">
                 <div class="card text-center border-0 bg-light">
                     <div class="card-body py-3">
                         <div class="h4 mb-1 fw-bold"
@@ -73,7 +76,7 @@
         </div>
 
         <!-- Общий progressbar -->
-        <div class="mb-3">
+        <div class="mb-4">
             <div class="d-flex justify-content-between mb-1">
                 <small class="fw-semibold">Использование склада</small>
                 <small th:text="${#numbers.formatDecimal(whStat.occupancyPercent(), 1, 1)} + '%'"></small>
@@ -86,9 +89,17 @@
                      aria-valuemin="0" aria-valuemax="100"></div>
             </div>
         </div>
+
+        <!-- Кнопка аналитики (только просмотр) -->
+        <div class="d-flex flex-wrap gap-2">
+            <a th:href="'/employee/manager/warehouses/analytics/' + ${warehouse.getId()}"
+               class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-bar-chart-line"></i> Аналитика
+            </a>
+        </div>
     </div>
 
-    <!-- Таблица стеллажей -->
+    <!-- Аккордеон стеллажей -->
     <div class="profile-card p-4">
         <h4 class="mb-3 fw-bold">Стеллажи</h4>
 
@@ -97,42 +108,240 @@
             <p class="mt-2">Стеллажи не добавлены</p>
         </div>
 
-        <div th:if="${!shelfStats.isEmpty()}" class="table-responsive">
-            <table class="table table-modern">
-                <thead>
-                <tr>
-                    <th>Код</th>
-                    <th>Зон</th>
-                    <th>Объём (занято / макс.)</th>
-                    <th>Заполненность</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="entry : ${shelfStats}">
-                    <th:block th:with="stat=${entry.value}">
-                    <td class="fw-semibold" th:text="${stat.shelf().getCode()}"></td>
-                    <td th:text="${stat.zoneCount()}"></td>
-                    <td th:text="${#numbers.formatDecimal(stat.usedVolume(), 1, 1)} + ' / ' + ${#numbers.formatDecimal(stat.capacity(), 1, 1)} + ' л'"></td>
-                    <td style="min-width: 160px;">
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="progress flex-grow-1" style="height: 8px;">
-                                <div class="progress-bar"
-                                     th:classappend="${stat.occupancyPercent() >= 85} ? 'bg-danger' : (${stat.occupancyPercent() >= 60} ? 'bg-warning' : 'bg-success')"
-                                     role="progressbar"
-                                     th:style="'width: ' + ${#numbers.formatDecimal(stat.occupancyPercent(), 1, 0)} + '%'"
-                                     aria-valuemin="0" aria-valuemax="100"></div>
+        <div th:if="${!shelfStats.isEmpty()}" class="accordion" id="shelvesAccordion">
+            <div th:each="entry : ${shelfStats}" class="accordion-item border mb-2 rounded overflow-hidden">
+                <th:block th:with="stat=${entry.value}">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            th:attr="data-bs-target='#shelf-' + ${entry.key},
+                                     aria-controls='shelf-' + ${entry.key}"
+                            aria-expanded="false">
+                        <div class="d-flex align-items-center gap-3 w-100 pe-2">
+                            <span class="fw-bold" th:text="'Стеллаж ' + ${stat.shelf().getCode()}"></span>
+                            <span class="badge bg-light text-dark border small"
+                                  th:text="${stat.zoneCount()} + ' зон'"></span>
+                            <div class="d-flex align-items-center gap-2 ms-auto" style="min-width: 120px;">
+                                <div class="progress flex-grow-1" style="height: 8px;">
+                                    <div class="progress-bar"
+                                         th:classappend="${stat.occupancyPercent() >= 85} ? 'bg-danger' : (${stat.occupancyPercent() >= 60} ? 'bg-warning' : 'bg-success')"
+                                         role="progressbar"
+                                         th:style="'width: ' + ${#numbers.formatDecimal(stat.occupancyPercent(), 1, 0)} + '%'"
+                                         aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <small th:text="${#numbers.formatDecimal(stat.occupancyPercent(), 1, 1)} + '%'"
+                                       class="text-muted"></small>
                             </div>
-                            <small th:text="${#numbers.formatDecimal(stat.occupancyPercent(), 1, 1)} + '%'" class="text-muted"></small>
                         </div>
-                    </td>
-                    </th:block>
-                </tr>
-                </tbody>
-            </table>
+                    </button>
+                </h2>
+                <div th:id="'shelf-' + ${entry.key}" class="accordion-collapse collapse">
+                    <div class="accordion-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0">
+                                <thead class="table-light">
+                                <tr>
+                                    <th>Полка</th>
+                                    <th>Размеры (см)</th>
+                                    <th>Объём (м³)</th>
+                                    <th>Заполненность</th>
+                                    <th>Товары на полке</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="zone : ${stat.shelf().getStorageZones()}">
+                                    <td class="fw-semibold" th:text="${zone.getLabel()}"></td>
+                                    <td class="text-muted small"
+                                        th:text="${#numbers.formatDecimal(zone.getLength(), 1, 0)}
+                                                 + '×' + ${#numbers.formatDecimal(zone.getWidth(), 1, 0)}
+                                                 + '×' + ${#numbers.formatDecimal(zone.getHeight(), 1, 0)}"></td>
+                                    <td class="small" th:text="${#numbers.formatDecimal(zone.getCapacityVolume(), 1, 4)}"></td>
+                                    <td style="min-width: 130px;">
+                                        <div class="d-flex align-items-center gap-1">
+                                            <span class="rounded-circle d-inline-block flex-shrink-0"
+                                                  th:style="'width:8px;height:8px;background-color:' +
+                                                            (${zone.getOccupancyPercentage() >= 85} ? '#dc3545' :
+                                                            (${zone.getOccupancyPercentage() >= 60} ? '#ffc107' : '#198754'))"></span>
+                                            <div class="progress flex-grow-1" style="height: 6px;">
+                                                <div class="progress-bar"
+                                                     th:classappend="${zone.getOccupancyPercentage() >= 85} ? 'bg-danger' : (${zone.getOccupancyPercentage() >= 60} ? 'bg-warning' : 'bg-success')"
+                                                     role="progressbar"
+                                                     th:style="'width: ' + ${#numbers.formatDecimal(zone.getOccupancyPercentage(), 1, 0)} + '%'"
+                                                     aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
+                                            <small class="text-muted"
+                                                   th:text="${#numbers.formatDecimal(zone.getOccupancyPercentage(), 1, 1)} + '%'"></small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span th:if="${zone.getProducts().isEmpty()}" class="text-muted">—</span>
+                                        <button th:unless="${zone.getProducts().isEmpty()}"
+                                                type="button"
+                                                class="btn btn-sm btn-outline-primary"
+                                                th:attr="data-zone-id=${zone.getId()}"
+                                                onclick="showZoneModal(this.dataset.zoneId)">
+                                            <i class="bi bi-eye"></i> Просмотреть
+                                            <span class="badge bg-primary ms-1"
+                                                  th:text="${zone.getProducts().size()}"></span>
+                                        </button>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                </th:block>
+            </div>
         </div>
     </div>
 </div>
 
 <div th:insert="~{blocks/footer :: footer}"></div>
+
+<!-- Модальное окно содержимого полки -->
+<div class="modal fade" id="zoneModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-box-seam me-2"></i><span id="zoneModalLabel"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="zoneModalBody">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    var zoneChart = null;
+
+    function showZoneModal(zoneId) {
+        var modal = new bootstrap.Modal(document.getElementById('zoneModal'));
+        document.getElementById('zoneModalBody').innerHTML =
+            '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+        modal.show();
+
+        fetch('/employee/api/warehouse/zone-info?zoneId=' + zoneId)
+            .then(function(r) { return r.json(); })
+            .then(function(response) {
+                if (response.success && response.data) {
+                    renderZoneModal(response.data);
+                } else {
+                    document.getElementById('zoneModalBody').innerHTML =
+                        '<div class="alert alert-danger">Ошибка загрузки данных</div>';
+                }
+            })
+            .catch(function() {
+                document.getElementById('zoneModalBody').innerHTML =
+                    '<div class="alert alert-danger">Ошибка загрузки данных</div>';
+            });
+    }
+
+    function renderZoneModal(zone) {
+        document.getElementById('zoneModalLabel').textContent =
+            'Полка ' + zone.label + ' — ' + zone.shelfCode + ' (' + zone.warehouseName + ')';
+
+        var freeVol  = Math.max(0, zone.capacityVolume - zone.usedVolume);
+        var occ      = zone.occupancyPercent.toFixed(1);
+        var occColor = zone.occupancyPercent >= 85 ? 'danger' :
+                       zone.occupancyPercent >= 60 ? 'warning' : 'success';
+
+        var rows = zone.products.map(function(p) {
+            var pct = zone.capacityVolume > 0
+                ? ((p.volumeM3 / zone.capacityVolume) * 100).toFixed(1) : '0.0';
+            return '<tr>' +
+                '<td><strong>' + p.productName + '</strong><br>' +
+                    '<small class="text-muted">' + p.productArticle + '</small></td>' +
+                '<td class="text-center">' + p.quantity + ' шт.</td>' +
+                '<td class="text-center">' + p.orientationLabel + '</td>' +
+                '<td class="text-center">' + p.volumeM3.toFixed(4) + '</td>' +
+                '<td style="min-width:100px">' +
+                    '<div class="progress" style="height:6px">' +
+                        '<div class="progress-bar bg-primary" style="width:' + pct + '%"></div>' +
+                    '</div>' +
+                    '<small class="text-muted">' + pct + '%</small>' +
+                '</td>' +
+            '</tr>';
+        }).join('');
+
+        var chartLabels = zone.products.map(function(p) { return p.productName; });
+        chartLabels.push('Свободно');
+        var chartData = zone.products.map(function(p) { return p.volumeM3; });
+        chartData.push(freeVol);
+        var palette = ['#0d6efd','#6610f2','#fd7e14','#20c997','#dc3545','#ffc107','#6f42c1','#0dcaf0'];
+        var chartColors = zone.products.map(function(_, i) { return palette[i % palette.length]; });
+        chartColors.push('#e9ecef');
+
+        document.getElementById('zoneModalBody').innerHTML =
+            '<div class="row g-2 mb-3">' +
+                '<div class="col-6 col-md-3">' +
+                    '<div class="card text-center border-0 bg-light h-100"><div class="card-body py-2">' +
+                        '<div class="fs-5 fw-bold text-' + occColor + '">' + occ + '%</div>' +
+                        '<small class="text-muted">Заполненность</small>' +
+                    '</div></div>' +
+                '</div>' +
+                '<div class="col-6 col-md-3">' +
+                    '<div class="card text-center border-0 bg-light h-100"><div class="card-body py-2">' +
+                        '<div class="fs-5 fw-bold">' + zone.products.length + '</div>' +
+                        '<small class="text-muted">Наименований</small>' +
+                    '</div></div>' +
+                '</div>' +
+                '<div class="col-6 col-md-3">' +
+                    '<div class="card text-center border-0 bg-light h-100"><div class="card-body py-2">' +
+                        '<div class="fs-5 fw-bold">' + zone.usedVolume.toFixed(4) + '</div>' +
+                        '<small class="text-muted">Занято (м\u00b3)</small>' +
+                    '</div></div>' +
+                '</div>' +
+                '<div class="col-6 col-md-3">' +
+                    '<div class="card text-center border-0 bg-light h-100"><div class="card-body py-2">' +
+                        '<div class="fs-5 fw-bold text-success">' + freeVol.toFixed(4) + '</div>' +
+                        '<small class="text-muted">Свободно (м\u00b3)</small>' +
+                    '</div></div>' +
+                '</div>' +
+            '</div>' +
+            '<div class="row g-3">' +
+                '<div class="col-md-4 d-flex align-items-center justify-content-center">' +
+                    '<canvas id="zoneChart" style="max-height:220px"></canvas>' +
+                '</div>' +
+                '<div class="col-md-8">' +
+                    '<table class="table table-sm table-hover mb-0">' +
+                        '<thead class="table-light"><tr>' +
+                            '<th>Товар</th><th class="text-center">Кол-во</th>' +
+                            '<th class="text-center">Ориентация</th>' +
+                            '<th class="text-center">Объём (м\u00b3)</th><th>% зоны</th>' +
+                        '</tr></thead>' +
+                        '<tbody>' + rows + '</tbody>' +
+                    '</table>' +
+                '</div>' +
+            '</div>';
+
+        if (zoneChart) zoneChart.destroy();
+        zoneChart = new Chart(document.getElementById('zoneChart'), {
+            type: 'doughnut',
+            data: {
+                labels: chartLabels,
+                datasets: [{
+                    data: chartData,
+                    backgroundColor: chartColors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { boxWidth: 12, font: { size: 11 } }
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+    }
+</script>
 </body>
 </html>

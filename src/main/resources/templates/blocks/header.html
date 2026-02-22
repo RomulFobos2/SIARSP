@@ -78,6 +78,16 @@
                         </ul>
                     </li>
 
+                    <!-- Dropdown: Документация -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Документация
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/manager/writeOffActs/allWriteOffActs">Акты списания</a></li>
+                        </ul>
+                    </li>
+
                     <!-- ========== WAREHOUSE_MANAGER ========== -->
                     <!-- Dropdown: Товары -->
                     <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
@@ -111,6 +121,16 @@
                         </ul>
                     </li>
 
+                    <!-- Dropdown: Документация -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Документация
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/writeOffActs/allWriteOffActs">Акты списания</a></li>
+                        </ul>
+                    </li>
+
                     <!-- ========== ACCOUNTER ========== -->
                     <!-- Dropdown: Закупки -->
                     <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_ACCOUNTER')">
@@ -120,6 +140,16 @@
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="/employee/accounter/requestsForDelivery/allRequestsForDelivery">Заявки на поставку</a></li>
                             <li><a class="dropdown-item" href="/employee/accounter/products/allProducts">Товары</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Dropdown: Документация -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_ACCOUNTER')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Документация
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/accounter/writeOffActs/allWriteOffActs">Акты списания</a></li>
                         </ul>
                     </li>
 

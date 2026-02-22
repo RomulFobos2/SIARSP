@@ -1,0 +1,220 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Аналитика склада | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container my-5">
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="'/employee/manager/warehouses/allWarehouses'">Склады</a></li>
+            <li class="breadcrumb-item">
+                <a th:href="'/employee/manager/warehouses/detailsWarehouse/' + ${warehouse.getId()}"
+                   th:text="${warehouse.getName()}"></a>
+            </li>
+            <li class="breadcrumb-item active">Аналитика</li>
+        </ol>
+    </nav>
+
+    <div class="mb-4">
+        <h2 class="h3 fw-bold mb-0">
+            <i class="bi bi-bar-chart-line me-2"></i>Аналитика: <span th:text="${stats.warehouseName()}"></span>
+        </h2>
+    </div>
+
+    <!-- ===== Секция 1: Сводка ===== -->
+    <div class="profile-card p-4 mb-4">
+        <h5 class="fw-bold mb-3">Сводная статистика</h5>
+
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm">
+                    <div class="card-body py-3">
+                        <div class="h3 mb-1 fw-bold"
+                             th:classappend="${stats.occupancyPercent() >= 85} ? 'text-danger' : (${stats.occupancyPercent() >= 60} ? 'text-warning' : 'text-success')"
+                             th:text="${#numbers.formatDecimal(stats.occupancyPercent(), 1, 1)} + '%'"></div>
+                        <div class="small text-muted">Заполнено</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm">
+                    <div class="card-body py-3">
+                        <div class="h3 mb-1 fw-bold text-primary" th:text="${stats.totalShelves()}"></div>
+                        <div class="small text-muted">Стеллажей</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm">
+                    <div class="card-body py-3">
+                        <div class="h3 mb-1 fw-bold text-info" th:text="${stats.uniqueProducts()}"></div>
+                        <div class="small text-muted">Наименований</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm">
+                    <div class="card-body py-3">
+                        <div class="h3 mb-1 fw-bold text-secondary" th:text="${stats.totalProductUnits()}"></div>
+                        <div class="small text-muted">Единиц товара</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Большой progress bar -->
+        <div>
+            <div class="d-flex justify-content-between mb-1">
+                <small class="fw-semibold text-muted">Использование объёма</small>
+                <small class="text-muted"
+                       th:text="${#numbers.formatDecimal(stats.usedVolumeLiters(), 1, 4)} + ' м³ из '
+                                + ${#numbers.formatDecimal(stats.totalCapacityLiters(), 1, 4)} + ' м³'"></small>
+            </div>
+            <div class="progress" style="height: 18px;">
+                <div class="progress-bar fs-6"
+                     th:classappend="${stats.occupancyPercent() >= 85} ? 'bg-danger' : (${stats.occupancyPercent() >= 60} ? 'bg-warning' : 'bg-success')"
+                     role="progressbar"
+                     th:style="'width: ' + ${#numbers.formatDecimal(stats.occupancyPercent(), 1, 0)} + '%'"
+                     th:text="${#numbers.formatDecimal(stats.occupancyPercent(), 1, 1)} + '%'"
+                     aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Секция 2: Топ-5 товаров ===== -->
+    <div class="profile-card p-4 mb-4">
+        <h5 class="fw-bold mb-3">Топ-5 товаров по занятому объёму</h5>
+
+        <div th:if="${stats.topProducts().isEmpty()}" class="text-muted text-center py-3">
+            <i class="bi bi-inbox"></i> Нет данных о размещении
+        </div>
+
+        <div th:if="${!stats.topProducts().isEmpty()}">
+            <div class="table-responsive">
+                <table class="table table-modern">
+                    <thead>
+                    <tr>
+                        <th>Товар</th>
+                        <th class="text-center">Кол-во</th>
+                        <th class="text-end">Объём (м³)</th>
+                        <th style="min-width: 150px;">% от нагрузки</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="tp : ${stats.topProducts()}">
+                        <td class="fw-semibold" th:text="${tp.productName()}"></td>
+                        <td class="text-center" th:text="${tp.totalQuantity()}"></td>
+                        <td class="text-end" th:text="${#numbers.formatDecimal(tp.volumeUsedM3(), 1, 5)}"></td>
+                        <td>
+                            <div th:with="pct=${stats.usedVolumeLiters() > 0 ? (tp.volumeUsedM3() / stats.usedVolumeLiters() * 100) : 0}">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height: 8px;">
+                                        <div class="progress-bar bg-info"
+                                             role="progressbar"
+                                             th:style="'width: ' + ${#numbers.formatDecimal(pct, 1, 0)} + '%'"
+                                             aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <small class="text-muted" th:text="${#numbers.formatDecimal(pct, 1, 1)} + '%'"></small>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Секция 3: Заполненность по стеллажам ===== -->
+    <div class="profile-card p-4 mb-4">
+        <h5 class="fw-bold mb-3">Заполненность по стеллажам</h5>
+
+        <div th:if="${warehouse.getShelves().isEmpty()}" class="text-muted text-center py-3">
+            Стеллажи не добавлены
+        </div>
+
+        <div th:each="shelf : ${warehouse.getShelves()}" class="mb-4">
+            <div class="d-flex justify-content-between mb-2">
+                <span class="fw-bold">Стеллаж <span th:text="${shelf.getCode()}"></span></span>
+                <small class="text-muted" th:text="${shelf.getStorageZones().size()} + ' зон'"></small>
+            </div>
+            <div th:each="zone : ${shelf.getStorageZones()}" class="mb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <small class="text-muted fw-semibold" style="min-width: 55px;" th:text="${zone.getLabel()}"></small>
+                    <div class="progress flex-grow-1" style="height: 10px;">
+                        <div class="progress-bar"
+                             th:classappend="${zone.getOccupancyPercentage() >= 85} ? 'bg-danger' : (${zone.getOccupancyPercentage() >= 60} ? 'bg-warning' : 'bg-success')"
+                             role="progressbar"
+                             th:style="'width: ' + ${#numbers.formatDecimal(zone.getOccupancyPercentage(), 1, 0)} + '%'"
+                             aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <small class="text-muted" style="min-width: 45px;"
+                           th:text="${#numbers.formatDecimal(zone.getOccupancyPercentage(), 1, 1)} + '%'"></small>
+                </div>
+            </div>
+            <div th:if="${shelf.getStorageZones().isEmpty()}" class="text-muted small">Нет зон хранения</div>
+        </div>
+    </div>
+
+    <!-- ===== Секция 4: Малозагруженные зоны ===== -->
+    <div class="profile-card p-4">
+        <h5 class="fw-bold mb-0">Зоны с малой загрузкой (менее 50%)</h5>
+
+        <div th:if="${underutilizedZones.isEmpty()}" class="text-center text-muted py-3">
+            <i class="bi bi-check-circle text-success" style="font-size: 1.5rem;"></i>
+            <p class="mt-2">Все зоны загружены более чем на 50%</p>
+        </div>
+
+        <div th:if="${!underutilizedZones.isEmpty()}" class="table-responsive mt-3">
+            <table class="table table-modern">
+                <thead>
+                <tr>
+                    <th>Полка</th>
+                    <th>Стеллаж</th>
+                    <th>Заполненность</th>
+                    <th class="text-end">Свободно (м³)</th>
+                    <th>Рекомендация</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="zu : ${underutilizedZones}">
+                    <td class="fw-semibold" th:text="${zu.zoneLabel()}"></td>
+                    <td th:text="${zu.shelfCode()}"></td>
+                    <td style="min-width: 140px;">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="progress flex-grow-1" style="height: 8px;">
+                                <div class="progress-bar bg-success"
+                                     role="progressbar"
+                                     th:style="'width: ' + ${#numbers.formatDecimal(zu.occupancyPercent(), 1, 0)} + '%'"
+                                     aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <small th:text="${#numbers.formatDecimal(zu.occupancyPercent(), 1, 1)} + '%'" class="text-muted"></small>
+                        </div>
+                    </td>
+                    <td class="text-end small"
+                        th:text="${#numbers.formatDecimal(zu.availableVolumeLiters(), 1, 4)}"></td>
+                    <td>
+                        <span class="badge"
+                              th:classappend="${zu.occupancyPercent() < 20} ? 'bg-success' : 'bg-info text-dark'"
+                              th:text="${zu.recommendation()}"></span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>

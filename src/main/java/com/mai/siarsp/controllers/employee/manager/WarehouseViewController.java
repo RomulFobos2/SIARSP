@@ -1,11 +1,15 @@
 package com.mai.siarsp.controllers.employee.manager;
 
+import com.mai.siarsp.dto.DetailedWarehouseStatistics;
+import com.mai.siarsp.dto.ZoneUtilization;
 import com.mai.siarsp.models.Shelf;
 import com.mai.siarsp.models.StorageZone;
 import com.mai.siarsp.models.Warehouse;
 import com.mai.siarsp.models.ZoneProduct;
 import com.mai.siarsp.repo.WarehouseRepository;
+import com.mai.siarsp.service.employee.warehouseManager.WarehouseManagementService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
@@ -28,9 +32,12 @@ import java.util.Optional;
 public class WarehouseViewController {
 
     private final WarehouseRepository warehouseRepository;
+    private final WarehouseManagementService managementService;
 
-    public WarehouseViewController(WarehouseRepository warehouseRepository) {
+    public WarehouseViewController(WarehouseRepository warehouseRepository,
+                                   @Qualifier("warehouseManagementService") WarehouseManagementService managementService) {
         this.warehouseRepository = warehouseRepository;
+        this.managementService = managementService;
     }
 
     // ========== СПИСОК СКЛАДОВ ==========
@@ -68,6 +75,29 @@ public class WarehouseViewController {
         model.addAttribute("whStat", whStat);
         model.addAttribute("shelfStats", shelfStats);
         return "employee/manager/warehouses/detailsWarehouse";
+    }
+
+    // ========== АНАЛИТИКА ==========
+
+    @Transactional(readOnly = true)
+    @GetMapping("/analytics/{warehouseId}")
+    public String analyticsPage(@PathVariable Long warehouseId, Model model) {
+        Optional<Warehouse> opt = warehouseRepository.findById(warehouseId);
+        if (opt.isEmpty()) {
+            return "redirect:/employee/manager/warehouses/allWarehouses";
+        }
+
+        Optional<DetailedWarehouseStatistics> stats = managementService.getDetailedStatistics(warehouseId);
+        if (stats.isEmpty()) {
+            return "redirect:/employee/manager/warehouses/allWarehouses";
+        }
+
+        List<ZoneUtilization> underutilizedZones = managementService.getUnderutilizedZones(warehouseId, 50.0);
+
+        model.addAttribute("warehouse", opt.get());
+        model.addAttribute("stats", stats.get());
+        model.addAttribute("underutilizedZones", underutilizedZones);
+        return "employee/manager/warehouses/analytics";
     }
 
     // ========== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ==========
