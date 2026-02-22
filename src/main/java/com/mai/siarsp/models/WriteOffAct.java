@@ -9,7 +9,6 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 
 /**
  * Акт списания товара
@@ -164,6 +163,17 @@ public class WriteOffAct {
     @ManyToOne
     @JoinColumn(nullable = false)
     private Employee responsibleEmployee;
+
+    /**
+     * Склад, с которого производится физическое списание товара
+     * При утверждении акта ZoneProduct-записи в зонах этого склада уменьшаются/удаляются
+     *
+     * Nullable для обратной совместимости с ранее созданными актами
+     */
+    @ToString.Exclude
+    @ManyToOne
+    @JoinColumn(nullable = true)
+    private Warehouse warehouse;
 
     // ========== КОНСТРУКТОРЫ ==========
 

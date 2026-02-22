@@ -4,8 +4,11 @@ import com.mai.siarsp.dto.WriteOffActDTO;
 import com.mai.siarsp.enumeration.WriteOffReason;
 import com.mai.siarsp.models.Employee;
 import com.mai.siarsp.models.Product;
+import com.mai.siarsp.models.Warehouse;
 import com.mai.siarsp.models.WriteOffAct;
+import com.mai.siarsp.models.ZoneProduct;
 import com.mai.siarsp.repo.ProductRepository;
+import com.mai.siarsp.repo.ZoneProductRepository;
 import com.mai.siarsp.service.employee.WriteOffActService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,7 +18,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -29,11 +34,14 @@ public class WriteOffActController {
 
     private final WriteOffActService writeOffActService;
     private final ProductRepository productRepository;
+    private final ZoneProductRepository zoneProductRepository;
 
     public WriteOffActController(WriteOffActService writeOffActService,
-                                 ProductRepository productRepository) {
+                                 ProductRepository productRepository,
+                                 ZoneProductRepository zoneProductRepository) {
         this.writeOffActService = writeOffActService;
         this.productRepository = productRepository;
+        this.zoneProductRepository = zoneProductRepository;
     }
 
     @GetMapping("/allWriteOffActs")
@@ -59,18 +67,38 @@ public class WriteOffActController {
                                     @RequestParam int quantity,
                                     @RequestParam WriteOffReason reason,
                                     @RequestParam(required = false) String comment,
+                                    @RequestParam Long warehouseId,
                                     @AuthenticationPrincipal Employee currentEmployee,
                                     RedirectAttributes redirectAttributes) {
-        boolean success = writeOffActService.createAct(productId, quantity, reason, comment, currentEmployee);
+        boolean success = writeOffActService.createAct(productId, quantity, reason, comment, currentEmployee, warehouseId);
 
         if (success) {
             redirectAttributes.addFlashAttribute("successMessage",
                     "Акт списания успешно создан и отправлен на подпись директору.");
         } else {
             redirectAttributes.addFlashAttribute("errorMessage",
-                    "Ошибка при создании акта списания. Проверьте доступное количество товара.");
+                    "Ошибка при создании акта списания. Проверьте доступное количество товара на выбранном складе.");
         }
         return "redirect:/employee/warehouseManager/writeOffActs/allWriteOffActs";
+    }
+
+    @Transactional(readOnly = true)
+    @GetMapping("/warehouses-by-product/{productId}")
+    @ResponseBody
+    public List<Map<String, Object>> getWarehousesByProduct(@PathVariable Long productId) {
+        List<ZoneProduct> zps = zoneProductRepository.findByProduct(
+                productRepository.getReferenceById(productId));
+        Map<Warehouse, Integer> whMap = new LinkedHashMap<>();
+        for (ZoneProduct zp : zps) {
+            Warehouse wh = zp.getZone().getShelf().getWarehouse();
+            whMap.merge(wh, zp.getQuantity(), Integer::sum);
+        }
+        return whMap.entrySet().stream()
+                .map(e -> Map.of(
+                        "id", e.getKey().getId(),
+                        "name", e.getKey().getName(),
+                        "availableQuantity", e.getValue()))
+                .toList();
     }
 
     @Transactional(readOnly = true)

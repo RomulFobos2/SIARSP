@@ -6,9 +6,13 @@ import com.mai.siarsp.enumeration.WriteOffReason;
 import com.mai.siarsp.mapper.WriteOffActMapper;
 import com.mai.siarsp.models.Employee;
 import com.mai.siarsp.models.Product;
+import com.mai.siarsp.models.Warehouse;
 import com.mai.siarsp.models.WriteOffAct;
+import com.mai.siarsp.models.ZoneProduct;
 import com.mai.siarsp.repo.ProductRepository;
+import com.mai.siarsp.repo.WarehouseRepository;
 import com.mai.siarsp.repo.WriteOffActRepository;
+import com.mai.siarsp.repo.ZoneProductRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,13 +41,19 @@ public class WriteOffActService {
 
     private final WriteOffActRepository writeOffActRepository;
     private final ProductRepository productRepository;
+    private final ZoneProductRepository zoneProductRepository;
+    private final WarehouseRepository warehouseRepository;
     private final NotificationService notificationService;
 
     public WriteOffActService(WriteOffActRepository writeOffActRepository,
                               ProductRepository productRepository,
+                              ZoneProductRepository zoneProductRepository,
+                              WarehouseRepository warehouseRepository,
                               NotificationService notificationService) {
         this.writeOffActRepository = writeOffActRepository;
         this.productRepository = productRepository;
+        this.zoneProductRepository = zoneProductRepository;
+        this.warehouseRepository = warehouseRepository;
         this.notificationService = notificationService;
     }
 
@@ -81,11 +91,12 @@ public class WriteOffActService {
      * @param reason       причина списания
      * @param comment      комментарий
      * @param responsible  ответственный сотрудник (заведующий складом)
+     * @param warehouseId  идентификатор склада, с которого производится списание
      * @return true при успешном создании
      */
     @Transactional
     public boolean createAct(Long productId, int quantity, WriteOffReason reason,
-                             String comment, Employee responsible) {
+                             String comment, Employee responsible, Long warehouseId) {
         try {
             Optional<Product> optProduct = productRepository.findById(productId);
             if (optProduct.isEmpty()) {
@@ -100,9 +111,24 @@ public class WriteOffActService {
                 return false;
             }
 
-            if (quantity > product.getAvailableQuantity()) {
-                log.error("Количество для списания ({}) превышает доступное ({}) для товара '{}'",
-                        quantity, product.getAvailableQuantity(), product.getName());
+            Optional<Warehouse> optWarehouse = warehouseRepository.findById(warehouseId);
+            if (optWarehouse.isEmpty()) {
+                log.error("Склад с id={} не найден", warehouseId);
+                return false;
+            }
+
+            Warehouse warehouse = optWarehouse.get();
+
+            int availableInWarehouse = zoneProductRepository
+                    .sumQuantityByProductIdAndWarehouseId(productId, warehouseId);
+            if (availableInWarehouse <= 0) {
+                log.error("Товар '{}' не размещён на складе '{}'", product.getName(), warehouse.getName());
+                return false;
+            }
+
+            if (quantity > availableInWarehouse) {
+                log.error("Количество списания ({}) превышает остаток ({}) в складе '{}' для товара '{}'",
+                        quantity, availableInWarehouse, warehouse.getName(), product.getName());
                 return false;
             }
 
@@ -111,15 +137,16 @@ public class WriteOffActService {
             WriteOffAct act = new WriteOffAct(actNumber, product, quantity, reason, responsible);
             act.setStatus(WriteOffActStatus.PENDING_DIRECTOR);
             act.setComment(comment);
+            act.setWarehouse(warehouse);
 
             writeOffActRepository.save(act);
 
             notificationService.notifyByRole("ROLE_EMPLOYEE_MANAGER",
                     "Акт списания №" + actNumber + " на подпись. Товар: " + product.getName()
-                            + ", кол-во: " + quantity + " шт.");
+                            + ", кол-во: " + quantity + " шт., склад: " + warehouse.getName());
 
-            log.info("Создан акт списания №{}: товар '{}', кол-во {}, причина {}",
-                    actNumber, product.getName(), quantity, reason);
+            log.info("Создан акт списания №{}: товар '{}', кол-во {}, причина {}, склад '{}'",
+                    actNumber, product.getName(), quantity, reason, warehouse.getName());
             return true;
 
         } catch (Exception e) {
@@ -161,16 +188,35 @@ public class WriteOffActService {
                 return false;
             }
 
-            // Списание
+            // Списание глобального остатка
             product.setStockQuantity(product.getStockQuantity() - act.getQuantity());
-
-            // Уменьшаем неразмещённый товар, если есть
-            if (product.getQuantityForStock() > 0) {
-                int decrease = Math.min(product.getQuantityForStock(), act.getQuantity());
-                product.setQuantityForStock(product.getQuantityForStock() - decrease);
-            }
-
             productRepository.save(product);
+
+            // Списываем физически из зон склада (если склад указан)
+            if (act.getWarehouse() != null) {
+                int remaining = act.getQuantity();
+                List<ZoneProduct> zoneProducts = zoneProductRepository
+                        .findByProductAndWarehouseId(product, act.getWarehouse().getId());
+                for (ZoneProduct zp : zoneProducts) {
+                    if (remaining <= 0) break;
+                    int zpQty = zp.getQuantity();
+                    if (zpQty <= remaining) {
+                        zoneProductRepository.delete(zp);
+                        remaining -= zpQty;
+                    } else {
+                        zp.setQuantity(zpQty - remaining);
+                        zoneProductRepository.save(zp);
+                        remaining = 0;
+                    }
+                }
+            } else {
+                // Обратная совместимость — акты без склада: уменьшаем неразмещённый товар
+                if (product.getQuantityForStock() > 0) {
+                    int decrease = Math.min(product.getQuantityForStock(), act.getQuantity());
+                    product.setQuantityForStock(product.getQuantityForStock() - decrease);
+                    productRepository.save(product);
+                }
+            }
 
             act.setStatus(WriteOffActStatus.APPROVED);
             writeOffActRepository.save(act);
