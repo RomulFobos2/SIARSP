@@ -29,22 +29,30 @@
             <!-- Выбор товара -->
             <div class="mb-3">
                 <label for="productId" class="form-label fw-semibold">Товар <span class="text-danger">*</span></label>
-                <select id="productId" name="productId" class="form-select" required onchange="updateMaxQuantity()">
+                <select id="productId" name="productId" class="form-select" required onchange="onProductChange()">
                     <option value="">— Выберите товар —</option>
                     <option th:each="product : ${products}"
                             th:value="${product.id}"
-                            th:text="${product.name + ' (' + product.article + ') — на складе: ' + product.getAvailableQuantity() + ' шт.'}"
-                            th:attr="data-available=${product.getAvailableQuantity()}">
+                            th:text="${product.name + ' (' + product.article + ')'}">
                     </option>
                 </select>
+            </div>
+
+            <!-- Выбор склада -->
+            <div class="mb-3">
+                <label for="warehouseId" class="form-label fw-semibold">Склад списания <span class="text-danger">*</span></label>
+                <select id="warehouseId" name="warehouseId" class="form-select" required disabled onchange="onWarehouseChange()">
+                    <option value="">— Сначала выберите товар —</option>
+                </select>
+                <div class="form-text" id="warehouseHint"></div>
             </div>
 
             <!-- Количество -->
             <div class="mb-3">
                 <label for="quantity" class="form-label fw-semibold">Количество <span class="text-danger">*</span></label>
                 <input type="number" id="quantity" name="quantity" class="form-control"
-                       min="1" required placeholder="Укажите количество для списания">
-                <div class="form-text" id="quantityHint">Выберите товар для отображения доступного количества</div>
+                       min="1" required disabled placeholder="Сначала выберите товар и склад">
+                <div class="form-text" id="quantityHint">Выберите товар и склад для отображения доступного количества</div>
             </div>
 
             <!-- Причина -->
@@ -77,21 +85,67 @@
 <div th:insert="~{blocks/footer :: footer}"></div>
 
 <script>
-    function updateMaxQuantity() {
-        var select = document.getElementById('productId');
+    function onProductChange() {
+        var productId = document.getElementById('productId').value;
+        var warehouseSelect = document.getElementById('warehouseId');
         var quantityInput = document.getElementById('quantity');
-        var hint = document.getElementById('quantityHint');
-        var selected = select.options[select.selectedIndex];
+        var quantityHint = document.getElementById('quantityHint');
+        var warehouseHint = document.getElementById('warehouseHint');
 
-        if (selected && selected.value) {
-            var available = parseInt(selected.getAttribute('data-available'));
+        // Сбрасываем склад и количество
+        warehouseSelect.innerHTML = '<option value="">— Выберите склад —</option>';
+        warehouseSelect.disabled = true;
+        quantityInput.disabled = true;
+        quantityInput.removeAttribute('max');
+        quantityInput.value = '';
+        quantityHint.textContent = 'Выберите товар и склад для отображения доступного количества';
+        warehouseHint.textContent = '';
+
+        if (!productId) return;
+
+        // Загружаем склады, на которых есть этот товар
+        warehouseHint.textContent = 'Загрузка складов...';
+        fetch('/employee/warehouseManager/writeOffActs/warehouses-by-product/' + productId)
+            .then(function(r) { return r.json(); })
+            .then(function(warehouses) {
+                warehouseHint.textContent = '';
+                if (warehouses.length === 0) {
+                    warehouseSelect.innerHTML = '<option value="">— Товар не размещён на складах —</option>';
+                    return;
+                }
+                warehouseSelect.innerHTML = '<option value="">— Выберите склад —</option>';
+                warehouses.forEach(function(wh) {
+                    var opt = document.createElement('option');
+                    opt.value = wh.id;
+                    opt.textContent = wh.name + ' (' + wh.availableQuantity + ' шт.)';
+                    opt.dataset.qty = wh.availableQuantity;
+                    warehouseSelect.appendChild(opt);
+                });
+                warehouseSelect.disabled = false;
+            })
+            .catch(function() {
+                warehouseHint.textContent = 'Ошибка загрузки складов';
+            });
+    }
+
+    function onWarehouseChange() {
+        var warehouseSelect = document.getElementById('warehouseId');
+        var quantityInput = document.getElementById('quantity');
+        var quantityHint = document.getElementById('quantityHint');
+        var selected = warehouseSelect.options[warehouseSelect.selectedIndex];
+
+        quantityInput.value = '';
+        if (selected && selected.dataset.qty) {
+            var available = parseInt(selected.dataset.qty);
             quantityInput.max = available;
-            quantityInput.value = '';
-            hint.textContent = 'Доступно для списания: ' + available + ' шт.';
+            quantityInput.disabled = false;
+            quantityInput.placeholder = 'Укажите количество для списания';
+            quantityHint.textContent = 'Доступно на выбранном складе: ' + available + ' шт.';
         } else {
             quantityInput.removeAttribute('max');
-            quantityInput.value = '';
-            hint.textContent = 'Выберите товар для отображения доступного количества';
+            quantityInput.disabled = true;
+            quantityInput.placeholder = 'Сначала выберите товар и склад';
+            quantityHint.textContent = 'Выберите склад для отображения доступного количества';
         }
     }
 </script>

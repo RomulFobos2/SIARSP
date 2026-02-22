@@ -22,4 +22,6 @@ public class WriteOffActDTO {
     private String productArticle;
     private Long responsibleEmployeeId;
     private String responsibleEmployeeFullName;
+    private Long warehouseId;
+    private String warehouseName;
 }

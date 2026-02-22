@@ -48,6 +48,9 @@
                         <div class="mb-2">
                             <strong>Ответственный:</strong> <span th:text="${act.getResponsibleEmployee().getFullName()}"></span>
                         </div>
+                        <div class="mb-2" th:if="${act.getWarehouse() != null}">
+                            <strong>Склад:</strong> <span th:text="${act.getWarehouse().getName()}"></span>
+                        </div>
                     </div>
                 </div>
             </div>

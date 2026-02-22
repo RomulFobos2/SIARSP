@@ -27,4 +27,12 @@ public interface ZoneProductRepository extends JpaRepository<ZoneProduct, Long> 
 
     @Query("SELECT COUNT(zp) > 0 FROM ZoneProduct zp WHERE zp.zone.shelf.id = :shelfId")
     boolean existsByShelfId(@Param("shelfId") Long shelfId);
+
+    @Query("SELECT zp FROM ZoneProduct zp WHERE zp.product = :product AND zp.zone.shelf.warehouse.id = :warehouseId")
+    List<ZoneProduct> findByProductAndWarehouseId(@Param("product") Product product,
+                                                   @Param("warehouseId") Long warehouseId);
+
+    @Query("SELECT COALESCE(SUM(zp.quantity), 0) FROM ZoneProduct zp WHERE zp.product.id = :productId AND zp.zone.shelf.warehouse.id = :warehouseId")
+    int sumQuantityByProductIdAndWarehouseId(@Param("productId") Long productId,
+                                              @Param("warehouseId") Long warehouseId);
 }
