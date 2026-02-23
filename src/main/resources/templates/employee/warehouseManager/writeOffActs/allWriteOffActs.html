@@ -36,47 +36,129 @@
             <p class="mt-2">Акты списания отсутствуют</p>
         </div>
 
-        <div th:unless="${#lists.isEmpty(acts)}" class="table-responsive">
-            <table class="table table-modern">
-                <thead>
-                <tr>
-                    <th>№ акта</th>
-                    <th>Дата</th>
-                    <th>Товар</th>
-                    <th>Кол-во</th>
-                    <th>Причина</th>
-                    <th>Статус</th>
-                    <th>Действия</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="act : ${acts}">
-                    <td class="fw-semibold" th:text="${act.actNumber}"></td>
-                    <td th:text="${#temporals.format(act.actDate, 'dd.MM.yyyy')}"></td>
-                    <td>
-                        <span th:text="${act.productName}"></span>
-                        <br><small class="text-muted" th:text="${act.productArticle}"></small>
-                    </td>
-                    <td th:text="${act.quantity} + ' шт.'"></td>
-                    <td th:text="${act.reason.displayName}"></td>
-                    <td>
-                        <span class="badge"
-                              th:classappend="${act.status.name() == 'PENDING_DIRECTOR'} ? 'bg-warning text-dark' : (${act.status.name() == 'APPROVED'} ? 'bg-success' : 'bg-danger')"
-                              th:text="${act.statusDisplayName}"></span>
-                    </td>
-                    <td>
-                        <a th:href="'/employee/warehouseManager/writeOffActs/detailsWriteOffAct/' + ${act.id}"
-                           class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-eye"></i> Подробнее
-                        </a>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
+        <div th:unless="${#lists.isEmpty(acts)}">
+            <!-- Панель фильтров -->
+            <div class="row g-2 mb-3">
+                <div class="col-md-4">
+                    <input type="text" id="searchInput" class="form-control"
+                           placeholder="Поиск по № акта или товару...">
+                </div>
+                <div class="col-md-3">
+                    <select id="statusFilter" class="form-select">
+                        <option value="">— Все статусы —</option>
+                        <option value="PENDING_DIRECTOR">На подписи у директора</option>
+                        <option value="APPROVED">Утверждён</option>
+                        <option value="REJECTED">Отклонён</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select id="reasonFilter" class="form-select">
+                        <option value="">— Все причины —</option>
+                        <option value="DEFECT">Брак</option>
+                        <option value="EXPIRED">Истек срок годности</option>
+                        <option value="DAMAGE">Повреждение при хранении</option>
+                        <option value="LOSS">Недостача</option>
+                        <option value="OTHER">Прочее</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-outline-secondary w-100" onclick="resetFilters()">
+                        <i class="bi bi-x-circle me-1"></i>Сбросить
+                    </button>
+                </div>
+            </div>
+            <div class="text-muted small mb-2" id="resultCount"></div>
+            <div id="noResultsMsg" class="text-center text-muted py-3" style="display:none;">
+                <i class="bi bi-search"></i> По заданным фильтрам ничего не найдено
+            </div>
+
+            <div class="table-responsive">
+                <table id="actsTable" class="table table-modern">
+                    <thead>
+                    <tr>
+                        <th>№ акта</th>
+                        <th>Дата</th>
+                        <th>Товар</th>
+                        <th>Кол-во</th>
+                        <th>Причина</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="act : ${acts}"
+                        th:attr="data-number=${act.actNumber},
+                                 data-product=${act.productName + ' ' + act.productArticle},
+                                 data-status=${act.status.name()},
+                                 data-reason=${act.reason.name()}">
+                        <td class="fw-semibold" th:text="${act.actNumber}"></td>
+                        <td th:text="${#temporals.format(act.actDate, 'dd.MM.yyyy')}"></td>
+                        <td>
+                            <span th:text="${act.productName}"></span>
+                            <br><small class="text-muted" th:text="${act.productArticle}"></small>
+                        </td>
+                        <td th:text="${act.quantity} + ' шт.'"></td>
+                        <td th:text="${act.reason.displayName}"></td>
+                        <td>
+                            <span class="badge"
+                                  th:classappend="${act.status.name() == 'PENDING_DIRECTOR'} ? 'bg-warning text-dark' : (${act.status.name() == 'APPROVED'} ? 'bg-success' : 'bg-danger')"
+                                  th:text="${act.statusDisplayName}"></span>
+                        </td>
+                        <td>
+                            <a th:href="'/employee/warehouseManager/writeOffActs/detailsWriteOffAct/' + ${act.id}"
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> Подробнее
+                            </a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
 
 <div th:insert="~{blocks/footer :: footer}"></div>
+
+<script>
+    function filterActs() {
+        var search = document.getElementById('searchInput').value.toLowerCase().trim();
+        var status = document.getElementById('statusFilter').value;
+        var reason = document.getElementById('reasonFilter').value;
+        var rows   = document.querySelectorAll('#actsTable tbody tr');
+        var visible = 0;
+        rows.forEach(function(row) {
+            var matchSearch = !search ||
+                row.dataset.number.toLowerCase().includes(search) ||
+                row.dataset.product.toLowerCase().includes(search);
+            var matchStatus = !status || row.dataset.status === status;
+            var matchReason = !reason || row.dataset.reason === reason;
+            var show = matchSearch && matchStatus && matchReason;
+            row.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+        var total = rows.length;
+        var counter = document.getElementById('resultCount');
+        var noResults = document.getElementById('noResultsMsg');
+        if (search || status || reason) {
+            counter.textContent = 'Показано: ' + visible + ' из ' + total;
+            noResults.style.display = visible === 0 ? '' : 'none';
+        } else {
+            counter.textContent = '';
+            noResults.style.display = 'none';
+        }
+    }
+
+    function resetFilters() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('statusFilter').value = '';
+        document.getElementById('reasonFilter').value = '';
+        filterActs();
+    }
+
+    document.getElementById('searchInput').addEventListener('input', filterActs);
+    document.getElementById('statusFilter').addEventListener('change', filterActs);
+    document.getElementById('reasonFilter').addEventListener('change', filterActs);
+</script>
 </body>
 </html>
