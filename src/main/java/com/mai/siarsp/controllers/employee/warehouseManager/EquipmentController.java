@@ -1,0 +1,82 @@
+package com.mai.siarsp.controllers.employee.warehouseManager;
+
+import com.mai.siarsp.dto.WarehouseEquipmentDTO;
+import com.mai.siarsp.models.EquipmentType;
+import com.mai.siarsp.models.Warehouse;
+import com.mai.siarsp.repo.WarehouseRepository;
+import com.mai.siarsp.service.employee.WarehouseEquipmentService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * Контроллер оборудования склада для заведующего складом (WAREHOUSE_MANAGER).
+ * Позволяет просматривать список оборудования и добавлять новые записи.
+ */
+@Controller("warehouseManagerEquipmentController")
+@RequestMapping("/employee/warehouseManager/equipment")
+@Slf4j
+public class EquipmentController {
+
+    private final WarehouseEquipmentService equipmentService;
+    private final WarehouseRepository warehouseRepository;
+
+    public EquipmentController(WarehouseEquipmentService equipmentService,
+                                WarehouseRepository warehouseRepository) {
+        this.equipmentService = equipmentService;
+        this.warehouseRepository = warehouseRepository;
+    }
+
+    @GetMapping("/all")
+    public String allEquipment(Model model) {
+        List<WarehouseEquipmentDTO> equipment = equipmentService.getAllEquipment();
+        model.addAttribute("equipment", equipment);
+        return "employee/warehouseManager/equipment/allEquipment";
+    }
+
+    @GetMapping("/create")
+    public String createEquipmentForm(Model model) {
+        List<EquipmentType> types = equipmentService.getAllTypeEntities();
+        List<Warehouse> warehouses = warehouseRepository.findAll();
+        model.addAttribute("types", types);
+        model.addAttribute("warehouses", warehouses);
+        return "employee/warehouseManager/equipment/createEquipment";
+    }
+
+    @PostMapping("/create")
+    public String createEquipment(@RequestParam String name,
+                                   @RequestParam(required = false) String serialNumber,
+                                   @RequestParam(required = false)
+                                   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate productionDate,
+                                   @RequestParam(required = false) Integer usefulLifeYears,
+                                   @RequestParam Long equipmentTypeId,
+                                   @RequestParam Long warehouseId,
+                                   RedirectAttributes redirectAttributes) {
+        boolean success = equipmentService.createEquipment(
+                name, serialNumber, productionDate, usefulLifeYears, equipmentTypeId, warehouseId);
+        if (success) {
+            redirectAttributes.addFlashAttribute("successMessage", "Оборудование успешно добавлено.");
+        } else {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Ошибка при добавлении оборудования. Возможно, оборудование с таким именем уже существует на складе.");
+        }
+        return "redirect:/employee/warehouseManager/equipment/all";
+    }
+
+    @GetMapping("/{id}")
+    public String detailsEquipment(@PathVariable Long id, Model model) {
+        Optional<WarehouseEquipmentDTO> dto = equipmentService.getById(id);
+        if (dto.isEmpty()) {
+            return "redirect:/employee/warehouseManager/equipment/all";
+        }
+        model.addAttribute("equipment", dto.get());
+        return "employee/warehouseManager/equipment/detailsEquipment";
+    }
+}

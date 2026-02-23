@@ -1,0 +1,86 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Добавить оборудование | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container my-5">
+    <div class="profile-card mb-4">
+        <div class="profile-actions">
+            <a th:href="'/employee/warehouseManager/equipment/all'" class="btn btn-secondary btn-profile">← Назад</a>
+        </div>
+    </div>
+
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+    <div class="profile-card p-4">
+        <h2 class="h3 mb-4 fw-bold">Добавить оборудование</h2>
+
+        <form th:action="'/employee/warehouseManager/equipment/create'" method="post">
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <label class="form-label fw-semibold">Наименование <span class="text-danger">*</span></label>
+                    <input type="text" name="name" class="form-control" maxlength="200" required
+                           placeholder="Например: Холодильная камера Polair КХН-11.75">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Тип оборудования <span class="text-danger">*</span></label>
+                    <select name="equipmentTypeId" class="form-select" required>
+                        <option value="" disabled selected>— Выберите тип —</option>
+                        <option th:each="type : ${types}"
+                                th:value="${type.id}"
+                                th:text="${type.name}"></option>
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Склад <span class="text-danger">*</span></label>
+                    <select name="warehouseId" class="form-select" required>
+                        <option value="" disabled selected>— Выберите склад —</option>
+                        <option th:each="wh : ${warehouses}"
+                                th:value="${wh.id}"
+                                th:text="${wh.name}"></option>
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Серийный номер</label>
+                    <input type="text" name="serialNumber" class="form-control" maxlength="100"
+                           placeholder="Серийный номер производителя">
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Дата производства</label>
+                    <input type="date" name="productionDate" class="form-control">
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Срок полезного использования (лет)</label>
+                    <input type="number" name="usefulLifeYears" class="form-control" min="1" max="100"
+                           placeholder="Например: 10">
+                    <div class="form-text">Используется для расчёта даты окончания срока службы</div>
+                </div>
+
+                <div class="col-12 mt-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i>Добавить
+                    </button>
+                    <a th:href="'/employee/warehouseManager/equipment/all'" class="btn btn-outline-secondary ms-2">Отмена</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>

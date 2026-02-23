@@ -2,8 +2,10 @@ package com.mai.siarsp.component;
 
 import com.mai.siarsp.enumeration.AttributeType;
 import com.mai.siarsp.models.Employee;
+import com.mai.siarsp.models.EquipmentType;
 import com.mai.siarsp.models.ProductAttribute;
 import com.mai.siarsp.models.ProductCategory;
+import com.mai.siarsp.repo.EquipmentTypeRepository;
 import com.mai.siarsp.repo.ProductAttributeRepository;
 import com.mai.siarsp.repo.ProductCategoryRepository;
 import com.mai.siarsp.repo.RoleRepository;
@@ -32,12 +34,18 @@ public class RoleRunner implements CommandLineRunner {
     private final EmployeeService employeeService;
     private final ProductCategoryRepository productCategoryRepository;
     private final ProductAttributeRepository productAttributeRepository;
+    private final EquipmentTypeRepository equipmentTypeRepository;
 
-    public RoleRunner(RoleRepository roleRepository, EmployeeService employeeService, ProductCategoryRepository productCategoryRepository, ProductAttributeRepository productAttributeRepository) {
+    public RoleRunner(RoleRepository roleRepository,
+                      EmployeeService employeeService,
+                      ProductCategoryRepository productCategoryRepository,
+                      ProductAttributeRepository productAttributeRepository,
+                      EquipmentTypeRepository equipmentTypeRepository) {
         this.roleRepository = roleRepository;
         this.employeeService = employeeService;
         this.productCategoryRepository = productCategoryRepository;
         this.productAttributeRepository = productAttributeRepository;
+        this.equipmentTypeRepository = equipmentTypeRepository;
     }
 
     @Transactional
@@ -51,6 +59,7 @@ public class RoleRunner implements CommandLineRunner {
         createRoleIfNotFound(ROLE_EMPLOYEE_ACCOUNTER, "Бухгалтер");
         createAdminIfNotFound();
         createProductAttributeGabarite();
+        createDefaultEquipmentTypesIfNotExist();
     }
 
     private void createRoleIfNotFound(String roleName, String description) {
@@ -109,5 +118,31 @@ public class RoleRunner implements CommandLineRunner {
         }
 
         log.info("📊 Атрибут '{}' добавлен в {} категорий", name, addedCount);
+    }
+
+    /**
+     * Создаёт стандартные типы оборудования при первом запуске.
+     * Типы, уже существующие в БД, не дублируются.
+     */
+    private void createDefaultEquipmentTypesIfNotExist() {
+        String[] defaultTypes = {
+                "Стеллаж",
+                "Холодильная камера",
+                "Поддон",
+                "Весы",
+                "Погрузчик",
+                "Прочее"
+        };
+        int created = 0;
+        for (String typeName : defaultTypes) {
+            if (!equipmentTypeRepository.existsByName(typeName)) {
+                equipmentTypeRepository.save(new EquipmentType(typeName));
+                log.info("Создан тип оборудования по умолчанию: '{}'", typeName);
+                created++;
+            }
+        }
+        if (created > 0) {
+            log.info("Добавлено {} типов оборудования по умолчанию", created);
+        }
     }
 }

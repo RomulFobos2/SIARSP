@@ -14,8 +14,11 @@ import java.util.List;
 public interface WarehouseEquipmentMapper {
     WarehouseEquipmentMapper INSTANCE = Mappers.getMapper(WarehouseEquipmentMapper.class);
 
+    @Mapping(source = "equipmentType.id", target = "equipmentTypeId")
+    @Mapping(source = "equipmentType.name", target = "equipmentTypeName")
     @Mapping(source = "warehouse.id", target = "warehouseId")
     @Mapping(source = "warehouse.name", target = "warehouseName")
+    @Mapping(source = "status.displayName", target = "statusDisplayName")
     @Mapping(source = "equipment", target = "expirationDate", qualifiedByName = "expirationDate")
     @Mapping(source = "equipment", target = "expired", qualifiedByName = "isExpired")
     WarehouseEquipmentDTO toDTO(WarehouseEquipment equipment);

@@ -1,0 +1,164 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Оборудование склада | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container my-5">
+    <div class="profile-card mb-4">
+        <div class="profile-actions">
+            <a th:href="'/'" class="btn btn-secondary btn-profile">← Главная</a>
+            <a th:href="'/employee/warehouseManager/equipment/create'" class="btn btn-primary btn-profile">
+                <i class="bi bi-plus-circle me-1"></i>Добавить оборудование
+            </a>
+        </div>
+    </div>
+
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+    <div class="profile-card p-4">
+        <h2 class="h3 mb-4 fw-bold">Оборудование склада</h2>
+
+        <div th:if="${#lists.isEmpty(equipment)}" class="text-center text-muted py-4">
+            <i class="bi bi-tools" style="font-size: 2rem;"></i>
+            <p class="mt-2">Оборудование не добавлено</p>
+        </div>
+
+        <div th:unless="${#lists.isEmpty(equipment)}">
+            <!-- Панель фильтров -->
+            <div class="row g-2 mb-3">
+                <div class="col-md-5">
+                    <input type="text" id="searchInput" class="form-control"
+                           placeholder="Поиск по наименованию, с/н или складу...">
+                </div>
+                <div class="col-md-3">
+                    <select id="statusFilter" class="form-select">
+                        <option value="">— Все статусы —</option>
+                        <option value="IN_USE">В эксплуатации</option>
+                        <option value="UNDER_REPAIR">На ремонте</option>
+                        <option value="WRITTEN_OFF">Списан</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select id="expiredFilter" class="form-select">
+                        <option value="">— Срок службы —</option>
+                        <option value="expired">Истёк</option>
+                        <option value="ok">Активен</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-outline-secondary w-100" onclick="resetFilters()">
+                        <i class="bi bi-x-circle me-1"></i>Сбросить
+                    </button>
+                </div>
+            </div>
+            <div class="text-muted small mb-2" id="resultCount"></div>
+            <div id="noResultsMsg" class="text-center text-muted py-3" style="display:none;">
+                <i class="bi bi-search"></i> По заданным фильтрам ничего не найдено
+            </div>
+
+            <div class="table-responsive">
+                <table id="equipTable" class="table table-modern">
+                    <thead>
+                    <tr>
+                        <th>Наименование</th>
+                        <th>Тип</th>
+                        <th>Серийный №</th>
+                        <th>Склад</th>
+                        <th>Срок службы до</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="eq : ${equipment}"
+                        th:attr="data-name=${eq.name},
+                                 data-serial=${eq.serialNumber != null ? eq.serialNumber : ''},
+                                 data-warehouse=${eq.warehouseName},
+                                 data-status=${eq.status.name()},
+                                 data-expired=${eq.expired ? 'expired' : 'ok'}">
+                        <td class="fw-semibold" th:text="${eq.name}"></td>
+                        <td th:text="${eq.equipmentTypeName}"></td>
+                        <td>
+                            <span th:if="${eq.serialNumber != null}" th:text="${eq.serialNumber}"></span>
+                            <span th:unless="${eq.serialNumber != null}" class="text-muted">—</span>
+                        </td>
+                        <td th:text="${eq.warehouseName}"></td>
+                        <td>
+                            <span th:if="${eq.expirationDate != null}"
+                                  th:text="${#temporals.format(eq.expirationDate, 'dd.MM.yyyy')}"
+                                  th:classappend="${eq.expired} ? 'text-danger fw-semibold' : ''"></span>
+                            <span th:unless="${eq.expirationDate != null}" class="text-muted">—</span>
+                            <span th:if="${eq.expired}" class="badge bg-danger ms-1">Истёк</span>
+                        </td>
+                        <td>
+                            <span class="badge"
+                                  th:classappend="${eq.status.name() == 'IN_USE'} ? 'bg-success' : (${eq.status.name() == 'UNDER_REPAIR'} ? 'bg-warning text-dark' : 'bg-secondary')"
+                                  th:text="${eq.statusDisplayName}"></span>
+                        </td>
+                        <td>
+                            <a th:href="'/employee/warehouseManager/equipment/' + ${eq.id}"
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> Подробнее
+                            </a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+
+<script>
+    function filterEquipment() {
+        var search   = document.getElementById('searchInput').value.toLowerCase().trim();
+        var status   = document.getElementById('statusFilter').value;
+        var expired  = document.getElementById('expiredFilter').value;
+        var rows     = document.querySelectorAll('#equipTable tbody tr');
+        var visible  = 0;
+        rows.forEach(function(row) {
+            var matchSearch = !search ||
+                row.dataset.name.toLowerCase().includes(search) ||
+                row.dataset.serial.toLowerCase().includes(search) ||
+                row.dataset.warehouse.toLowerCase().includes(search);
+            var matchStatus  = !status  || row.dataset.status  === status;
+            var matchExpired = !expired || row.dataset.expired === expired;
+            var show = matchSearch && matchStatus && matchExpired;
+            row.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+        var total = rows.length;
+        var counter = document.getElementById('resultCount');
+        var noResults = document.getElementById('noResultsMsg');
+        if (search || status || expired) {
+            counter.textContent = 'Показано: ' + visible + ' из ' + total;
+            noResults.style.display = visible === 0 ? '' : 'none';
+        } else {
+            counter.textContent = '';
+            noResults.style.display = 'none';
+        }
+    }
+    function resetFilters() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('statusFilter').value = '';
+        document.getElementById('expiredFilter').value = '';
+        filterEquipment();
+    }
+    document.getElementById('searchInput').addEventListener('input', filterEquipment);
+    document.getElementById('statusFilter').addEventListener('change', filterEquipment);
+    document.getElementById('expiredFilter').addEventListener('change', filterEquipment);
+</script>
+</body>
+</html>

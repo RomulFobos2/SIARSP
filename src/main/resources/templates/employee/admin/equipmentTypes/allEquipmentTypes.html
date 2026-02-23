@@ -1,0 +1,72 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Типы оборудования | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container my-5">
+    <div class="profile-card mb-4">
+        <div class="profile-actions">
+            <a th:href="'/'" class="btn btn-secondary btn-profile">← Главная</a>
+            <a th:href="'/employee/admin/equipmentTypes/create'" class="btn btn-primary btn-profile">
+                <i class="bi bi-plus-circle me-1"></i>Добавить тип
+            </a>
+        </div>
+    </div>
+
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+    <div class="profile-card p-4">
+        <h2 class="h3 mb-4 fw-bold">Типы оборудования склада</h2>
+
+        <div th:if="${#lists.isEmpty(types)}" class="text-center text-muted py-4">
+            <i class="bi bi-list-ul" style="font-size: 2rem;"></i>
+            <p class="mt-2">Типы оборудования не добавлены</p>
+        </div>
+
+        <div th:unless="${#lists.isEmpty(types)}" class="table-responsive">
+            <table class="table table-modern">
+                <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Наименование</th>
+                    <th>Действия</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="type, iter : ${types}">
+                    <td th:text="${iter.count}"></td>
+                    <td class="fw-semibold" th:text="${type.name}"></td>
+                    <td>
+                        <a th:href="'/employee/admin/equipmentTypes/edit/' + ${type.id}"
+                           class="btn btn-sm btn-outline-secondary me-1">
+                            <i class="bi bi-pencil"></i> Изменить
+                        </a>
+                        <form th:action="'/employee/admin/equipmentTypes/delete/' + ${type.id}"
+                              method="post" class="d-inline"
+                              onsubmit="return confirm('Удалить тип «' + this.dataset.name + '»?');"
+                              th:attr="data-name=${type.name}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash"></i> Удалить
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>
