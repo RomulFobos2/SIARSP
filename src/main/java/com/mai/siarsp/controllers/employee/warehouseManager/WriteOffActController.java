@@ -18,10 +18,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Контроллер актов списания для заведующего складом (WAREHOUSE_MANAGER).
@@ -94,10 +91,13 @@ public class WriteOffActController {
             whMap.merge(wh, zp.getQuantity(), Integer::sum);
         }
         return whMap.entrySet().stream()
-                .map(e -> Map.of(
-                        "id", e.getKey().getId(),
-                        "name", e.getKey().getName(),
-                        "availableQuantity", e.getValue()))
+                .map(e -> {
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("id", e.getKey().getId());
+                    m.put("name", e.getKey().getName());
+                    m.put("availableQuantity", e.getValue());
+                    return m;
+                })
                 .toList();
     }
 
