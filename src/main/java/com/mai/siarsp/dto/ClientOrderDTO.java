@@ -15,6 +15,7 @@ public class ClientOrderDTO {
     private LocalDate deliveryDate;
     private LocalDate actualDeliveryDate;
     private ClientOrderStatus status;
+    private String statusDisplayName;
     private BigDecimal totalAmount;
     private String comment;
     private String contractFile;

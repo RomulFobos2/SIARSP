@@ -1,0 +1,170 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Заказ | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/javascript.js"></script>
+</head>
+<body>
+<header th:insert="~{blocks/header :: header}"></header>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+
+            <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+            <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+            <!-- Заголовок -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="page-title">
+                        Заказ <span th:text="${order.orderNumber}"></span>
+                    </h1>
+                    <span class="badge fs-6"
+                          th:text="${order.status.displayName}"
+                          th:classappend="${order.status.name() == 'NEW' ? 'bg-secondary' :
+                                           order.status.name() == 'CONFIRMED' ? 'bg-info text-dark' :
+                                           order.status.name() == 'RESERVED' ? 'bg-primary' :
+                                           order.status.name() == 'IN_PROGRESS' ? 'bg-warning text-dark' :
+                                           order.status.name() == 'READY' ? 'bg-success' :
+                                           order.status.name() == 'SHIPPED' ? 'bg-dark' :
+                                           order.status.name() == 'DELIVERED' ? 'bg-success' :
+                                           order.status.name() == 'CANCELLED' ? 'bg-danger' : 'bg-secondary'}"></span>
+                </div>
+            </div>
+
+            <!-- Информация -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-6">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title fw-bold">Информация о заказе</h6>
+                            <p class="mb-1"><strong>Номер:</strong> <span th:text="${order.orderNumber}"></span></p>
+                            <p class="mb-1"><strong>Дата создания:</strong>
+                                <span th:text="${#temporals.format(order.orderDate, 'dd.MM.yyyy HH:mm')}"></span></p>
+                            <p class="mb-1"><strong>Дата доставки:</strong>
+                                <span th:text="${#temporals.format(order.deliveryDate, 'dd.MM.yyyy')}"></span></p>
+                            <p class="mb-1" th:if="${order.actualDeliveryDate != null}">
+                                <strong>Фактическая доставка:</strong>
+                                <span th:text="${#temporals.format(order.actualDeliveryDate, 'dd.MM.yyyy')}"></span></p>
+                            <p class="mb-0"><strong>Ответственный:</strong>
+                                <span th:text="${order.responsibleEmployee.fullName}"></span></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title fw-bold">Клиент</h6>
+                            <p class="mb-1"><strong>Организация:</strong>
+                                <span th:text="${order.client.organizationName}"></span></p>
+                            <p class="mb-1"><strong>Тип:</strong>
+                                <span th:text="${order.client.organizationType}"></span></p>
+                            <p class="mb-1"><strong>Адрес доставки:</strong>
+                                <span th:text="${order.client.deliveryAddress}"></span></p>
+                            <p class="mb-0" th:if="${order.client.contactPerson != null}">
+                                <strong>Контакт:</strong>
+                                <span th:text="${order.client.contactPerson}"></span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Позиции заказа -->
+            <h5 class="fw-bold mb-3">Позиции заказа</h5>
+            <div class="table-responsive mb-4">
+                <table class="table table-modern">
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Товар</th>
+                        <th>Артикул</th>
+                        <th>Количество</th>
+                        <th>Цена за ед.</th>
+                        <th>Сумма</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="op, idx : ${order.orderedProducts}">
+                        <td th:text="${idx.index + 1}"></td>
+                        <td th:text="${op.product.name}"></td>
+                        <td th:text="${op.product.article}"></td>
+                        <td th:text="${op.quantity}"></td>
+                        <td th:text="${#numbers.formatDecimal(op.price, 1, 2) + ' руб.'}"></td>
+                        <td th:text="${#numbers.formatDecimal(op.totalPrice, 1, 2) + ' руб.'}"></td>
+                    </tr>
+                    </tbody>
+                    <tfoot>
+                    <tr>
+                        <td colspan="5" class="text-end fw-bold">Итого:</td>
+                        <td class="fw-bold" th:text="${#numbers.formatDecimal(order.totalAmount, 1, 2) + ' руб.'}"></td>
+                    </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- Комментарий -->
+            <div th:if="${order.comment != null and !order.comment.isBlank()}" class="mb-4">
+                <h6 class="fw-bold">Комментарий</h6>
+                <p class="text-muted" th:text="${order.comment}"></p>
+            </div>
+
+            <!-- Кнопки действий -->
+            <div class="d-flex gap-2 mb-4">
+                <!-- NEW: Редактировать, Подтвердить, Отменить -->
+                <a th:if="${order.status.name() == 'NEW'}"
+                   th:href="'/employee/manager/clientOrders/editClientOrder/' + ${order.id}"
+                   class="btn btn-outline-primary">Редактировать</a>
+
+                <form th:if="${order.status.name() == 'NEW'}"
+                      th:action="'/employee/manager/clientOrders/confirmClientOrder/' + ${order.id}"
+                      method="post" class="d-inline">
+                    <button type="submit" class="btn btn-success">Подтвердить заказ</button>
+                </form>
+
+                <!-- Отмена: NEW, CONFIRMED, RESERVED -->
+                <button th:if="${order.status.name() == 'NEW' or order.status.name() == 'CONFIRMED' or order.status.name() == 'RESERVED'}"
+                        type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                    Отменить заказ
+                </button>
+            </div>
+
+            <div class="link-section">
+                <a href="/employee/manager/clientOrders/allClientOrders">&larr; К списку заказов</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Отмена заказа -->
+<div class="modal fade" id="cancelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Подтверждение отмены</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы действительно хотите отменить заказ <strong th:text="${order.orderNumber}"></strong>?</p>
+                <p th:if="${order.status.name() == 'RESERVED'}" class="text-warning">
+                    Резервирование товара будет снято.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Нет</button>
+                <form th:action="'/employee/manager/clientOrders/cancelClientOrder/' + ${order.id}"
+                      method="post" class="d-inline">
+                    <button type="submit" class="btn btn-danger">Да, отменить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>

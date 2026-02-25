@@ -78,6 +78,16 @@
                         </ul>
                     </li>
 
+                    <!-- Dropdown: Заказы -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Заказы
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/manager/clientOrders/allClientOrders">Все заказы</a></li>
+                            <li><a class="dropdown-item" href="/employee/manager/clientOrders/createClientOrder">Создать заказ</a></li>
+                        </ul>
+                    </li>
                     <!-- Dropdown: Документация -->
                     <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
                         <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -121,6 +131,15 @@
                         </ul>
                     </li>
 
+                    <!-- Dropdown: Заказы -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Заказы
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/clientOrders/allClientOrders">Заказы клиентов</a></li>
+                        </ul>
+                    </li>
                     <!-- Dropdown: Документация -->
                     <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
                         <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -143,6 +162,15 @@
                         </ul>
                     </li>
 
+                    <!-- Dropdown: Заказы -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_ACCOUNTER')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Заказы
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/accounter/clientOrders/allClientOrders">Заказы клиентов</a></li>
+                        </ul>
+                    </li>
                     <!-- Dropdown: Документация -->
                     <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_ACCOUNTER')">
                         <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">

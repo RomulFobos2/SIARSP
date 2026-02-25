@@ -1,0 +1,91 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Заказы клиентов | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/javascript.js"></script>
+</head>
+<body>
+<header th:insert="~{blocks/header :: header}"></header>
+<div class="container my-5">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="page-title">Заказы клиентов</h1>
+            <p class="page-subtitle">Управление заказами</p>
+        </div>
+        <a href="/employee/manager/clientOrders/createClientOrder" class="btn btn-primary">
+            + Создать заказ
+        </a>
+    </div>
+
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+    <!-- Фильтр по статусу -->
+    <form method="get" class="row g-3 mb-4">
+        <div class="col-auto">
+            <select name="statusFilter" class="form-select">
+                <option value="">Все статусы</option>
+                <option th:each="s : ${statuses}" th:value="${s.name()}" th:text="${s.displayName}"
+                        th:selected="${s.name() == currentFilter}"></option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-outline-secondary">Фильтровать</button>
+        </div>
+        <div class="col-auto" th:if="${currentFilter != null and !currentFilter.isBlank()}">
+            <a href="/employee/manager/clientOrders/allClientOrders" class="btn btn-outline-danger">Сбросить</a>
+        </div>
+    </form>
+
+    <div th:if="${orders.isEmpty()}" class="alert alert-info">Заказы не найдены.</div>
+
+    <div th:if="${!orders.isEmpty()}" class="table-responsive">
+        <table class="table table-modern">
+            <thead>
+            <tr>
+                <th>№ заказа</th>
+                <th>Дата</th>
+                <th>Клиент</th>
+                <th>Сумма</th>
+                <th>Дата доставки</th>
+                <th>Статус</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="order : ${orders}">
+                <td class="fw-semibold" th:text="${order.orderNumber}"></td>
+                <td th:text="${#temporals.format(order.orderDate, 'dd.MM.yyyy')}"></td>
+                <td th:text="${order.clientOrganizationName}"></td>
+                <td th:text="${#numbers.formatDecimal(order.totalAmount, 1, 2) + ' руб.'}"></td>
+                <td th:text="${#temporals.format(order.deliveryDate, 'dd.MM.yyyy')}"></td>
+                <td>
+                    <span class="badge"
+                          th:text="${order.statusDisplayName}"
+                          th:classappend="${order.status.name() == 'NEW' ? 'bg-secondary' :
+                                           order.status.name() == 'CONFIRMED' ? 'bg-info text-dark' :
+                                           order.status.name() == 'RESERVED' ? 'bg-primary' :
+                                           order.status.name() == 'IN_PROGRESS' ? 'bg-warning text-dark' :
+                                           order.status.name() == 'READY' ? 'bg-success' :
+                                           order.status.name() == 'SHIPPED' ? 'bg-dark' :
+                                           order.status.name() == 'DELIVERED' ? 'bg-success' :
+                                           order.status.name() == 'CANCELLED' ? 'bg-danger' : 'bg-secondary'}"></span>
+                </td>
+                <td>
+                    <a th:href="'/employee/manager/clientOrders/detailsClientOrder/' + ${order.id}"
+                       class="btn btn-sm btn-outline-primary">Подробнее</a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>
