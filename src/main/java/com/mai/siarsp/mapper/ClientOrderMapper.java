@@ -20,6 +20,7 @@ public interface ClientOrderMapper {
     @Mapping(source = "responsibleEmployee", target = "responsibleEmployeeFullName", qualifiedByName = "employeeFullName")
     @Mapping(source = "deliveryTask.id", target = "deliveryTaskId")
     @Mapping(source = "acceptanceAct.id", target = "acceptanceActId")
+    @Mapping(source = "status.displayName", target = "statusDisplayName")
     ClientOrderDTO toDTO(ClientOrder clientOrder);
 
     List<ClientOrderDTO> toDTOList(List<ClientOrder> clientOrders);

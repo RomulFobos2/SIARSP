@@ -95,6 +95,45 @@
             </div>
         </div>
 
+        <!-- ========== ЗАКАЗЫ КЛИЕНТА ========== -->
+        <div class="mb-4" th:if="${clientDTO.getOrders() != null && !clientDTO.getOrders().isEmpty()}">
+            <h6 class="form-section-title">Заказы клиента</h6>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                    <tr>
+                        <th>№ заказа</th>
+                        <th>Дата</th>
+                        <th>Сумма</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="order : ${clientDTO.getOrders()}">
+                        <td th:text="${order.getOrderNumber()}"></td>
+                        <td th:text="${#temporals.format(order.getOrderDate(), 'dd.MM.yyyy HH:mm')}"></td>
+                        <td th:text="${#numbers.formatDecimal(order.getTotalAmount(), 1, 2)} + ' руб.'"></td>
+                        <td>
+                            <span class="badge"
+                                  th:classappend="${order.getStatus().name() == 'NEW'} ? 'bg-secondary' :
+                                      (${order.getStatus().name() == 'CONFIRMED'} ? 'bg-info' :
+                                      (${order.getStatus().name() == 'RESERVED'} ? 'bg-primary' :
+                                      (${order.getStatus().name() == 'IN_PROGRESS'} ? 'bg-warning text-dark' :
+                                      (${order.getStatus().name() == 'READY'} ? 'bg-success' :
+                                      (${order.getStatus().name() == 'CANCELLED'} ? 'bg-danger' : 'bg-dark')))))"
+                                  th:text="${order.getStatusDisplayName()}"></span>
+                        </td>
+                        <td>
+                            <a th:href="'/employee/manager/clientOrders/detailsClientOrder/' + ${order.getId()}"
+                               class="btn btn-sm btn-outline-primary">Подробнее</a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <div class="action-buttons mb-4">
             <button th:onclick="'window.location.href=\'/employee/manager/clients/editClient/' + ${clientDTO.getId()} + '\';'"
                     class="btn btn-primary btn-profile">

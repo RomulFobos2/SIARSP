@@ -1,0 +1,207 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Создание заказа | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/javascript.js"></script>
+</head>
+<body>
+<header th:insert="~{blocks/header :: header}"></header>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+            <div class="profile-card p-4">
+
+                <h1 class="page-title">Создание заказа</h1>
+                <p class="page-subtitle">Оформление нового заказа клиента</p>
+
+                <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+                <form id="orderForm" method="post" action="/employee/manager/clientOrders/createClientOrder">
+
+                    <!-- Клиент -->
+                    <div class="mb-4">
+                        <h6 class="form-section-title">Клиент</h6>
+                        <select id="clientId" name="clientId" class="form-select" required>
+                            <option value="">-- Выберите клиента --</option>
+                            <option th:each="client : ${clients}"
+                                    th:value="${client.id}"
+                                    th:text="${client.getDisplayName()}"></option>
+                        </select>
+                    </div>
+
+                    <!-- Дата доставки и комментарий -->
+                    <div class="mb-4">
+                        <h6 class="form-section-title">Параметры заказа</h6>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="deliveryDate" class="form-label">Дата доставки *</label>
+                                <input type="date" id="deliveryDate" name="deliveryDate"
+                                       class="form-control" required>
+                            </div>
+                            <div class="col-md-8">
+                                <label for="comment" class="form-label">Комментарий</label>
+                                <textarea id="comment" name="comment" class="form-control"
+                                          maxlength="500" rows="2" placeholder="Примечания к заказу"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Позиции заказа -->
+                    <div class="mb-4">
+                        <h6 class="form-section-title">Позиции заказа</h6>
+                        <div id="productsContainer">
+                            <!-- Динамические строки добавляются JS -->
+                        </div>
+                        <button type="button" id="addProductBtn" class="btn btn-outline-primary mt-2"
+                                onclick="addProductRow()">
+                            + Добавить товар
+                        </button>
+                    </div>
+
+                    <!-- Итого -->
+                    <div class="mb-4 p-3 bg-light rounded">
+                        <h5 class="mb-0">Итого: <span id="grandTotal" class="fw-bold">0.00</span> руб.</h5>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button type="submit" class="btn btn-primary btn-profile">Создать заказ</button>
+                    </div>
+
+                    <div class="divider"><span>или</span></div>
+                    <div class="link-section">
+                        <a href="/employee/manager/clientOrders/allClientOrders">&larr; К списку заказов</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:insert="~{blocks/footer :: footer}"></div>
+
+<script th:inline="javascript">
+    var productsData = /*[[${productsList}]]*/ [];
+</script>
+<script>
+    var rowIndex = 0;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Установить минимальную дату доставки (завтра)
+        var tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        var dateStr = tomorrow.toISOString().split('T')[0];
+        document.getElementById('deliveryDate').setAttribute('min', dateStr);
+
+        // Добавить первую строку автоматически
+        addProductRow();
+    });
+
+    function addProductRow() {
+        rowIndex++;
+        var container = document.getElementById('productsContainer');
+        var row = document.createElement('div');
+        row.className = 'row g-2 mb-3 product-row align-items-end';
+        row.setAttribute('data-row-index', rowIndex);
+        row.innerHTML =
+            '<div class="col-md-4">' +
+                '<label class="form-label">Товар *</label>' +
+                '<select name="productId" class="form-select product-select" required onchange="onProductChange(this)">' +
+                    '<option value="">-- Выберите --</option>' +
+                    buildProductOptions() +
+                '</select>' +
+            '</div>' +
+            '<div class="col-md-2">' +
+                '<label class="form-label">Кол-во *</label>' +
+                '<input type="number" name="quantity" class="form-control quantity-input" min="1" required oninput="calculateRowTotal(this)">' +
+                '<small class="text-muted available-hint"></small>' +
+            '</div>' +
+            '<div class="col-md-2">' +
+                '<label class="form-label">Цена *</label>' +
+                '<input type="number" name="price" class="form-control price-input" min="0.01" step="0.01" required oninput="calculateRowTotal(this)">' +
+            '</div>' +
+            '<div class="col-md-2">' +
+                '<label class="form-label">Сумма</label>' +
+                '<input type="text" class="form-control row-total" readonly value="0.00">' +
+            '</div>' +
+            '<div class="col-md-2 d-flex align-items-end">' +
+                '<button type="button" class="btn btn-outline-danger" onclick="removeProductRow(this)">Удалить</button>' +
+            '</div>';
+        container.appendChild(row);
+    }
+
+    function buildProductOptions() {
+        var html = '';
+        for (var i = 0; i < productsData.length; i++) {
+            var p = productsData[i];
+            html += '<option value="' + p.id + '" data-available="' + p.availableQuantity + '">'
+                + p.name + ' (' + p.article + ') — в наличии: ' + p.availableQuantity + ' шт.'
+                + '</option>';
+        }
+        return html;
+    }
+
+    function onProductChange(select) {
+        var row = select.closest('.product-row');
+        var selectedOption = select.options[select.selectedIndex];
+        var qtyInput = row.querySelector('.quantity-input');
+        var hint = row.querySelector('.available-hint');
+
+        if (selectedOption.value) {
+            var available = parseInt(selectedOption.getAttribute('data-available'));
+            qtyInput.setAttribute('max', available);
+            hint.textContent = 'Доступно: ' + available + ' шт.';
+        } else {
+            qtyInput.removeAttribute('max');
+            hint.textContent = '';
+        }
+    }
+
+    function calculateRowTotal(input) {
+        var row = input.closest('.product-row');
+        var qty = parseFloat(row.querySelector('.quantity-input').value) || 0;
+        var price = parseFloat(row.querySelector('.price-input').value) || 0;
+        var total = (qty * price).toFixed(2);
+        row.querySelector('.row-total').value = total;
+        updateGrandTotal();
+    }
+
+    function updateGrandTotal() {
+        var totals = document.querySelectorAll('.row-total');
+        var sum = 0;
+        for (var i = 0; i < totals.length; i++) {
+            sum += parseFloat(totals[i].value) || 0;
+        }
+        document.getElementById('grandTotal').textContent = sum.toFixed(2);
+    }
+
+    function removeProductRow(btn) {
+        var row = btn.closest('.product-row');
+        row.remove();
+        updateGrandTotal();
+    }
+
+    // Валидация перед отправкой
+    document.getElementById('orderForm').addEventListener('submit', function(e) {
+        var rows = document.querySelectorAll('.product-row');
+        if (rows.length === 0) {
+            e.preventDefault();
+            alert('Добавьте хотя бы один товар в заказ.');
+            return;
+        }
+
+        var selects = document.querySelectorAll('.product-select');
+        for (var i = 0; i < selects.length; i++) {
+            if (!selects[i].value) {
+                e.preventDefault();
+                alert('Выберите товар во всех позициях.');
+                return;
+            }
+        }
+    });
+</script>
+</body>
+</html>
