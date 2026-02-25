@@ -158,6 +158,23 @@
             qtyInput.removeAttribute('max');
             hint.textContent = '';
         }
+        updateSelectOptions();
+    }
+
+    function updateSelectOptions() {
+        var allSelects = document.querySelectorAll('.product-select');
+        var selectedValues = [];
+        for (var i = 0; i < allSelects.length; i++) {
+            if (allSelects[i].value) selectedValues.push(allSelects[i].value);
+        }
+        for (var i = 0; i < allSelects.length; i++) {
+            var currentVal = allSelects[i].value;
+            var options = allSelects[i].querySelectorAll('option');
+            for (var j = 0; j < options.length; j++) {
+                if (!options[j].value) continue;
+                options[j].disabled = (options[j].value !== currentVal && selectedValues.indexOf(options[j].value) !== -1);
+            }
+        }
     }
 
     function calculateRowTotal(input) {
@@ -182,6 +199,7 @@
         var row = btn.closest('.product-row');
         row.remove();
         updateGrandTotal();
+        updateSelectOptions();
     }
 
     // Валидация перед отправкой
@@ -194,12 +212,19 @@
         }
 
         var selects = document.querySelectorAll('.product-select');
+        var selectedIds = [];
         for (var i = 0; i < selects.length; i++) {
             if (!selects[i].value) {
                 e.preventDefault();
                 alert('Выберите товар во всех позициях.');
                 return;
             }
+            if (selectedIds.indexOf(selects[i].value) !== -1) {
+                e.preventDefault();
+                alert('Один и тот же товар не может быть добавлен дважды.');
+                return;
+            }
+            selectedIds.push(selects[i].value);
         }
     });
 </script>

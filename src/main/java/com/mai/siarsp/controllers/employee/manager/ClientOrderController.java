@@ -41,23 +41,9 @@ public class ClientOrderController {
 
     @Transactional(readOnly = true)
     @GetMapping("/allClientOrders")
-    public String allClientOrders(@RequestParam(value = "statusFilter", required = false) String statusFilter,
-                                  Model model) {
-        List<ClientOrderDTO> orders;
-        if (statusFilter != null && !statusFilter.isBlank()) {
-            try {
-                ClientOrderStatus status = ClientOrderStatus.valueOf(statusFilter);
-                orders = clientOrderService.getOrdersByStatus(status);
-            } catch (IllegalArgumentException e) {
-                orders = clientOrderService.getAllOrders();
-            }
-        } else {
-            orders = clientOrderService.getAllOrders();
-        }
-
-        model.addAttribute("orders", orders);
+    public String allClientOrders(Model model) {
+        model.addAttribute("orders", clientOrderService.getAllOrders());
         model.addAttribute("statuses", ClientOrderStatus.values());
-        model.addAttribute("currentFilter", statusFilter);
         return "employee/manager/clientOrders/allClientOrders";
     }
 
