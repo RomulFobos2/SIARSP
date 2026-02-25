@@ -104,7 +104,7 @@ public class ClientOrderService {
      */
     @Transactional(readOnly = true)
     public Optional<ClientOrder> getOrderById(Long id) {
-        return clientOrderRepository.findById(id);
+        return clientOrderRepository.findByIdWithDetails(id);
     }
 
     // ========== СОЗДАНИЕ И РЕДАКТИРОВАНИЕ ==========

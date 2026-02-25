@@ -18,32 +18,32 @@
         <p class="page-subtitle">Просмотр заказов</p>
     </div>
 
-    <!-- Фильтр по статусу -->
-    <form method="get" class="row g-3 mb-4">
-        <div class="col-auto">
-            <select name="statusFilter" class="form-select">
+    <!-- Поиск и фильтрация -->
+    <div class="row g-3 mb-4 align-items-end">
+        <div class="col-md-5">
+            <input type="text" id="searchInput" class="form-control" placeholder="Поиск по номеру, клиенту, ответственному...">
+        </div>
+        <div class="col-md-3">
+            <select id="statusFilter" class="form-select">
                 <option value="">Все статусы</option>
-                <option th:each="s : ${statuses}" th:value="${s.name()}" th:text="${s.displayName}"
-                        th:selected="${s.name() == currentFilter}"></option>
+                <option th:each="s : ${statuses}" th:value="${s.name()}" th:text="${s.displayName}"></option>
             </select>
         </div>
-        <div class="col-auto">
-            <button type="submit" class="btn btn-outline-secondary">Фильтровать</button>
+        <div class="col-md-4 text-muted">
+            Найдено: <span id="resultCount" th:text="${orders.size()}"></span>
         </div>
-        <div class="col-auto" th:if="${currentFilter != null and !currentFilter.isBlank()}">
-            <a href="/employee/accounter/clientOrders/allClientOrders" class="btn btn-outline-danger">Сбросить</a>
-        </div>
-    </form>
+    </div>
 
     <div th:if="${orders.isEmpty()}" class="alert alert-info">Заказы не найдены.</div>
 
     <div th:if="${!orders.isEmpty()}" class="table-responsive">
-        <table class="table table-modern">
+        <table class="table table-modern" id="ordersTable">
             <thead>
             <tr>
                 <th>№ заказа</th>
                 <th>Дата</th>
                 <th>Клиент</th>
+                <th>Ответственный</th>
                 <th>Сумма</th>
                 <th>Дата доставки</th>
                 <th>Статус</th>
@@ -51,10 +51,15 @@
             </tr>
             </thead>
             <tbody>
-            <tr th:each="order : ${orders}">
+            <tr th:each="order : ${orders}"
+                th:attr="data-number=${order.orderNumber},
+                         data-client=${order.clientOrganizationName},
+                         data-employee=${order.responsibleEmployeeFullName},
+                         data-status=${order.status.name()}">
                 <td class="fw-semibold" th:text="${order.orderNumber}"></td>
                 <td th:text="${#temporals.format(order.orderDate, 'dd.MM.yyyy')}"></td>
                 <td th:text="${order.clientOrganizationName}"></td>
+                <td th:text="${order.responsibleEmployeeFullName}"></td>
                 <td th:text="${#numbers.formatDecimal(order.totalAmount, 1, 2) + ' руб.'}"></td>
                 <td th:text="${#temporals.format(order.deliveryDate, 'dd.MM.yyyy')}"></td>
                 <td>
@@ -78,6 +83,27 @@
         </table>
     </div>
 </div>
+<script>
+    function filterOrders() {
+        var search = document.getElementById('searchInput').value.toLowerCase().trim();
+        var status = document.getElementById('statusFilter').value;
+        var rows = document.querySelectorAll('#ordersTable tbody tr');
+        var visible = 0;
+        rows.forEach(function(row) {
+            var matchSearch = !search ||
+                (row.dataset.number || '').toLowerCase().includes(search) ||
+                (row.dataset.client || '').toLowerCase().includes(search) ||
+                (row.dataset.employee || '').toLowerCase().includes(search);
+            var matchStatus = !status || row.dataset.status === status;
+            var show = matchSearch && matchStatus;
+            row.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+        document.getElementById('resultCount').textContent = visible;
+    }
+    document.getElementById('searchInput').addEventListener('input', filterOrders);
+    document.getElementById('statusFilter').addEventListener('change', filterOrders);
+</script>
 <div th:insert="~{blocks/footer :: footer}"></div>
 </body>
 </html>
