@@ -131,6 +131,7 @@
                 '<button type="button" class="btn btn-outline-danger" onclick="removeProductRow(this)">Удалить</button>' +
             '</div>';
         container.appendChild(row);
+        updateSelectOptions();
     }
 
     function buildProductOptions() {
@@ -145,19 +146,47 @@
     }
 
     function onProductChange(select) {
+        // если выбран уже где-то ещё — сбросить и выйти
+        var allSelects = document.querySelectorAll('.product-select');
+        for (var i = 0; i < allSelects.length; i++) {
+            if (allSelects[i] !== select && allSelects[i].value === select.value && select.value) {
+                alert('Этот товар уже добавлен в заказ.');
+                select.value = '';
+
+                // очистить связанные поля строки
+                var row = select.closest('.product-row');
+                var qtyInput = row.querySelector('.quantity-input');
+                var hint = row.querySelector('.available-hint');
+
+                qtyInput.removeAttribute('max');
+                qtyInput.value = '';
+
+                hint.textContent = '';
+
+                row.querySelector('.price-input').value = '';
+                row.querySelector('.row-total').value = '0.00';
+                updateGrandTotal();
+
+                updateSelectOptions();
+                return;
+            }
+        }
+
+        // обычная логика
         var row = select.closest('.product-row');
         var selectedOption = select.options[select.selectedIndex];
         var qtyInput = row.querySelector('.quantity-input');
         var hint = row.querySelector('.available-hint');
 
         if (selectedOption.value) {
-            var available = parseInt(selectedOption.getAttribute('data-available'));
+            var available = parseInt(selectedOption.getAttribute('data-available'), 10);
             qtyInput.setAttribute('max', available);
             hint.textContent = 'Доступно: ' + available + ' шт.';
         } else {
             qtyInput.removeAttribute('max');
             hint.textContent = '';
         }
+
         updateSelectOptions();
     }
 
