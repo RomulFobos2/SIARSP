@@ -15,7 +15,7 @@
 <div class="container my-5">
     <div class="profile-card mb-4">
         <div class="profile-actions">
-            <a th:href="'/employee/manager/equipment/' + ${equipment.id}" class="btn btn-secondary btn-profile">← Назад</a>
+            <a th:href="'/employee/manager/equipment/detailsEquipment/' + ${equipment.id}" class="btn btn-secondary btn-profile">← Назад</a>
         </div>
     </div>
 
@@ -24,7 +24,7 @@
     <div class="profile-card p-4">
         <h2 class="h3 mb-4 fw-bold">Редактировать оборудование</h2>
 
-        <form th:action="'/employee/manager/equipment/edit/' + ${equipment.id}" method="post">
+        <form th:action="'/employee/manager/equipment/editEquipment/' + ${equipment.id}" method="post">
             <div class="row g-3">
                 <div class="col-md-8">
                     <label class="form-label fw-semibold">Наименование <span class="text-danger">*</span></label>
@@ -84,7 +84,7 @@
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-check-circle me-1"></i>Сохранить
                     </button>
-                    <a th:href="'/employee/manager/equipment/' + ${equipment.id}"
+                    <a th:href="'/employee/manager/equipment/detailsEquipment/' + ${equipment.id}"
                        class="btn btn-outline-secondary ms-2">Отмена</a>
                 </div>
             </div>

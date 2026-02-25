@@ -1,4 +1,4 @@
-package com.mai.siarsp.controllers.employee.admin;
+package com.mai.siarsp.controllers.employee.warehouseManager;
 
 import com.mai.siarsp.dto.EquipmentTypeDTO;
 import com.mai.siarsp.service.employee.WarehouseEquipmentService;
@@ -12,11 +12,11 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Контроллер справочника типов оборудования для администратора (EMPLOYEE_ADMIN).
+ * Контроллер справочника типов оборудования для заведующего складом (WAREHOUSE_MANAGER).
  * Полный CRUD для управления типами оборудования склада.
  */
 @Controller
-@RequestMapping("/employee/admin/equipmentTypes")
+@RequestMapping("/employee/warehouseManager/equipmentTypes")
 @Slf4j
 public class EquipmentTypeController {
 
@@ -26,19 +26,19 @@ public class EquipmentTypeController {
         this.equipmentService = equipmentService;
     }
 
-    @GetMapping("/all")
+    @GetMapping("/allEquipmentTypes")
     public String allEquipmentTypes(Model model) {
         List<EquipmentTypeDTO> types = equipmentService.getAllTypes();
         model.addAttribute("types", types);
-        return "employee/admin/equipmentTypes/allEquipmentTypes";
+        return "employee/warehouseManager/equipmentTypes/allEquipmentTypes";
     }
 
-    @GetMapping("/create")
+    @GetMapping("/createEquipmentType")
     public String createEquipmentTypeForm() {
-        return "employee/admin/equipmentTypes/createEquipmentType";
+        return "employee/warehouseManager/equipmentTypes/createEquipmentType";
     }
 
-    @PostMapping("/create")
+    @PostMapping("/createEquipmentType")
     public String createEquipmentType(@RequestParam String name,
                                        RedirectAttributes redirectAttributes) {
         boolean success = equipmentService.createEquipmentType(name.trim());
@@ -49,20 +49,20 @@ public class EquipmentTypeController {
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Тип оборудования с таким названием уже существует.");
         }
-        return "redirect:/employee/admin/equipmentTypes/all";
+        return "redirect:/employee/warehouseManager/equipmentTypes/allEquipmentTypes";
     }
 
-    @GetMapping("/edit/{id}")
+    @GetMapping("/editEquipmentType/{id}")
     public String editEquipmentTypeForm(@PathVariable Long id, Model model) {
         Optional<EquipmentTypeDTO> dto = equipmentService.getTypeById(id);
         if (dto.isEmpty()) {
-            return "redirect:/employee/admin/equipmentTypes/all";
+            return "redirect:/employee/warehouseManager/equipmentTypes/allEquipmentTypes";
         }
         model.addAttribute("type", dto.get());
-        return "employee/admin/equipmentTypes/editEquipmentType";
+        return "employee/warehouseManager/equipmentTypes/editEquipmentType";
     }
 
-    @PostMapping("/edit/{id}")
+    @PostMapping("/editEquipmentType/{id}")
     public String editEquipmentType(@PathVariable Long id,
                                      @RequestParam String name,
                                      RedirectAttributes redirectAttributes) {
@@ -74,10 +74,10 @@ public class EquipmentTypeController {
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Ошибка: тип оборудования с таким названием уже существует.");
         }
-        return "redirect:/employee/admin/equipmentTypes/all";
+        return "redirect:/employee/warehouseManager/equipmentTypes/allEquipmentTypes";
     }
 
-    @PostMapping("/delete/{id}")
+    @GetMapping("/deleteEquipmentType/{id}")
     public String deleteEquipmentType(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         boolean success = equipmentService.deleteEquipmentType(id);
         if (success) {
@@ -86,6 +86,6 @@ public class EquipmentTypeController {
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Ошибка при удалении типа. Возможно, он используется оборудованием.");
         }
-        return "redirect:/employee/admin/equipmentTypes/all";
+        return "redirect:/employee/warehouseManager/equipmentTypes/allEquipmentTypes";
     }
 }

@@ -34,14 +34,14 @@ public class EquipmentController {
         this.warehouseRepository = warehouseRepository;
     }
 
-    @GetMapping("/all")
+    @GetMapping("/allEquipment")
     public String allEquipment(Model model) {
         List<WarehouseEquipmentDTO> equipment = equipmentService.getAllEquipment();
         model.addAttribute("equipment", equipment);
         return "employee/warehouseManager/equipment/allEquipment";
     }
 
-    @GetMapping("/create")
+    @GetMapping("/createEquipment")
     public String createEquipmentForm(Model model) {
         List<EquipmentType> types = equipmentService.getAllTypeEntities();
         List<Warehouse> warehouses = warehouseRepository.findAll();
@@ -50,7 +50,7 @@ public class EquipmentController {
         return "employee/warehouseManager/equipment/createEquipment";
     }
 
-    @PostMapping("/create")
+    @PostMapping("/createEquipment")
     public String createEquipment(@RequestParam String name,
                                    @RequestParam(required = false) String serialNumber,
                                    @RequestParam(required = false)
@@ -67,14 +67,14 @@ public class EquipmentController {
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Ошибка при добавлении оборудования. Возможно, оборудование с таким именем уже существует на складе.");
         }
-        return "redirect:/employee/warehouseManager/equipment/all";
+        return "redirect:/employee/warehouseManager/equipment/allEquipment";
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/detailsEquipment/{id}")
     public String detailsEquipment(@PathVariable Long id, Model model) {
         Optional<WarehouseEquipmentDTO> dto = equipmentService.getById(id);
         if (dto.isEmpty()) {
-            return "redirect:/employee/warehouseManager/equipment/all";
+            return "redirect:/employee/warehouseManager/equipment/allEquipment";
         }
         model.addAttribute("equipment", dto.get());
         return "employee/warehouseManager/equipment/detailsEquipment";
