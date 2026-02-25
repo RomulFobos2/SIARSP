@@ -15,7 +15,7 @@
 <div class="container my-5">
     <div class="profile-card mb-4">
         <div class="profile-actions">
-            <a th:href="'/employee/admin/equipmentTypes/all'" class="btn btn-secondary btn-profile">← Назад</a>
+            <a th:href="'/employee/warehouseManager/equipmentTypes/allEquipmentTypes'" class="btn btn-secondary btn-profile">← Назад</a>
         </div>
     </div>
 
@@ -24,7 +24,7 @@
     <div class="profile-card p-4" style="max-width: 500px;">
         <h2 class="h3 mb-4 fw-bold">Изменить тип оборудования</h2>
 
-        <form th:action="'/employee/admin/equipmentTypes/edit/' + ${type.id}" method="post">
+        <form th:action="'/employee/warehouseManager/equipmentTypes/editEquipmentType/' + ${type.id}" method="post">
             <div class="mb-3">
                 <label class="form-label fw-semibold">Наименование <span class="text-danger">*</span></label>
                 <input type="text" name="name" class="form-control" maxlength="100" required
@@ -33,7 +33,7 @@
             <button type="submit" class="btn btn-primary">
                 <i class="bi bi-check-circle me-1"></i>Сохранить
             </button>
-            <a th:href="'/employee/admin/equipmentTypes/all'" class="btn btn-outline-secondary ms-2">Отмена</a>
+            <a th:href="'/employee/warehouseManager/equipmentTypes/allEquipmentTypes'" class="btn btn-outline-secondary ms-2">Отмена</a>
         </form>
     </div>
 </div>

@@ -16,7 +16,7 @@
     <div class="profile-card mb-4">
         <div class="profile-actions">
             <a th:href="'/'" class="btn btn-secondary btn-profile">← Главная</a>
-            <a th:href="'/employee/warehouseManager/equipment/create'" class="btn btn-primary btn-profile">
+            <a th:href="'/employee/warehouseManager/equipment/createEquipment'" class="btn btn-primary btn-profile">
                 <i class="bi bi-plus-circle me-1"></i>Добавить оборудование
             </a>
         </div>
@@ -106,7 +106,7 @@
                                   th:text="${eq.statusDisplayName}"></span>
                         </td>
                         <td>
-                            <a th:href="'/employee/warehouseManager/equipment/' + ${eq.id}"
+                            <a th:href="'/employee/warehouseManager/equipment/detailsEquipment/' + ${eq.id}"
                                class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-eye"></i> Подробнее
                             </a>

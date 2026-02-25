@@ -35,28 +35,28 @@ public class EquipmentController {
         this.warehouseRepository = warehouseRepository;
     }
 
-    @GetMapping("/all")
+    @GetMapping("/allEquipment")
     public String allEquipment(Model model) {
         List<WarehouseEquipmentDTO> equipment = equipmentService.getAllEquipment();
         model.addAttribute("equipment", equipment);
         return "employee/manager/equipment/allEquipment";
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/detailsEquipment/{id}")
     public String detailsEquipment(@PathVariable Long id, Model model) {
         Optional<WarehouseEquipmentDTO> dto = equipmentService.getById(id);
         if (dto.isEmpty()) {
-            return "redirect:/employee/manager/equipment/all";
+            return "redirect:/employee/manager/equipment/allEquipment";
         }
         model.addAttribute("equipment", dto.get());
         return "employee/manager/equipment/detailsEquipment";
     }
 
-    @GetMapping("/edit/{id}")
+    @GetMapping("/editEquipment/{id}")
     public String editEquipmentForm(@PathVariable Long id, Model model) {
         Optional<WarehouseEquipmentDTO> dto = equipmentService.getById(id);
         if (dto.isEmpty()) {
-            return "redirect:/employee/manager/equipment/all";
+            return "redirect:/employee/manager/equipment/allEquipment";
         }
         List<EquipmentType> types = equipmentService.getAllTypeEntities();
         List<Warehouse> warehouses = warehouseRepository.findAll();
@@ -67,7 +67,7 @@ public class EquipmentController {
         return "employee/manager/equipment/editEquipment";
     }
 
-    @PostMapping("/edit/{id}")
+    @PostMapping("/editEquipment/{id}")
     public String editEquipment(@PathVariable Long id,
                                  @RequestParam String name,
                                  @RequestParam(required = false) String serialNumber,
@@ -87,10 +87,10 @@ public class EquipmentController {
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Ошибка при обновлении оборудования. Возможно, оборудование с таким именем уже существует на складе.");
         }
-        return "redirect:/employee/manager/equipment/" + id;
+        return "redirect:/employee/manager/equipment/detailsEquipment/" + id;
     }
 
-    @PostMapping("/delete/{id}")
+    @GetMapping("/deleteEquipment/{id}")
     public String deleteEquipment(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         boolean success = equipmentService.deleteEquipment(id);
         if (success) {
@@ -98,6 +98,6 @@ public class EquipmentController {
         } else {
             redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при удалении оборудования.");
         }
-        return "redirect:/employee/manager/equipment/all";
+        return "redirect:/employee/manager/equipment/allEquipment";
     }
 }
