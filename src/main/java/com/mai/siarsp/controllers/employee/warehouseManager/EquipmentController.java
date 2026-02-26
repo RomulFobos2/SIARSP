@@ -38,7 +38,7 @@ public class EquipmentController {
     public String allEquipment(Model model) {
         List<WarehouseEquipmentDTO> equipment = equipmentService.getAllEquipment();
         model.addAttribute("equipment", equipment);
-        return "employee/warehouseManager/equipment/allEquipment";
+        return "employee/warehouseManager/equipments/allEquipment";
     }
 
     @GetMapping("/createEquipment")
@@ -47,7 +47,7 @@ public class EquipmentController {
         List<Warehouse> warehouses = warehouseRepository.findAll();
         model.addAttribute("types", types);
         model.addAttribute("warehouses", warehouses);
-        return "employee/warehouseManager/equipment/createEquipment";
+        return "employee/warehouseManager/equipments/createEquipment";
     }
 
     @PostMapping("/createEquipment")
@@ -77,6 +77,6 @@ public class EquipmentController {
             return "redirect:/employee/warehouseManager/equipments/allEquipment";
         }
         model.addAttribute("equipment", dto.get());
-        return "employee/warehouseManager/equipment/detailsEquipment";
+        return "employee/warehouseManager/equipments/detailsEquipment";
     }
 }

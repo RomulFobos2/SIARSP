@@ -39,7 +39,7 @@ public class EquipmentController {
     public String allEquipment(Model model) {
         List<WarehouseEquipmentDTO> equipment = equipmentService.getAllEquipment();
         model.addAttribute("equipment", equipment);
-        return "employee/manager/equipment/allEquipment";
+        return "employee/manager/equipments/allEquipment";
     }
 
     @GetMapping("/detailsEquipment/{id}")
@@ -49,7 +49,7 @@ public class EquipmentController {
             return "redirect:/employee/manager/equipments/allEquipment";
         }
         model.addAttribute("equipment", dto.get());
-        return "employee/manager/equipment/detailsEquipment";
+        return "employee/manager/equipments/detailsEquipment";
     }
 
     @GetMapping("/editEquipment/{id}")
@@ -64,7 +64,7 @@ public class EquipmentController {
         model.addAttribute("types", types);
         model.addAttribute("warehouses", warehouses);
         model.addAttribute("statuses", EquipmentStatus.values());
-        return "employee/manager/equipment/editEquipment";
+        return "employee/manager/equipments/editEquipment";
     }
 
     @PostMapping("/editEquipment/{id}")
