@@ -21,7 +21,7 @@ import java.util.Optional;
  * Позволяет просматривать список оборудования и добавлять новые записи.
  */
 @Controller("warehouseManagerEquipmentController")
-@RequestMapping("/employee/warehouseManager/equipment")
+@RequestMapping("/employee/warehouseManager/equipments")
 @Slf4j
 public class EquipmentController {
 
@@ -34,24 +34,24 @@ public class EquipmentController {
         this.warehouseRepository = warehouseRepository;
     }
 
-    @GetMapping("/all")
+    @GetMapping("/allEquipment")
     public String allEquipment(Model model) {
         List<WarehouseEquipmentDTO> equipment = equipmentService.getAllEquipment();
         model.addAttribute("equipment", equipment);
-        return "employee/warehouseManager/equipment/allEquipment";
+        return "employee/warehouseManager/equipments/allEquipment";
     }
 
-    @GetMapping("/create")
-    public String createEquipmentForm(Model model) {
+    @GetMapping("/addEquipment")
+    public String addEquipmentForm(Model model) {
         List<EquipmentType> types = equipmentService.getAllTypeEntities();
         List<Warehouse> warehouses = warehouseRepository.findAll();
         model.addAttribute("types", types);
         model.addAttribute("warehouses", warehouses);
-        return "employee/warehouseManager/equipment/createEquipment";
+        return "employee/warehouseManager/equipments/addEquipment";
     }
 
-    @PostMapping("/create")
-    public String createEquipment(@RequestParam String name,
+    @PostMapping("/addEquipment")
+    public String addEquipment(@RequestParam String name,
                                    @RequestParam(required = false) String serialNumber,
                                    @RequestParam(required = false)
                                    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate productionDate,
@@ -67,16 +67,16 @@ public class EquipmentController {
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Ошибка при добавлении оборудования. Возможно, оборудование с таким именем уже существует на складе.");
         }
-        return "redirect:/employee/warehouseManager/equipment/all";
+        return "redirect:/employee/warehouseManager/equipments/allEquipment";
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/detailsEquipment/{id}")
     public String detailsEquipment(@PathVariable Long id, Model model) {
         Optional<WarehouseEquipmentDTO> dto = equipmentService.getById(id);
         if (dto.isEmpty()) {
-            return "redirect:/employee/warehouseManager/equipment/all";
+            return "redirect:/employee/warehouseManager/equipments/allEquipment";
         }
         model.addAttribute("equipment", dto.get());
-        return "employee/warehouseManager/equipment/detailsEquipment";
+        return "employee/warehouseManager/equipments/detailsEquipment";
     }
 }

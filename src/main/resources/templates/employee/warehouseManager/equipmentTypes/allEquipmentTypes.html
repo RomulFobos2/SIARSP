@@ -13,11 +13,18 @@
 <header th:insert="~{blocks/header :: header}"></header>
 
 <div class="container my-5">
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item active">Типы оборудования</li>
+        </ol>
+    </nav>
+
     <div class="profile-card mb-4">
         <div class="profile-actions">
-            <a th:href="'/'" class="btn btn-secondary btn-profile">← Главная</a>
-            <a th:href="'/employee/admin/equipmentTypes/create'" class="btn btn-primary btn-profile">
-                <i class="bi bi-plus-circle me-1"></i>Добавить тип
+            <a th:href="'/employee/warehouseManager/equipmentTypes/addEquipmentType'"
+               class="btn btn-success btn-profile">
+                + Добавить тип
             </a>
         </div>
     </div>
@@ -47,18 +54,15 @@
                     <td th:text="${iter.count}"></td>
                     <td class="fw-semibold" th:text="${type.name}"></td>
                     <td>
-                        <a th:href="'/employee/admin/equipmentTypes/edit/' + ${type.id}"
+                        <a th:href="'/employee/warehouseManager/equipmentTypes/editEquipmentType/' + ${type.id}"
                            class="btn btn-sm btn-outline-secondary me-1">
                             <i class="bi bi-pencil"></i> Изменить
                         </a>
-                        <form th:action="'/employee/admin/equipmentTypes/delete/' + ${type.id}"
-                              method="post" class="d-inline"
-                              onsubmit="return confirm('Удалить тип «' + this.dataset.name + '»?');"
-                              th:attr="data-name=${type.name}">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">
-                                <i class="bi bi-trash"></i> Удалить
-                            </button>
-                        </form>
+                        <a th:href="'/employee/warehouseManager/equipmentTypes/deleteEquipmentType/' + ${type.id}"
+                           class="btn btn-sm btn-outline-danger"
+                           th:attr="onclick='return confirm(\'Удалить тип «' + ${type.name} + '»?\')'">
+                            <i class="bi bi-trash"></i> Удалить
+                        </a>
                     </td>
                 </tr>
                 </tbody>

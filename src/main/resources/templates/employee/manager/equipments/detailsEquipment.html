@@ -13,14 +13,19 @@
 <header th:insert="~{blocks/header :: header}"></header>
 
 <div class="container my-5">
-    <div class="profile-card mb-4">
-        <div class="profile-actions">
-            <a th:href="'/employee/manager/equipment/all'" class="btn btn-secondary btn-profile">← Назад</a>
-            <a th:href="'/employee/manager/equipment/edit/' + ${equipment.id}"
-               class="btn btn-primary btn-profile">
-                <i class="bi bi-pencil me-1"></i>Редактировать
-            </a>
-        </div>
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="'/employee/manager/equipments/allEquipment'">Оборудование</a></li>
+            <li class="breadcrumb-item active" th:text="${equipment.name}"></li>
+        </ol>
+    </nav>
+
+    <div class="mb-3">
+        <a th:href="'/employee/manager/equipments/editEquipment/' + ${equipment.id}"
+           class="btn btn-primary">
+            <i class="bi bi-pencil me-1"></i>Редактировать
+        </a>
     </div>
 
     <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
@@ -86,12 +91,11 @@
 
         <!-- Кнопка удаления -->
         <div class="mt-4">
-            <form th:action="'/employee/manager/equipment/delete/' + ${equipment.id}" method="post"
-                  onsubmit="return confirm('Вы уверены, что хотите удалить это оборудование?');">
-                <button type="submit" class="btn btn-danger">
-                    <i class="bi bi-trash me-1"></i>Удалить оборудование
-                </button>
-            </form>
+            <a th:href="'/employee/manager/equipments/deleteEquipment/' + ${equipment.id}"
+               class="btn btn-danger"
+               onclick="return confirm('Вы уверены, что хотите удалить это оборудование?');">
+                <i class="bi bi-trash me-1"></i>Удалить оборудование
+            </a>
         </div>
     </div>
 </div>

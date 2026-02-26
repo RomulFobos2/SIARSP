@@ -13,9 +13,19 @@
 <header th:insert="~{blocks/header :: header}"></header>
 
 <div class="container my-5">
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item active">Оборудование</li>
+        </ol>
+    </nav>
+
     <div class="profile-card mb-4">
         <div class="profile-actions">
-            <a th:href="'/'" class="btn btn-secondary btn-profile">← Главная</a>
+            <a th:href="'/employee/warehouseManager/equipments/addEquipment'"
+               class="btn btn-success btn-profile">
+                + Добавить оборудование
+            </a>
         </div>
     </div>
 
@@ -31,6 +41,7 @@
         </div>
 
         <div th:unless="${#lists.isEmpty(equipment)}">
+            <!-- Панель фильтров -->
             <div class="row g-2 mb-3">
                 <div class="col-md-5">
                     <input type="text" id="searchInput" class="form-control"
@@ -76,39 +87,35 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <tr th:each="eq : ${equipment}"
-                        th:attr="data-name=${eq.name},
-                                 data-serial=${eq.serialNumber != null ? eq.serialNumber : ''},
-                                 data-warehouse=${eq.warehouseName},
-                                 data-status=${eq.status.name()},
-                                 data-expired=${eq.expired ? 'expired' : 'ok'}">
-                        <td class="fw-semibold" th:text="${eq.name}"></td>
-                        <td th:text="${eq.equipmentTypeName}"></td>
+                    <tr th:each="equipmentItem : ${equipment}"
+                        th:data-name="${equipmentItem.name}"
+                        th:data-serial="${equipmentItem.serialNumber != null ? equipmentItem.serialNumber : ''}"
+                        th:data-warehouse="${equipmentItem.warehouseName}"
+                        th:data-status="${equipmentItem.status != null ? equipmentItem.status.name() : ''}"
+                        th:data-expired="${equipmentItem.expired ? 'expired' : 'ok'}">
+                        <td class="fw-semibold" th:text="${equipmentItem.name}"></td>
+                        <td th:text="${equipmentItem.equipmentTypeName}"></td>
                         <td>
-                            <span th:if="${eq.serialNumber != null}" th:text="${eq.serialNumber}"></span>
-                            <span th:unless="${eq.serialNumber != null}" class="text-muted">—</span>
+                            <span th:if="${equipmentItem.serialNumber != null}" th:text="${equipmentItem.serialNumber}"></span>
+                            <span th:unless="${equipmentItem.serialNumber != null}" class="text-muted">—</span>
                         </td>
-                        <td th:text="${eq.warehouseName}"></td>
+                        <td th:text="${equipmentItem.warehouseName}"></td>
                         <td>
-                            <span th:if="${eq.expirationDate != null}"
-                                  th:text="${#temporals.format(eq.expirationDate, 'dd.MM.yyyy')}"
-                                  th:classappend="${eq.expired} ? 'text-danger fw-semibold' : ''"></span>
-                            <span th:unless="${eq.expirationDate != null}" class="text-muted">—</span>
-                            <span th:if="${eq.expired}" class="badge bg-danger ms-1">Истёк</span>
+                            <span th:if="${equipmentItem.expirationDate != null}"
+                                  th:text="${#temporals.format(equipmentItem.expirationDate, 'dd.MM.yyyy')}"
+                                  th:classappend="${equipmentItem.expired} ? 'text-danger fw-semibold' : ''"></span>
+                            <span th:unless="${equipmentItem.expirationDate != null}" class="text-muted">—</span>
+                            <span th:if="${equipmentItem.expired}" class="badge bg-danger ms-1">Истёк</span>
                         </td>
                         <td>
                             <span class="badge"
-                                  th:classappend="${eq.status.name() == 'IN_USE'} ? 'bg-success' : (${eq.status.name() == 'UNDER_REPAIR'} ? 'bg-warning text-dark' : 'bg-secondary')"
-                                  th:text="${eq.statusDisplayName}"></span>
+                                  th:classappend="${equipmentItem.status != null and equipmentItem.status.name() == 'IN_USE'} ? 'bg-success' : (${equipmentItem.status != null and equipmentItem.status.name() == 'UNDER_REPAIR'} ? 'bg-warning text-dark' : 'bg-secondary')"
+                                  th:text="${equipmentItem.statusDisplayName}"></span>
                         </td>
                         <td>
-                            <a th:href="'/employee/manager/equipment/' + ${eq.id}"
-                               class="btn btn-sm btn-outline-primary me-1">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                            <a th:href="'/employee/manager/equipment/edit/' + ${eq.id}"
-                               class="btn btn-sm btn-outline-secondary">
-                                <i class="bi bi-pencil"></i>
+                            <a th:href="@{/employee/warehouseManager/equipments/detailsEquipment/{id}(id=${equipmentItem.id})}"
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> Подробнее
                             </a>
                         </td>
                     </tr>

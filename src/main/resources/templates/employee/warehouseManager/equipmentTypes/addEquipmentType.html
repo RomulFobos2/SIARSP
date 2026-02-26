@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Изменить тип оборудования | СИАРСП</title>
+    <title>Новый тип оборудования | СИАРСП</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="/css/bootstrap.min.css" rel="stylesheet">
@@ -13,27 +13,29 @@
 <header th:insert="~{blocks/header :: header}"></header>
 
 <div class="container my-5">
-    <div class="profile-card mb-4">
-        <div class="profile-actions">
-            <a th:href="'/employee/admin/equipmentTypes/all'" class="btn btn-secondary btn-profile">← Назад</a>
-        </div>
-    </div>
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="'/employee/warehouseManager/equipmentTypes/allEquipmentTypes'">Типы оборудования</a></li>
+            <li class="breadcrumb-item active">Добавить тип</li>
+        </ol>
+    </nav>
 
     <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
     <div class="profile-card p-4" style="max-width: 500px;">
-        <h2 class="h3 mb-4 fw-bold">Изменить тип оборудования</h2>
+        <h2 class="h3 mb-4 fw-bold">Добавить тип оборудования</h2>
 
-        <form th:action="'/employee/admin/equipmentTypes/edit/' + ${type.id}" method="post">
+        <form th:action="'/employee/warehouseManager/equipmentTypes/addEquipmentType'" method="post">
             <div class="mb-3">
                 <label class="form-label fw-semibold">Наименование <span class="text-danger">*</span></label>
                 <input type="text" name="name" class="form-control" maxlength="100" required
-                       th:value="${type.name}">
+                       placeholder="Например: Термометр">
             </div>
             <button type="submit" class="btn btn-primary">
-                <i class="bi bi-check-circle me-1"></i>Сохранить
+                <i class="bi bi-plus-circle me-1"></i>Создать
             </button>
-            <a th:href="'/employee/admin/equipmentTypes/all'" class="btn btn-outline-secondary ms-2">Отмена</a>
+            <a th:href="'/employee/warehouseManager/equipmentTypes/allEquipmentTypes'" class="btn btn-outline-secondary ms-2">Отмена</a>
         </form>
     </div>
 </div>
