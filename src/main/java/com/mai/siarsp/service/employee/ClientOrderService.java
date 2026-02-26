@@ -19,9 +19,7 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 
 /**
  * Сервис управления заказами клиентов
@@ -202,24 +200,45 @@ public class ClientOrderService {
             order.setDeliveryDate(deliveryDate);
             order.setComment(comment);
 
-            // orphanRemoval удалит старые записи
-            order.getOrderedProducts().clear();
-
+            // Smart merge: обновляем существующие, добавляем новые, удаляем лишние
+            // (вместо clear() + re-add, чтобы избежать Duplicate Entry при flush)
+            Map<Long, OrderItemRequest> incoming = new LinkedHashMap<>();
             for (OrderItemRequest item : items) {
-                Optional<Product> optProduct = productRepository.findById(item.productId());
-                if (optProduct.isEmpty()) {
-                    log.error("Товар с id={} не найден", item.productId());
-                    return false;
-                }
-
                 if (item.quantity() <= 0 || item.price() == null || item.price().compareTo(BigDecimal.ZERO) <= 0) {
                     log.error("Некорректные данные позиции: qty={}, price={}", item.quantity(), item.price());
                     return false;
                 }
-
-                OrderedProduct orderedProduct = new OrderedProduct(optProduct.get(), item.quantity(), item.price());
-                order.addOrderedProduct(orderedProduct);
+                incoming.put(item.productId(), item);
             }
+
+            Map<Long, OrderedProduct> existing = new HashMap<>();
+            for (OrderedProduct op : order.getOrderedProducts()) {
+                existing.put(op.getProduct().getId(), op);
+            }
+
+            // UPDATE существующих + ADD новых
+            for (Map.Entry<Long, OrderItemRequest> entry : incoming.entrySet()) {
+                Long pid = entry.getKey();
+                OrderItemRequest item = entry.getValue();
+
+                OrderedProduct op = existing.get(pid);
+                if (op != null) {
+                    op.setQuantity(item.quantity());
+                    op.setPrice(item.price());
+                    op.recalculateTotalPrice();
+                } else {
+                    Optional<Product> optProduct = productRepository.findById(pid);
+                    if (optProduct.isEmpty()) {
+                        log.error("Товар с id={} не найден", pid);
+                        return false;
+                    }
+                    OrderedProduct newOp = new OrderedProduct(optProduct.get(), item.quantity(), item.price());
+                    order.addOrderedProduct(newOp);
+                }
+            }
+
+            // REMOVE позиций, которых больше нет во входе
+            order.getOrderedProducts().removeIf(op -> !incoming.containsKey(op.getProduct().getId()));
 
             order.calculateTotalAmount();
             clientOrderRepository.save(order);
@@ -456,6 +475,59 @@ public class ClientOrderService {
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             return false;
         }
+    }
+
+    // ========== АНАЛИТИКА ==========
+
+    /**
+     * Возвращает дефицит товаров по активным заказам (NEW, CONFIRMED)
+     * Дефицит = суммарная потребность по заказам - доступное количество на складе
+     *
+     * Используется на странице создания заявки на поставку
+     * для информирования заведующего складом о нехватке товаров
+     */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getProductDeficit() {
+        List<ClientOrderStatus> activeStatuses = List.of(
+                ClientOrderStatus.NEW, ClientOrderStatus.CONFIRMED);
+        List<ClientOrder> activeOrders = clientOrderRepository.findByStatusInOrderByOrderDateDesc(activeStatuses);
+
+        // Суммируем потребность по товарам
+        Map<Long, Integer> demandByProduct = new HashMap<>();
+        Map<Long, Product> productsMap = new HashMap<>();
+
+        for (ClientOrder order : activeOrders) {
+            for (OrderedProduct op : order.getOrderedProducts()) {
+                Long pid = op.getProduct().getId();
+                demandByProduct.merge(pid, op.getQuantity(), Integer::sum);
+                productsMap.putIfAbsent(pid, op.getProduct());
+            }
+        }
+
+        // Собираем дефицитные позиции
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Map.Entry<Long, Integer> entry : demandByProduct.entrySet()) {
+            Long pid = entry.getKey();
+            int orderedTotal = entry.getValue();
+            Product product = productsMap.get(pid);
+            int available = product.getAvailableQuantity();
+
+            if (orderedTotal > available) {
+                int deficit = orderedTotal - available;
+                Map<String, Object> item = new LinkedHashMap<>();
+                item.put("productId", pid);
+                item.put("productName", product.getName());
+                item.put("article", product.getArticle());
+                item.put("orderedTotal", orderedTotal);
+                item.put("stockQuantity", product.getStockQuantity());
+                item.put("availableQuantity", available);
+                item.put("deficit", deficit);
+                result.add(item);
+            }
+        }
+
+        result.sort(Comparator.comparing(m -> (String) m.get("productName")));
+        return result;
     }
 
     // ========== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ==========
