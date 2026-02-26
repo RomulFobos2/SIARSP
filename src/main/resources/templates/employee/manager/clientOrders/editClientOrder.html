@@ -180,8 +180,11 @@
         for (var i = 0; i < productsData.length; i++) {
             var p = productsData[i];
             var selected = (selectedId && p.id == selectedId) ? ' selected' : '';
-            html += '<option value="' + p.id + '" data-available="' + p.availableQuantity + '"' + selected + '>'
-                + p.name + ' (' + p.article + ') — в наличии: ' + p.availableQuantity + ' шт.'
+            var avgDel = p.avgDeliveryDays ? Math.round(p.avgDeliveryDays) : 0;
+            html += '<option value="' + p.id + '" data-available="' + p.availableQuantity
+                + '" data-stock="' + p.stockQuantity
+                + '" data-avg-delivery="' + avgDel + '"' + selected + '>'
+                + p.name + ' (' + p.article + ') — на складе: ' + p.stockQuantity + ' шт.'
                 + '</option>';
         }
         return html;
@@ -215,19 +218,50 @@
         // обычная логика
         var row = select.closest('.product-row');
         var selectedOption = select.options[select.selectedIndex];
-        var qtyInput = row.querySelector('.quantity-input');
         var hint = row.querySelector('.available-hint');
 
         if (selectedOption.value) {
             var available = parseInt(selectedOption.getAttribute('data-available'), 10);
             qtyInput.setAttribute('max', available);
             hint.textContent = 'Доступно: ' + available + ' шт.';
+            hint.className = 'text-muted available-hint';
+            updateDeficitHint(row);
         } else {
-            qtyInput.removeAttribute('max');
             hint.textContent = '';
+            hint.className = 'text-muted available-hint';
         }
 
         updateSelectOptions();
+    }
+
+    function updateDeficitHint(row) {
+        var select = row.querySelector('.product-select');
+        var selectedOption = select.options[select.selectedIndex];
+        var qtyInput = row.querySelector('.quantity-input');
+        var hint = row.querySelector('.available-hint');
+
+        if (!selectedOption || !selectedOption.value) {
+            hint.textContent = '';
+            hint.className = 'text-muted available-hint';
+            return;
+        }
+
+        var available = parseInt(selectedOption.getAttribute('data-available'));
+        var qty = parseInt(qtyInput.value) || 0;
+
+        if (qty > available) {
+            var deficit = qty - available;
+            var avgDays = parseInt(selectedOption.getAttribute('data-avg-delivery')) || 0;
+            var text = 'Дефицит: ' + deficit + ' шт.';
+            if (avgDays > 0) {
+                text += ' | Среднее время поставки: ' + avgDays + ' дн.';
+            }
+            hint.textContent = text;
+            hint.className = 'text-warning available-hint';
+        } else {
+            hint.textContent = 'Доступно: ' + available + ' шт.';
+            hint.className = 'text-muted available-hint';
+        }
     }
 
     function updateSelectOptions() {
@@ -253,6 +287,7 @@
         var total = (qty * price).toFixed(2);
         row.querySelector('.row-total').value = total;
         updateGrandTotal();
+        updateDeficitHint(row);
     }
 
     function updateGrandTotal() {

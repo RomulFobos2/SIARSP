@@ -25,6 +25,40 @@
 
     <div th:if="${requestError}" class="alert alert-danger" th:text="${requestError}"></div>
 
+    <!-- Блок дефицита товаров по заказам -->
+    <div th:if="${!deficitData.isEmpty()}" class="card border-warning mb-4">
+        <div class="card-header bg-warning bg-opacity-25 d-flex justify-content-between align-items-center">
+            <strong>Дефицит товаров по заказам</strong>
+            <button type="button" class="btn btn-sm btn-warning" onclick="autoFillByDeficit()">
+                <i class="bi bi-lightning-fill"></i> Автозаполнение по дефициту
+            </button>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-sm table-striped mb-0">
+                <thead>
+                    <tr>
+                        <th>Товар</th>
+                        <th>Артикул</th>
+                        <th>Заказано</th>
+                        <th>На складе</th>
+                        <th>Доступно</th>
+                        <th class="text-danger">Дефицит</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="item : ${deficitData}">
+                        <td th:text="${item.get('productName')}"></td>
+                        <td th:text="${item.get('article')}"></td>
+                        <td th:text="${item.get('orderedTotal')}"></td>
+                        <td th:text="${item.get('stockQuantity')}"></td>
+                        <td th:text="${item.get('availableQuantity')}"></td>
+                        <td class="text-danger fw-bold" th:text="${item.get('deficit')}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <div class="profile-card p-4">
         <h2 class="h3 mb-4 fw-bold">Создание заявки на поставку</h2>
 
@@ -95,6 +129,9 @@
 
 <div th:insert="~{blocks/footer :: footer}"></div>
 
+<script th:inline="javascript">
+    var deficitData = /*[[${deficitData}]]*/ [];
+</script>
 <script>
     function initSelect2(selectElement) {
         $(selectElement).select2({
@@ -175,6 +212,29 @@
             // Обновить Select2, чтобы отобразить disabled-состояние
             // Без пересоздания — достаточно закрыть и открыть
         });
+    }
+
+    function autoFillByDeficit() {
+        // Удалить все текущие строки
+        var rows = document.querySelectorAll('.product-row');
+        rows.forEach(function(row) {
+            var select = row.querySelector('select.product-select');
+            if (select) {
+                try { $(select).select2('destroy'); } catch(e) {}
+            }
+            row.remove();
+        });
+
+        // Добавить строки по дефициту
+        if (deficitData.length === 0) {
+            addProductRow();
+            return;
+        }
+
+        for (var i = 0; i < deficitData.length; i++) {
+            var item = deficitData[i];
+            addProductRow(item.productId, item.deficit, 0);
+        }
     }
 
     document.addEventListener('DOMContentLoaded', function() {

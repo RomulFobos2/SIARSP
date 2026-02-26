@@ -2,6 +2,7 @@ package com.mai.siarsp.controllers.employee.warehouseManager;
 
 import com.mai.siarsp.dto.RequestForDeliveryDTO;
 import com.mai.siarsp.models.RequestForDelivery;
+import com.mai.siarsp.service.employee.ClientOrderService;
 import com.mai.siarsp.service.employee.manager.SupplierService;
 import com.mai.siarsp.service.employee.warehouseManager.ProductService;
 import com.mai.siarsp.service.employee.warehouseManager.RequestForDeliveryService;
@@ -28,16 +29,19 @@ public class RequestForDeliveryController {
     private final SupplierService supplierService;
     private final ProductService productService;
     private final WarehouseService warehouseService;
+    private final ClientOrderService clientOrderService;
 
     public RequestForDeliveryController(
             @Qualifier("warehouseManagerRequestForDeliveryService") RequestForDeliveryService requestForDeliveryService,
             SupplierService supplierService,
             @Qualifier("warehouseManagerProductService") ProductService productService,
-            @Qualifier("warehouseManagerWarehouseService") WarehouseService warehouseService) {
+            @Qualifier("warehouseManagerWarehouseService") WarehouseService warehouseService,
+            ClientOrderService clientOrderService) {
         this.requestForDeliveryService = requestForDeliveryService;
         this.supplierService = supplierService;
         this.productService = productService;
         this.warehouseService = warehouseService;
+        this.clientOrderService = clientOrderService;
     }
 
     @Transactional
@@ -53,6 +57,7 @@ public class RequestForDeliveryController {
         model.addAttribute("allSuppliers", supplierService.getAllSuppliers());
         model.addAttribute("allProducts", productService.getAllProducts());
         model.addAttribute("allWarehouses", warehouseService.getAllWarehouses());
+        model.addAttribute("deficitData", clientOrderService.getProductDeficit());
         return "employee/warehouseManager/requestsForDelivery/addRequestForDelivery";
     }
 

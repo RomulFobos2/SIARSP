@@ -9,6 +9,7 @@ import com.mai.siarsp.models.Employee;
 import com.mai.siarsp.models.Product;
 import com.mai.siarsp.repo.ClientRepository;
 import com.mai.siarsp.repo.ProductRepository;
+import com.mai.siarsp.repo.RequestForDeliveryRepository;
 import com.mai.siarsp.service.employee.ClientOrderService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -30,13 +31,16 @@ public class ClientOrderController {
     private final ClientOrderService clientOrderService;
     private final ClientRepository clientRepository;
     private final ProductRepository productRepository;
+    private final RequestForDeliveryRepository requestForDeliveryRepository;
 
     public ClientOrderController(ClientOrderService clientOrderService,
                                  ClientRepository clientRepository,
-                                 ProductRepository productRepository) {
+                                 ProductRepository productRepository,
+                                 RequestForDeliveryRepository requestForDeliveryRepository) {
         this.clientOrderService = clientOrderService;
         this.clientRepository = clientRepository;
         this.productRepository = productRepository;
+        this.requestForDeliveryRepository = requestForDeliveryRepository;
     }
 
     @Transactional(readOnly = true)
@@ -181,9 +185,26 @@ public class ClientOrderController {
 
     /**
      * Формирует список товаров для JS в форме создания/редактирования
+     * Включает среднее время поставки по каждому товару (на основе завершённых заявок)
      */
     private List<Map<String, Object>> buildProductsList() {
         List<Product> products = productRepository.findAll();
+
+        // Среднее время поставки по товарам
+        Map<Long, Double> avgDeliveryMap = new HashMap<>();
+        try {
+            List<Object[]> avgData = requestForDeliveryRepository.findAverageDeliveryDaysByProduct();
+            for (Object[] row : avgData) {
+                Long productId = ((Number) row[0]).longValue();
+                Double avgDays = row[1] != null ? ((Number) row[1]).doubleValue() : null;
+                if (avgDays != null) {
+                    avgDeliveryMap.put(productId, avgDays);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Не удалось загрузить среднее время поставки: {}", e.getMessage());
+        }
+
         List<Map<String, Object>> result = new ArrayList<>();
         for (Product p : products) {
             Map<String, Object> map = new HashMap<>();
@@ -192,6 +213,7 @@ public class ClientOrderController {
             map.put("article", p.getArticle());
             map.put("availableQuantity", p.getAvailableQuantity());
             map.put("stockQuantity", p.getStockQuantity());
+            map.put("avgDeliveryDays", avgDeliveryMap.getOrDefault(p.getId(), 0.0));
             result.add(map);
         }
         result.sort(Comparator.comparing(m -> (String) m.get("name")));
