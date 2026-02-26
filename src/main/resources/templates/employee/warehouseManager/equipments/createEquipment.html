@@ -13,18 +13,20 @@
 <header th:insert="~{blocks/header :: header}"></header>
 
 <div class="container my-5">
-    <div class="profile-card mb-4">
-        <div class="profile-actions">
-            <a th:href="'/employee/warehouseManager/equipment/allEquipment'" class="btn btn-secondary btn-profile">← Назад</a>
-        </div>
-    </div>
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="'/employee/warehouseManager/equipments/allEquipment'">Оборудование</a></li>
+            <li class="breadcrumb-item active">Добавить оборудование</li>
+        </ol>
+    </nav>
 
     <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
     <div class="profile-card p-4">
         <h2 class="h3 mb-4 fw-bold">Добавить оборудование</h2>
 
-        <form th:action="'/employee/warehouseManager/equipment/createEquipment'" method="post">
+        <form th:action="'/employee/warehouseManager/equipments/createEquipment'" method="post">
             <div class="row g-3">
                 <div class="col-md-8">
                     <label class="form-label fw-semibold">Наименование <span class="text-danger">*</span></label>
@@ -74,7 +76,7 @@
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-plus-circle me-1"></i>Добавить
                     </button>
-                    <a th:href="'/employee/warehouseManager/equipment/allEquipment'" class="btn btn-outline-secondary ms-2">Отмена</a>
+                    <a th:href="'/employee/warehouseManager/equipments/allEquipment'" class="btn btn-outline-secondary ms-2">Отмена</a>
                 </div>
             </div>
         </form>

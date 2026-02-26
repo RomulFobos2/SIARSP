@@ -13,11 +13,23 @@
 <header th:insert="~{blocks/header :: header}"></header>
 
 <div class="container my-5">
-    <div class="profile-card mb-4">
-        <div class="profile-actions">
-            <a th:href="'/employee/warehouseManager/equipment/allEquipment'" class="btn btn-secondary btn-profile">← Назад</a>
-        </div>
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="'/employee/manager/equipments/allEquipment'">Оборудование</a></li>
+            <li class="breadcrumb-item active" th:text="${equipment.name}"></li>
+        </ol>
+    </nav>
+
+    <div class="mb-3">
+        <a th:href="'/employee/manager/equipments/editEquipment/' + ${equipment.id}"
+           class="btn btn-primary">
+            <i class="bi bi-pencil me-1"></i>Редактировать
+        </a>
     </div>
+
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
     <div class="profile-card p-4">
         <h2 class="h3 mb-4 fw-bold">Карточка оборудования</h2>
@@ -27,23 +39,14 @@
                 <div class="card h-100">
                     <div class="card-header fw-semibold">Основная информация</div>
                     <div class="card-body">
-                        <div class="mb-2">
-                            <strong>Наименование:</strong>
-                            <span th:text="${equipment.name}"></span>
-                        </div>
-                        <div class="mb-2">
-                            <strong>Тип:</strong>
-                            <span th:text="${equipment.equipmentTypeName}"></span>
-                        </div>
+                        <div class="mb-2"><strong>Наименование:</strong> <span th:text="${equipment.name}"></span></div>
+                        <div class="mb-2"><strong>Тип:</strong> <span th:text="${equipment.equipmentTypeName}"></span></div>
                         <div class="mb-2">
                             <strong>Серийный номер:</strong>
                             <span th:if="${equipment.serialNumber != null}" th:text="${equipment.serialNumber}"></span>
                             <span th:unless="${equipment.serialNumber != null}" class="text-muted">—</span>
                         </div>
-                        <div class="mb-2">
-                            <strong>Склад:</strong>
-                            <span th:text="${equipment.warehouseName}"></span>
-                        </div>
+                        <div class="mb-2"><strong>Склад:</strong> <span th:text="${equipment.warehouseName}"></span></div>
                         <div class="mb-2">
                             <strong>Статус:</strong>
                             <span class="badge"
@@ -84,6 +87,15 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Кнопка удаления -->
+        <div class="mt-4">
+            <a th:href="'/employee/manager/equipments/deleteEquipment/' + ${equipment.id}"
+               class="btn btn-danger"
+               onclick="return confirm('Вы уверены, что хотите удалить это оборудование?');">
+                <i class="bi bi-trash me-1"></i>Удалить оборудование
+            </a>
         </div>
     </div>
 </div>

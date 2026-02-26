@@ -21,7 +21,7 @@ import java.util.Optional;
  * Позволяет просматривать список оборудования и добавлять новые записи.
  */
 @Controller("warehouseManagerEquipmentController")
-@RequestMapping("/employee/warehouseManager/equipment")
+@RequestMapping("/employee/warehouseManager/equipments")
 @Slf4j
 public class EquipmentController {
 
@@ -38,7 +38,7 @@ public class EquipmentController {
     public String allEquipment(Model model) {
         List<WarehouseEquipmentDTO> equipment = equipmentService.getAllEquipment();
         model.addAttribute("equipment", equipment);
-        return "employee/warehouseManager/equipment/allEquipment";
+        return "employee/warehouseManager/equipments/allEquipment";
     }
 
     @GetMapping("/createEquipment")
@@ -47,7 +47,7 @@ public class EquipmentController {
         List<Warehouse> warehouses = warehouseRepository.findAll();
         model.addAttribute("types", types);
         model.addAttribute("warehouses", warehouses);
-        return "employee/warehouseManager/equipment/createEquipment";
+        return "employee/warehouseManager/equipments/createEquipment";
     }
 
     @PostMapping("/createEquipment")
@@ -67,16 +67,16 @@ public class EquipmentController {
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Ошибка при добавлении оборудования. Возможно, оборудование с таким именем уже существует на складе.");
         }
-        return "redirect:/employee/warehouseManager/equipment/allEquipment";
+        return "redirect:/employee/warehouseManager/equipments/allEquipment";
     }
 
     @GetMapping("/detailsEquipment/{id}")
     public String detailsEquipment(@PathVariable Long id, Model model) {
         Optional<WarehouseEquipmentDTO> dto = equipmentService.getById(id);
         if (dto.isEmpty()) {
-            return "redirect:/employee/warehouseManager/equipment/allEquipment";
+            return "redirect:/employee/warehouseManager/equipments/allEquipment";
         }
         model.addAttribute("equipment", dto.get());
-        return "employee/warehouseManager/equipment/detailsEquipment";
+        return "employee/warehouseManager/equipments/detailsEquipment";
     }
 }

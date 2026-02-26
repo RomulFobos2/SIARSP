@@ -13,11 +13,13 @@
 <header th:insert="~{blocks/header :: header}"></header>
 
 <div class="container my-5">
-    <div class="profile-card mb-4">
-        <div class="profile-actions">
-            <a th:href="'/employee/warehouseManager/equipmentTypes/allEquipmentTypes'" class="btn btn-secondary btn-profile">← Назад</a>
-        </div>
-    </div>
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="'/employee/warehouseManager/equipmentTypes/allEquipmentTypes'">Типы оборудования</a></li>
+            <li class="breadcrumb-item active">Добавить тип</li>
+        </ol>
+    </nav>
 
     <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
