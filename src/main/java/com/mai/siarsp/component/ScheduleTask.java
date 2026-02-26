@@ -88,6 +88,7 @@ public class ScheduleTask {
             }
 
             if (text != null) {
+                notificationService.notifyByRole(MANAGER_ROLE, text);
                 notificationService.notifyByRole(ROLE_EMPLOYEE_WAREHOUSE_MANAGER, text);
                 notifiedCount++;
             }
