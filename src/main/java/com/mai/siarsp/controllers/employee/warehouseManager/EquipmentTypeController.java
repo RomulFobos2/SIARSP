@@ -33,13 +33,13 @@ public class EquipmentTypeController {
         return "employee/warehouseManager/equipmentTypes/allEquipmentTypes";
     }
 
-    @GetMapping("/createEquipmentType")
-    public String createEquipmentTypeForm() {
-        return "employee/warehouseManager/equipmentTypes/createEquipmentType";
+    @GetMapping("/addEquipmentType")
+    public String addEquipmentTypeForm() {
+        return "employee/warehouseManager/equipmentTypes/addEquipmentType";
     }
 
-    @PostMapping("/createEquipmentType")
-    public String createEquipmentType(@RequestParam String name,
+    @PostMapping("/addEquipmentType")
+    public String addEquipmentType(@RequestParam String name,
                                        RedirectAttributes redirectAttributes) {
         boolean success = equipmentService.createEquipmentType(name.trim());
         if (success) {

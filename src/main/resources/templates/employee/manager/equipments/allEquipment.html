@@ -78,11 +78,7 @@
                     </thead>
                     <tbody>
                     <tr th:each="eq : ${equipment}"
-                        th:attr="data-name=${eq.name},
-                                 data-serial=${eq.serialNumber != null ? eq.serialNumber : ''},
-                                 data-warehouse=${eq.warehouseName},
-                                 data-status=${eq.status.name()},
-                                 data-expired=${eq.expired ? 'expired' : 'ok'}">
+                        th:attr="data-name=${eq.name},data-serial=${eq.serialNumber != null ? eq.serialNumber : ''},data-warehouse=${eq.warehouseName},data-status=${eq.status != null ? eq.status.name() : ''},data-expired=${eq.expired ? 'expired' : 'ok'}">
                         <td class="fw-semibold" th:text="${eq.name}"></td>
                         <td th:text="${eq.equipmentTypeName}"></td>
                         <td>
@@ -99,7 +95,7 @@
                         </td>
                         <td>
                             <span class="badge"
-                                  th:classappend="${eq.status.name() == 'IN_USE'} ? 'bg-success' : (${eq.status.name() == 'UNDER_REPAIR'} ? 'bg-warning text-dark' : 'bg-secondary')"
+                                  th:classappend="${eq.status != null and eq.status.name() == 'IN_USE'} ? 'bg-success' : (${eq.status != null and eq.status.name() == 'UNDER_REPAIR'} ? 'bg-warning text-dark' : 'bg-secondary')"
                                   th:text="${eq.statusDisplayName}"></span>
                         </td>
                         <td>
