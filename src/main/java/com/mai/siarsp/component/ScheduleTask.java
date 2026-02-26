@@ -11,6 +11,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
@@ -19,6 +20,7 @@ import java.util.List;
 public class ScheduleTask {
 
     private static final String MANAGER_ROLE = "ROLE_EMPLOYEE_MANAGER";
+    private static final String ROLE_EMPLOYEE_WAREHOUSE_MANAGER = "ROLE_EMPLOYEE_WAREHOUSE_MANAGER";
 
     private final WarehouseEquipmentRepository warehouseEquipmentRepository;
     private final NotificationService notificationService;
@@ -32,6 +34,7 @@ public class ScheduleTask {
     @Bean
     public ApplicationRunner applicationRunner() {
         return args -> {
+            checkEquipmentExpiration();
         };
     }
 
@@ -53,6 +56,7 @@ public class ScheduleTask {
      */
     @Scheduled(cron = "0 0 8 * * ?")
     public void checkEquipmentExpiration() {
+
         log.info("Запуск проверки сроков службы оборудования склада");
 
         List<WarehouseEquipment> activeEquipment =
@@ -73,18 +77,18 @@ public class ScheduleTask {
 
             if (daysLeft < 0) {
                 text = "⚠️ Срок службы истёк: «" + eq.getName() + "» (склад: " + warehouseName
-                        + "). Дата окончания: " + expDate + ". Статус: "
+                        + "). Дата окончания: " + expDate.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) + ". Статус: "
                         + eq.getStatus().getDisplayName() + ".";
             } else if (daysLeft <= 7) {
                 text = "⚠️ Срок службы заканчивается через " + daysLeft + " дн.: «"
-                        + eq.getName() + "» (склад: " + warehouseName + ", до " + expDate + ").";
+                        + eq.getName() + "» (склад: " + warehouseName + ", до " + expDate.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) + ").";
             } else if (daysLeft <= 30) {
                 text = "ℹ️ Срок службы заканчивается через месяц (" + daysLeft + " дн.): «"
-                        + eq.getName() + "» (склад: " + warehouseName + ", до " + expDate + ").";
+                        + eq.getName() + "» (склад: " + warehouseName + ", до " + expDate.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) + ").";
             }
 
             if (text != null) {
-                notificationService.notifyByRole(MANAGER_ROLE, text);
+                notificationService.notifyByRole(ROLE_EMPLOYEE_WAREHOUSE_MANAGER, text);
                 notifiedCount++;
             }
         }
