@@ -21,7 +21,7 @@ import java.util.Optional;
  * Позволяет просматривать список оборудования и добавлять новые записи.
  */
 @Controller("warehouseManagerEquipmentController")
-@RequestMapping("/employee/warehouseManager/equipment")
+@RequestMapping("/employee/warehouseManager/equipments")
 @Slf4j
 public class EquipmentController {
 
@@ -67,14 +67,14 @@ public class EquipmentController {
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Ошибка при добавлении оборудования. Возможно, оборудование с таким именем уже существует на складе.");
         }
-        return "redirect:/employee/warehouseManager/equipment/allEquipment";
+        return "redirect:/employee/warehouseManager/equipments/allEquipment";
     }
 
     @GetMapping("/detailsEquipment/{id}")
     public String detailsEquipment(@PathVariable Long id, Model model) {
         Optional<WarehouseEquipmentDTO> dto = equipmentService.getById(id);
         if (dto.isEmpty()) {
-            return "redirect:/employee/warehouseManager/equipment/allEquipment";
+            return "redirect:/employee/warehouseManager/equipments/allEquipment";
         }
         model.addAttribute("equipment", dto.get());
         return "employee/warehouseManager/equipment/detailsEquipment";

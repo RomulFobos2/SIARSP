@@ -22,7 +22,7 @@ import java.util.Optional;
  * Позволяет просматривать, редактировать (включая статус) и удалять оборудование.
  */
 @Controller("managerEquipmentController")
-@RequestMapping("/employee/manager/equipment")
+@RequestMapping("/employee/manager/equipments")
 @Slf4j
 public class EquipmentController {
 
@@ -46,7 +46,7 @@ public class EquipmentController {
     public String detailsEquipment(@PathVariable Long id, Model model) {
         Optional<WarehouseEquipmentDTO> dto = equipmentService.getById(id);
         if (dto.isEmpty()) {
-            return "redirect:/employee/manager/equipment/allEquipment";
+            return "redirect:/employee/manager/equipments/allEquipment";
         }
         model.addAttribute("equipment", dto.get());
         return "employee/manager/equipment/detailsEquipment";
@@ -56,7 +56,7 @@ public class EquipmentController {
     public String editEquipmentForm(@PathVariable Long id, Model model) {
         Optional<WarehouseEquipmentDTO> dto = equipmentService.getById(id);
         if (dto.isEmpty()) {
-            return "redirect:/employee/manager/equipment/allEquipment";
+            return "redirect:/employee/manager/equipments/allEquipment";
         }
         List<EquipmentType> types = equipmentService.getAllTypeEntities();
         List<Warehouse> warehouses = warehouseRepository.findAll();
@@ -87,7 +87,7 @@ public class EquipmentController {
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Ошибка при обновлении оборудования. Возможно, оборудование с таким именем уже существует на складе.");
         }
-        return "redirect:/employee/manager/equipment/detailsEquipment/" + id;
+        return "redirect:/employee/manager/equipments/detailsEquipment/" + id;
     }
 
     @GetMapping("/deleteEquipment/{id}")
@@ -98,6 +98,6 @@ public class EquipmentController {
         } else {
             redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при удалении оборудования.");
         }
-        return "redirect:/employee/manager/equipment/allEquipment";
+        return "redirect:/employee/manager/equipments/allEquipment";
     }
 }

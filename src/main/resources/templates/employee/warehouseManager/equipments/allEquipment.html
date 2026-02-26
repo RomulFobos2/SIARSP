@@ -13,13 +13,17 @@
 <header th:insert="~{blocks/header :: header}"></header>
 
 <div class="container my-5">
-    <div class="profile-card mb-4">
-        <div class="profile-actions">
-            <a th:href="'/'" class="btn btn-secondary btn-profile">← Главная</a>
-            <a th:href="'/employee/warehouseManager/equipment/createEquipment'" class="btn btn-primary btn-profile">
-                <i class="bi bi-plus-circle me-1"></i>Добавить оборудование
-            </a>
-        </div>
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item active">Оборудование</li>
+        </ol>
+    </nav>
+
+    <div class="mb-3">
+        <a th:href="'/employee/warehouseManager/equipments/createEquipment'" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>Добавить оборудование
+        </a>
     </div>
 
     <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
@@ -106,7 +110,7 @@
                                   th:text="${eq.statusDisplayName}"></span>
                         </td>
                         <td>
-                            <a th:href="'/employee/warehouseManager/equipment/detailsEquipment/' + ${eq.id}"
+                            <a th:href="'/employee/warehouseManager/equipments/detailsEquipment/' + ${eq.id}"
                                class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-eye"></i> Подробнее
                             </a>

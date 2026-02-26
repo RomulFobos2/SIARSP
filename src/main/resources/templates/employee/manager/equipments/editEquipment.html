@@ -13,18 +13,24 @@
 <header th:insert="~{blocks/header :: header}"></header>
 
 <div class="container my-5">
-    <div class="profile-card mb-4">
-        <div class="profile-actions">
-            <a th:href="'/employee/manager/equipment/detailsEquipment/' + ${equipment.id}" class="btn btn-secondary btn-profile">← Назад</a>
-        </div>
-    </div>
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="'/employee/manager/equipments/allEquipment'">Оборудование</a></li>
+            <li class="breadcrumb-item">
+                <a th:href="'/employee/manager/equipments/detailsEquipment/' + ${equipment.id}"
+                   th:text="${equipment.name}"></a>
+            </li>
+            <li class="breadcrumb-item active">Редактировать</li>
+        </ol>
+    </nav>
 
     <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
     <div class="profile-card p-4">
         <h2 class="h3 mb-4 fw-bold">Редактировать оборудование</h2>
 
-        <form th:action="'/employee/manager/equipment/editEquipment/' + ${equipment.id}" method="post">
+        <form th:action="'/employee/manager/equipments/editEquipment/' + ${equipment.id}" method="post">
             <div class="row g-3">
                 <div class="col-md-8">
                     <label class="form-label fw-semibold">Наименование <span class="text-danger">*</span></label>
@@ -84,7 +90,7 @@
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-check-circle me-1"></i>Сохранить
                     </button>
-                    <a th:href="'/employee/manager/equipment/detailsEquipment/' + ${equipment.id}"
+                    <a th:href="'/employee/manager/equipments/detailsEquipment/' + ${equipment.id}"
                        class="btn btn-outline-secondary ms-2">Отмена</a>
                 </div>
             </div>
