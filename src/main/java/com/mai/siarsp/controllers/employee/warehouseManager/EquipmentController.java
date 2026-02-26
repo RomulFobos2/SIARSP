@@ -41,17 +41,17 @@ public class EquipmentController {
         return "employee/warehouseManager/equipments/allEquipment";
     }
 
-    @GetMapping("/createEquipment")
-    public String createEquipmentForm(Model model) {
+    @GetMapping("/addEquipment")
+    public String addEquipmentForm(Model model) {
         List<EquipmentType> types = equipmentService.getAllTypeEntities();
         List<Warehouse> warehouses = warehouseRepository.findAll();
         model.addAttribute("types", types);
         model.addAttribute("warehouses", warehouses);
-        return "employee/warehouseManager/equipments/createEquipment";
+        return "employee/warehouseManager/equipments/addEquipment";
     }
 
-    @PostMapping("/createEquipment")
-    public String createEquipment(@RequestParam String name,
+    @PostMapping("/addEquipment")
+    public String addEquipment(@RequestParam String name,
                                    @RequestParam(required = false) String serialNumber,
                                    @RequestParam(required = false)
                                    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate productionDate,

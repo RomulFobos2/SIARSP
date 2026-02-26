@@ -20,10 +20,13 @@
         </ol>
     </nav>
 
-    <div class="mb-3">
-        <a th:href="'/employee/warehouseManager/equipments/createEquipment'" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-1"></i>Добавить оборудование
-        </a>
+    <div class="profile-card mb-4">
+        <div class="profile-actions">
+            <a th:href="'/employee/warehouseManager/equipments/addEquipment'"
+               class="btn btn-success btn-profile">
+                + Добавить оборудование
+            </a>
+        </div>
     </div>
 
     <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
@@ -85,11 +88,7 @@
                     </thead>
                     <tbody>
                     <tr th:each="eq : ${equipment}"
-                        th:attr="data-name=${eq.name},
-                                 data-serial=${eq.serialNumber != null ? eq.serialNumber : ''},
-                                 data-warehouse=${eq.warehouseName},
-                                 data-status=${eq.status.name()},
-                                 data-expired=${eq.expired ? 'expired' : 'ok'}">
+                        th:attr="data-name=${eq.name},data-serial=${eq.serialNumber != null ? eq.serialNumber : ''},data-warehouse=${eq.warehouseName},data-status=${eq.status != null ? eq.status.name() : ''},data-expired=${eq.expired ? 'expired' : 'ok'}">
                         <td class="fw-semibold" th:text="${eq.name}"></td>
                         <td th:text="${eq.equipmentTypeName}"></td>
                         <td>
@@ -106,7 +105,7 @@
                         </td>
                         <td>
                             <span class="badge"
-                                  th:classappend="${eq.status.name() == 'IN_USE'} ? 'bg-success' : (${eq.status.name() == 'UNDER_REPAIR'} ? 'bg-warning text-dark' : 'bg-secondary')"
+                                  th:classappend="${eq.status != null and eq.status.name() == 'IN_USE'} ? 'bg-success' : (${eq.status != null and eq.status.name() == 'UNDER_REPAIR'} ? 'bg-warning text-dark' : 'bg-secondary')"
                                   th:text="${eq.statusDisplayName}"></span>
                         </td>
                         <td>
