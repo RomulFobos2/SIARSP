@@ -21,13 +21,6 @@
         </ol>
     </nav>
 
-    <div class="mb-3">
-        <a th:href="'/employee/manager/equipments/editEquipment/' + ${equipment.id}"
-           class="btn btn-primary">
-            <i class="bi bi-pencil me-1"></i>Редактировать
-        </a>
-    </div>
-
     <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
     <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
@@ -89,14 +82,6 @@
             </div>
         </div>
 
-        <!-- Кнопка удаления -->
-        <div class="mt-4">
-            <a th:href="'/employee/manager/equipments/deleteEquipment/' + ${equipment.id}"
-               class="btn btn-danger"
-               onclick="return confirm('Вы уверены, что хотите удалить это оборудование?');">
-                <i class="bi bi-trash me-1"></i>Удалить оборудование
-            </a>
-        </div>
     </div>
 </div>
 
