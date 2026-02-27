@@ -88,6 +88,18 @@
             </div>
         </div>
     </div>
+
+    <div class="mt-4">
+        <a th:href="'/employee/warehouseManager/equipments/editEquipment/' + ${equipment.id}"
+           class="btn btn-primary me-2">
+            <i class="bi bi-pencil me-1"></i>Редактировать
+        </a>
+        <a th:href="'/employee/warehouseManager/equipments/deleteEquipment/' + ${equipment.id}"
+           class="btn btn-outline-danger"
+           onclick="return confirm('Вы уверены, что хотите удалить это оборудование?')">
+            <i class="bi bi-trash me-1"></i>Удалить
+        </a>
+    </div>
 </div>
 
 <div th:insert="~{blocks/footer :: footer}"></div>

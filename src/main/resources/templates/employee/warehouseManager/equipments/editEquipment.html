@@ -16,11 +16,8 @@
     <!-- Хлебные крошки -->
     <nav aria-label="breadcrumb" class="mb-3">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a th:href="'/employee/manager/equipments/allEquipment'">Оборудование</a></li>
-            <li class="breadcrumb-item">
-                <a th:href="'/employee/manager/equipments/detailsEquipment/' + ${equipment.id}"
-                   th:text="${equipment.name}"></a>
-            </li>
+            <li class="breadcrumb-item"><a th:href="'/employee/warehouseManager/equipments/allEquipment'">Оборудование</a></li>
+            <li class="breadcrumb-item"><a th:href="'/employee/warehouseManager/equipments/detailsEquipment/' + ${equipment.id}" th:text="${equipment.name}"></a></li>
             <li class="breadcrumb-item active">Редактировать</li>
         </ol>
     </nav>
@@ -30,7 +27,7 @@
     <div class="profile-card p-4">
         <h2 class="h3 mb-4 fw-bold">Редактировать оборудование</h2>
 
-        <form th:action="'/employee/manager/equipments/editEquipment/' + ${equipment.id}" method="post">
+        <form th:action="'/employee/warehouseManager/equipments/editEquipment/' + ${equipment.id}" method="post">
             <div class="row g-3">
                 <div class="col-md-8">
                     <label class="form-label fw-semibold">Наименование <span class="text-danger">*</span></label>
@@ -48,7 +45,7 @@
                     </select>
                 </div>
 
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <label class="form-label fw-semibold">Склад <span class="text-danger">*</span></label>
                     <select name="warehouseId" class="form-select" required>
                         <option th:each="wh : ${warehouses}"
@@ -58,17 +55,17 @@
                     </select>
                 </div>
 
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <label class="form-label fw-semibold">Статус <span class="text-danger">*</span></label>
                     <select name="status" class="form-select" required>
-                        <option th:each="st : ${statuses}"
-                                th:value="${st.name()}"
-                                th:text="${st.displayName}"
-                                th:selected="${st == equipment.status}"></option>
+                        <option th:each="s : ${statuses}"
+                                th:value="${s.name()}"
+                                th:text="${s.displayName}"
+                                th:selected="${equipment.status != null and s == equipment.status}"></option>
                     </select>
                 </div>
 
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <label class="form-label fw-semibold">Серийный номер</label>
                     <input type="text" name="serialNumber" class="form-control" maxlength="100"
                            th:value="${equipment.serialNumber}">
@@ -77,21 +74,21 @@
                 <div class="col-md-6">
                     <label class="form-label fw-semibold">Дата производства</label>
                     <input type="date" name="productionDate" class="form-control"
-                           th:value="${equipment.productionDate != null ? #temporals.format(equipment.productionDate, 'yyyy-MM-dd') : ''}">
+                           th:value="${equipment.productionDate}">
                 </div>
 
                 <div class="col-md-6">
                     <label class="form-label fw-semibold">Срок полезного использования (лет)</label>
                     <input type="number" name="usefulLifeYears" class="form-control" min="1" max="100"
                            th:value="${equipment.usefulLifeYears}">
+                    <div class="form-text">Используется для расчёта даты окончания срока службы</div>
                 </div>
 
                 <div class="col-12 mt-2">
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-check-circle me-1"></i>Сохранить
                     </button>
-                    <a th:href="'/employee/manager/equipments/detailsEquipment/' + ${equipment.id}"
-                       class="btn btn-outline-secondary ms-2">Отмена</a>
+                    <a th:href="'/employee/warehouseManager/equipments/detailsEquipment/' + ${equipment.id}" class="btn btn-outline-secondary ms-2">Отмена</a>
                 </div>
             </div>
         </form>
