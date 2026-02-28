@@ -15,6 +15,7 @@ public interface EmployeeMapper {
 
     @Mapping(source = "role.name", target = "roleName")
     @Mapping(source = "role.description", target = "roleDescription")
+    @Mapping(source = "enabled", target = "active")
     @Mapping(source = "employee", target = "fullName", qualifiedByName = "fullNameMapper")
     EmployeeDTO toDTO(Employee employee);
 
