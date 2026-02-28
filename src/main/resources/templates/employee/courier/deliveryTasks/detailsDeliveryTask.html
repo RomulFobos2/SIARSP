@@ -1,0 +1,203 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Доставка | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+<header th:insert="~{blocks/header :: header}"></header>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+
+            <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+            <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="page-title">Доставка</h1>
+                    <span class="badge fs-6"
+                          th:text="${task.status.displayName}"
+                          th:classappend="${task.status.name() == 'PENDING' ? 'bg-secondary' :
+                                           task.status.name() == 'LOADING' ? 'bg-warning text-dark' :
+                                           task.status.name() == 'IN_TRANSIT' ? 'bg-primary' :
+                                           task.status.name() == 'DELIVERED' ? 'bg-success' :
+                                           task.status.name() == 'CANCELLED' ? 'bg-danger' : 'bg-secondary'}"></span>
+                </div>
+            </div>
+
+            <!-- Информация -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-6">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title fw-bold">Заказ</h6>
+                            <p class="mb-1"><strong>Номер:</strong> <span th:text="${task.clientOrder.orderNumber}"></span></p>
+                            <p class="mb-1"><strong>Клиент:</strong> <span th:text="${task.clientOrder.client.organizationName}"></span></p>
+                            <p class="mb-0"><strong>Адрес доставки:</strong> <span th:text="${task.clientOrder.client.deliveryAddress}"></span></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title fw-bold">Автомобиль</h6>
+                            <p class="mb-1"><strong>Автомобиль:</strong> <span th:text="${task.vehicle.fullName}"></span></p>
+                            <p class="mb-1"><strong>Планируемое начало:</strong>
+                                <span th:text="${task.plannedStartTime != null ? #temporals.format(task.plannedStartTime, 'dd.MM.yyyy HH:mm') : '—'}"></span></p>
+                            <p class="mb-0"><strong>Планируемое окончание:</strong>
+                                <span th:text="${task.plannedEndTime != null ? #temporals.format(task.plannedEndTime, 'dd.MM.yyyy HH:mm') : '—'}"></span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ТТН -->
+            <div th:if="${task.ttnNumber != null}" class="card border-0 bg-light mb-4">
+                <div class="card-body">
+                    <h6 class="card-title fw-bold">ТТН</h6>
+                    <p class="mb-0"><strong>Номер:</strong> <span th:text="${task.ttnNumber}"></span></p>
+                </div>
+            </div>
+
+            <!-- Маршрут -->
+            <div th:if="${!task.routePoints.isEmpty()}" class="mb-4">
+                <h5 class="fw-bold mb-3">Маршрут</h5>
+                <div class="list-group">
+                    <div th:each="rp : ${task.routePoints}" class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-secondary me-2" th:text="${rp.orderIndex}"></span>
+                            <strong th:text="${rp.pointType.displayName}"></strong>:
+                            <span th:text="${rp.address}"></span>
+                            <span th:if="${rp.comment != null and !rp.comment.isBlank()}" class="text-muted ms-2"
+                                  th:text="'(' + ${rp.comment} + ')'"></span>
+                        </div>
+                        <div>
+                            <span th:if="${rp.reached}" class="badge bg-success">Пройдена
+                                <span th:if="${rp.actualArrivalTime != null}"
+                                      th:text="${#temporals.format(rp.actualArrivalTime, 'HH:mm')}"></span>
+                            </span>
+                            <span th:unless="${rp.reached}">
+                                <form th:if="${task.status.name() == 'IN_TRANSIT'}"
+                                      th:action="'/employee/courier/deliveryTasks/markRoutePoint/' + ${task.id} + '/' + ${rp.id}"
+                                      method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-success">Отметить</button>
+                                </form>
+                                <span th:unless="${task.status.name() == 'IN_TRANSIT'}" class="badge bg-secondary">Ожидает</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PENDING/LOADING: ожидание погрузки -->
+            <div th:if="${task.status.name() == 'PENDING'}" class="alert alert-secondary mb-4">
+                Ожидание начала погрузки.
+            </div>
+
+            <!-- LOADING: начать доставку -->
+            <div th:if="${task.status.name() == 'LOADING'}" class="card border-0 bg-light mb-4">
+                <div class="card-body">
+                    <h6 class="card-title fw-bold">Начать доставку</h6>
+                    <form th:action="'/employee/courier/deliveryTasks/startDelivery/' + ${task.id}" method="post">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-4">
+                                <label for="startMileage" class="form-label">Начальный пробег (км)</label>
+                                <input type="number" id="startMileage" name="startMileage" class="form-control"
+                                       min="0" required placeholder="Текущий пробег">
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-primary">Начать доставку</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- IN_TRANSIT: управление -->
+            <div th:if="${task.status.name() == 'IN_TRANSIT'}" class="mb-4">
+                <!-- GPS -->
+                <div class="card border-0 bg-light mb-3">
+                    <div class="card-body">
+                        <h6 class="card-title fw-bold">Обновить местоположение</h6>
+                        <form th:action="'/employee/courier/deliveryTasks/updateLocation/' + ${task.id}" method="post">
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-3">
+                                    <label for="latitude" class="form-label">Широта</label>
+                                    <input type="number" id="latitude" name="latitude" class="form-control"
+                                           step="0.000001" required
+                                           th:value="${task.currentLatitude}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="longitude" class="form-label">Долгота</label>
+                                    <input type="number" id="longitude" name="longitude" class="form-control"
+                                           step="0.000001" required
+                                           th:value="${task.currentLongitude}">
+                                </div>
+                                <div class="col-md-3">
+                                    <button type="submit" class="btn btn-outline-primary">Обновить GPS</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Завершение доставки -->
+                <div class="card border-0 bg-light">
+                    <div class="card-body">
+                        <h6 class="card-title fw-bold">Завершить доставку</h6>
+                        <form th:action="'/employee/courier/deliveryTasks/completeDelivery/' + ${task.id}" method="post"
+                              onsubmit="return confirm('Вы уверены, что хотите завершить доставку?');">
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-4">
+                                    <label for="endMileage" class="form-label">Конечный пробег (км)</label>
+                                    <input type="number" id="endMileage" name="endMileage" class="form-control"
+                                           min="0" required placeholder="Текущий пробег">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="clientRepresentative" class="form-label">ФИО представителя клиента</label>
+                                    <input type="text" id="clientRepresentative" name="clientRepresentative"
+                                           class="form-control" placeholder="Иванова М.П., заведующая">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="actComment" class="form-label">Комментарий к акту</label>
+                                    <input type="text" id="actComment" name="actComment"
+                                           class="form-control" placeholder="Примечания">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-success">Завершить доставку</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DELIVERED: итоги -->
+            <div th:if="${task.status.name() == 'DELIVERED'}" class="card border-0 bg-light mb-4">
+                <div class="card-body">
+                    <h6 class="card-title fw-bold">Результаты доставки</h6>
+                    <p class="mb-1"><strong>Начало:</strong>
+                        <span th:text="${task.actualStartTime != null ? #temporals.format(task.actualStartTime, 'dd.MM.yyyy HH:mm') : '—'}"></span></p>
+                    <p class="mb-1"><strong>Окончание:</strong>
+                        <span th:text="${task.actualEndTime != null ? #temporals.format(task.actualEndTime, 'dd.MM.yyyy HH:mm') : '—'}"></span></p>
+                    <p class="mb-1"><strong>Начальный пробег:</strong>
+                        <span th:text="${task.startMileage != null ? task.startMileage + ' км' : '—'}"></span></p>
+                    <p class="mb-1"><strong>Конечный пробег:</strong>
+                        <span th:text="${task.endMileage != null ? task.endMileage + ' км' : '—'}"></span></p>
+                    <p class="mb-0"><strong>Итого пробег:</strong>
+                        <span th:text="${task.totalMileage != null ? task.totalMileage + ' км' : '—'}"></span></p>
+                </div>
+            </div>
+
+            <div class="link-section">
+                <a href="/employee/courier/deliveryTasks/myDeliveryTasks">&larr; К моим доставкам</a>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>

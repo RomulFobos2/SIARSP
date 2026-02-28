@@ -141,6 +141,7 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="/employee/warehouseManager/clientOrders/allClientOrders">Заказы клиентов</a></li>
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/deliveryTasks/allDeliveryTasks">Задачи на доставку</a></li>
                         </ul>
                     </li>
                     <!-- Dropdown: Документация -->
@@ -150,6 +151,16 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="/employee/warehouseManager/writeOffActs/allWriteOffActs">Акты списания</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- ========== WAREHOUSE_WORKER ========== -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_WORKER')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Задачи
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/warehouseWorker/deliveryTasks/allDeliveryTasks">Задачи на погрузку</a></li>
                         </ul>
                     </li>
 
@@ -172,6 +183,7 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="/employee/accounter/clientOrders/allClientOrders">Заказы клиентов</a></li>
+                            <li><a class="dropdown-item" href="/employee/accounter/deliveryTasks/allDeliveryTasks">Задачи на доставку</a></li>
                         </ul>
                     </li>
                     <!-- Dropdown: Документация -->
@@ -181,6 +193,16 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="/employee/accounter/writeOffActs/allWriteOffActs">Акты списания</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- ========== COURIER ========== -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_COURIER')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Доставки
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/courier/deliveryTasks/myDeliveryTasks">Мои доставки</a></li>
                         </ul>
                     </li>
 

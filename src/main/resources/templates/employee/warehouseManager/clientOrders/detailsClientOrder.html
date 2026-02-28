@@ -29,7 +29,9 @@
                           th:classappend="${order.status.name() == 'CONFIRMED' ? 'bg-info text-dark' :
                                            order.status.name() == 'RESERVED' ? 'bg-primary' :
                                            order.status.name() == 'IN_PROGRESS' ? 'bg-warning text-dark' :
-                                           order.status.name() == 'READY' ? 'bg-success' : 'bg-secondary'}"></span>
+                                           order.status.name() == 'READY' ? 'bg-success' :
+                                           order.status.name() == 'SHIPPED' ? 'bg-dark' :
+                                           order.status.name() == 'DELIVERED' ? 'bg-success' : 'bg-secondary'}"></span>
                 </div>
             </div>
 
@@ -132,9 +134,29 @@
                     <button type="submit" class="btn btn-success">Сборка завершена</button>
                 </form>
 
-                <!-- READY: информация -->
-                <div th:if="${order.status.name() == 'READY'}" class="alert alert-success mb-0">
-                    Заказ собран и ожидает отгрузки.
+                <!-- READY: создать задачу на доставку -->
+                <div th:if="${order.status.name() == 'READY'}">
+                    <a th:if="${order.deliveryTask == null}"
+                       th:href="'/employee/warehouseManager/deliveryTasks/createDeliveryTask/' + ${order.id}"
+                       class="btn btn-primary">Создать задачу на доставку</a>
+                    <a th:if="${order.deliveryTask != null}"
+                       th:href="'/employee/warehouseManager/deliveryTasks/detailsDeliveryTask/' + ${order.deliveryTask.id}"
+                       class="btn btn-outline-primary">Перейти к задаче на доставку</a>
+                </div>
+
+                <!-- SHIPPED: информация -->
+                <div th:if="${order.status.name() == 'SHIPPED'}" class="alert alert-info mb-0">
+                    Заказ отгружен и находится в доставке.
+                    <a th:if="${order.deliveryTask != null}"
+                       th:href="'/employee/warehouseManager/deliveryTasks/detailsDeliveryTask/' + ${order.deliveryTask.id}"
+                       class="alert-link">Перейти к задаче</a>
+                </div>
+
+                <!-- DELIVERED: информация -->
+                <div th:if="${order.status.name() == 'DELIVERED'}" class="alert alert-success mb-0">
+                    Заказ доставлен
+                    <span th:if="${order.actualDeliveryDate != null}"
+                          th:text="${#temporals.format(order.actualDeliveryDate, 'dd.MM.yyyy')}"></span>.
                 </div>
             </div>
 

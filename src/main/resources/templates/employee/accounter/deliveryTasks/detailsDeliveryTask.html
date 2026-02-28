@@ -1,0 +1,115 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Задача на доставку | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+<header th:insert="~{blocks/header :: header}"></header>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+
+            <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+            <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="page-title">Задача на доставку</h1>
+                    <span class="badge fs-6"
+                          th:text="${task.status.displayName}"
+                          th:classappend="${task.status.name() == 'PENDING' ? 'bg-secondary' :
+                                           task.status.name() == 'LOADING' ? 'bg-warning text-dark' :
+                                           task.status.name() == 'IN_TRANSIT' ? 'bg-primary' :
+                                           task.status.name() == 'DELIVERED' ? 'bg-success' :
+                                           task.status.name() == 'CANCELLED' ? 'bg-danger' : 'bg-secondary'}"></span>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-md-6">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title fw-bold">Заказ</h6>
+                            <p class="mb-1"><strong>Номер:</strong> <span th:text="${task.clientOrder.orderNumber}"></span></p>
+                            <p class="mb-1"><strong>Клиент:</strong> <span th:text="${task.clientOrder.client.organizationName}"></span></p>
+                            <p class="mb-0"><strong>Сумма:</strong>
+                                <span th:text="${#numbers.formatDecimal(task.clientOrder.totalAmount, 1, 2) + ' руб.'}"></span></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title fw-bold">Транспорт</h6>
+                            <p class="mb-1"><strong>Водитель:</strong> <span th:text="${task.driver.fullName}"></span></p>
+                            <p class="mb-0"><strong>Автомобиль:</strong> <span th:text="${task.vehicle.fullName}"></span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Блок ТТН -->
+            <div th:if="${task.ttn != null}" class="card border-0 bg-light mb-4">
+                <div class="card-body">
+                    <h6 class="card-title fw-bold">ТТН (оформлена)</h6>
+                    <p class="mb-1"><strong>Номер:</strong> <span th:text="${task.ttn.ttnNumber}"></span></p>
+                    <p class="mb-1"><strong>Дата выдачи:</strong>
+                        <span th:text="${#temporals.format(task.ttn.issueDate, 'dd.MM.yyyy')}"></span></p>
+                    <p th:if="${task.ttn.cargoDescription != null}" class="mb-1">
+                        <strong>Описание груза:</strong> <span th:text="${task.ttn.cargoDescription}"></span></p>
+                    <p th:if="${task.ttn.totalWeight != null}" class="mb-1">
+                        <strong>Вес:</strong> <span th:text="${task.ttn.totalWeight + ' кг'}"></span></p>
+                    <p th:if="${task.ttn.totalVolume != null}" class="mb-1">
+                        <strong>Объём:</strong> <span th:text="${task.ttn.totalVolume + ' м³'}"></span></p>
+                    <p th:if="${task.ttn.comment != null and !task.ttn.comment.isBlank()}" class="mb-0">
+                        <strong>Комментарий:</strong> <span th:text="${task.ttn.comment}"></span></p>
+                </div>
+            </div>
+
+            <!-- Кнопка оформления ТТН -->
+            <div th:if="${task.ttn == null}" class="mb-4">
+                <a th:href="'/employee/accounter/deliveryTasks/createTTN/' + ${task.id}"
+                   class="btn btn-primary">Оформить ТТН</a>
+            </div>
+
+            <!-- Позиции заказа -->
+            <h5 class="fw-bold mb-3">Позиции заказа</h5>
+            <div class="table-responsive mb-4">
+                <table class="table table-modern">
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Товар</th>
+                        <th>Артикул</th>
+                        <th>Количество</th>
+                        <th>Цена за ед.</th>
+                        <th>Сумма</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="op, idx : ${task.clientOrder.orderedProducts}">
+                        <td th:text="${idx.index + 1}"></td>
+                        <td th:text="${op.product.name}"></td>
+                        <td th:text="${op.product.article}"></td>
+                        <td th:text="${op.quantity}"></td>
+                        <td th:text="${#numbers.formatDecimal(op.price, 1, 2) + ' руб.'}"></td>
+                        <td th:text="${#numbers.formatDecimal(op.totalPrice, 1, 2) + ' руб.'}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="link-section">
+                <a href="/employee/accounter/deliveryTasks/allDeliveryTasks">&larr; К списку задач</a>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>

@@ -38,7 +38,9 @@ public class SecurityConfigEmployee {
                         .requestMatchers("/employee/manager/**").hasRole("EMPLOYEE_MANAGER")
                         .requestMatchers("/employee/warehouseManager/**").hasRole("EMPLOYEE_WAREHOUSE_MANAGER")
                         .requestMatchers("/employee/accounter/**").hasRole("EMPLOYEE_ACCOUNTER")
-                        .requestMatchers("/employee/**").hasAnyRole("EMPLOYEE_ADMIN", "EMPLOYEE_MANAGER", "EMPLOYEE_WAREHOUSE_MANAGER", "EMPLOYEE_WORKER", "EMPLOYEE_COURIER", "EMPLOYEE_ACCOUNTER") // любые сотрудники
+                        .requestMatchers("/employee/warehouseWorker/**").hasRole("EMPLOYEE_WAREHOUSE_WORKER")
+                        .requestMatchers("/employee/courier/**").hasRole("EMPLOYEE_COURIER")
+                        .requestMatchers("/employee/**").hasAnyRole("EMPLOYEE_ADMIN", "EMPLOYEE_MANAGER", "EMPLOYEE_WAREHOUSE_MANAGER", "EMPLOYEE_WAREHOUSE_WORKER", "EMPLOYEE_COURIER", "EMPLOYEE_ACCOUNTER") // любые сотрудники
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form

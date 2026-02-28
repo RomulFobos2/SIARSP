@@ -1,0 +1,180 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Создать задачу на доставку | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+<header th:insert="~{blocks/header :: header}"></header>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+
+            <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+            <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+            <h1 class="page-title mb-4">Создать задачу на доставку</h1>
+
+            <!-- Информация о заказе -->
+            <div class="card border-0 bg-light mb-4">
+                <div class="card-body">
+                    <h6 class="card-title fw-bold">Заказ</h6>
+                    <p class="mb-1"><strong>Номер:</strong> <span th:text="${order.orderNumber}"></span></p>
+                    <p class="mb-1"><strong>Клиент:</strong> <span th:text="${order.client.organizationName}"></span></p>
+                    <p class="mb-1"><strong>Адрес доставки:</strong> <span th:text="${order.client.deliveryAddress}"></span></p>
+                    <p class="mb-0"><strong>Дата доставки:</strong>
+                        <span th:text="${#temporals.format(order.deliveryDate, 'dd.MM.yyyy')}"></span></p>
+                </div>
+            </div>
+
+            <form th:action="'/employee/warehouseManager/deliveryTasks/createDeliveryTask/' + ${order.id}"
+                  method="post">
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label for="driverId" class="form-label fw-bold">Водитель-экспедитор</label>
+                        <select id="driverId" name="driverId" class="form-select" required>
+                            <option value="" disabled selected>Выберите водителя</option>
+                            <option th:each="driver : ${drivers}"
+                                    th:value="${driver.id}"
+                                    th:text="${driver.fullName}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="vehicleId" class="form-label fw-bold">Автомобиль</label>
+                        <select id="vehicleId" name="vehicleId" class="form-select" required>
+                            <option value="" disabled selected>Выберите автомобиль</option>
+                            <option th:each="v : ${vehicles}"
+                                    th:value="${v.id}"
+                                    th:text="${v.fullName}"></option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label for="plannedStartTime" class="form-label fw-bold">Планируемое начало</label>
+                        <input type="datetime-local" id="plannedStartTime" name="plannedStartTime"
+                               class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="plannedEndTime" class="form-label fw-bold">Планируемое окончание</label>
+                        <input type="datetime-local" id="plannedEndTime" name="plannedEndTime"
+                               class="form-control" required>
+                    </div>
+                </div>
+
+                <!-- Маршрутные точки -->
+                <h5 class="fw-bold mb-3">Маршрут</h5>
+                <div id="routePointsContainer">
+                    <!-- Точка 1: Склад (автоматически) -->
+                    <div class="card mb-2 route-point">
+                        <div class="card-body py-2">
+                            <div class="row g-2 align-items-center">
+                                <div class="col-md-2">
+                                    <select name="rpType" class="form-select form-select-sm">
+                                        <option th:each="rpt : ${routePointTypes}" th:value="${rpt.name()}"
+                                                th:text="${rpt.displayName}"
+                                                th:selected="${rpt.name() == 'WAREHOUSE'}"></option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="text" name="rpAddress" class="form-control form-control-sm"
+                                           placeholder="Адрес" value="Склад ИП Левчук">
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="text" name="rpLatitude" class="form-control form-control-sm"
+                                           placeholder="Широта">
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="text" name="rpLongitude" class="form-control form-control-sm"
+                                           placeholder="Долгота">
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="text" name="rpComment" class="form-control form-control-sm"
+                                           placeholder="Комментарий">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Точка 2: Адрес доставки (автоматически) -->
+                    <div class="card mb-2 route-point">
+                        <div class="card-body py-2">
+                            <div class="row g-2 align-items-center">
+                                <div class="col-md-2">
+                                    <select name="rpType" class="form-select form-select-sm">
+                                        <option th:each="rpt : ${routePointTypes}" th:value="${rpt.name()}"
+                                                th:text="${rpt.displayName}"
+                                                th:selected="${rpt.name() == 'DELIVERY_ADDRESS'}"></option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="text" name="rpAddress" class="form-control form-control-sm"
+                                           placeholder="Адрес" th:value="${order.client.deliveryAddress}">
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="text" name="rpLatitude" class="form-control form-control-sm"
+                                           placeholder="Широта">
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="text" name="rpLongitude" class="form-control form-control-sm"
+                                           placeholder="Долгота">
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="text" name="rpComment" class="form-control form-control-sm"
+                                           placeholder="Комментарий">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-sm btn-outline-secondary mb-4" onclick="addRoutePoint()">
+                    + Добавить контрольную точку
+                </button>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Создать задачу</button>
+                    <a href="/employee/warehouseManager/deliveryTasks/allDeliveryTasks"
+                       class="btn btn-outline-secondary">Отмена</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div th:insert="~{blocks/footer :: footer}"></div>
+
+<script th:inline="javascript">
+    var routePointTypes = [[${routePointTypes}]];
+
+    function addRoutePoint() {
+        var container = document.getElementById('routePointsContainer');
+        var lastDeliveryPoint = container.querySelectorAll('.route-point');
+        var insertBefore = lastDeliveryPoint[lastDeliveryPoint.length - 1];
+
+        var div = document.createElement('div');
+        div.className = 'card mb-2 route-point';
+        div.innerHTML = '<div class="card-body py-2">' +
+            '<div class="row g-2 align-items-center">' +
+            '<div class="col-md-2">' +
+            '<select name="rpType" class="form-select form-select-sm">' +
+            '<option value="CHECKPOINT" selected>Контрольная точка</option>' +
+            '<option value="WAREHOUSE">Склад</option>' +
+            '<option value="DELIVERY_ADDRESS">Адрес доставки</option>' +
+            '</select></div>' +
+            '<div class="col-md-4"><input type="text" name="rpAddress" class="form-control form-control-sm" placeholder="Адрес"></div>' +
+            '<div class="col-md-2"><input type="text" name="rpLatitude" class="form-control form-control-sm" placeholder="Широта"></div>' +
+            '<div class="col-md-2"><input type="text" name="rpLongitude" class="form-control form-control-sm" placeholder="Долгота"></div>' +
+            '<div class="col-md-1"><input type="text" name="rpComment" class="form-control form-control-sm" placeholder="Комм."></div>' +
+            '<div class="col-md-1"><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest(\'.route-point\').remove()">X</button></div>' +
+            '</div></div>';
+
+        container.insertBefore(div, insertBefore);
+    }
+</script>
+</body>
+</html>
