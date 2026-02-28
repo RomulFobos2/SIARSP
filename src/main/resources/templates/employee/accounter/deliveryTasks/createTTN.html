@@ -1,0 +1,70 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Оформление ТТН | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+<header th:insert="~{blocks/header :: header}"></header>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+
+            <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+            <h1 class="page-title mb-4">Оформление ТТН</h1>
+
+            <!-- Информация о задаче -->
+            <div class="card border-0 bg-light mb-4">
+                <div class="card-body">
+                    <h6 class="card-title fw-bold">Информация о доставке</h6>
+                    <p class="mb-1"><strong>Заказ:</strong> <span th:text="${task.clientOrder.orderNumber}"></span></p>
+                    <p class="mb-1"><strong>Клиент:</strong> <span th:text="${task.clientOrder.client.organizationName}"></span></p>
+                    <p class="mb-1"><strong>Водитель:</strong> <span th:text="${task.driver.fullName}"></span></p>
+                    <p class="mb-0"><strong>Автомобиль:</strong> <span th:text="${task.vehicle.fullName}"></span></p>
+                </div>
+            </div>
+
+            <form th:action="'/employee/accounter/deliveryTasks/createTTN/' + ${task.id}" method="post">
+
+                <div class="mb-3">
+                    <label for="cargoDescription" class="form-label fw-bold">Описание груза</label>
+                    <textarea id="cargoDescription" name="cargoDescription" class="form-control" rows="3"
+                              placeholder="Например: Продукты питания для МБДОУ Детский сад №5"></textarea>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label for="totalWeight" class="form-label fw-bold">Общий вес (кг)</label>
+                        <input type="number" id="totalWeight" name="totalWeight" class="form-control"
+                               step="0.1" min="0" placeholder="Например: 250.5">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="totalVolume" class="form-label fw-bold">Общий объём (м³)</label>
+                        <input type="number" id="totalVolume" name="totalVolume" class="form-control"
+                               step="0.01" min="0" placeholder="Например: 1.2">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="comment" class="form-label fw-bold">Комментарий</label>
+                    <textarea id="comment" name="comment" class="form-control" rows="2"
+                              placeholder="Особые условия перевозки, контактное лицо и т.п."></textarea>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Оформить ТТН</button>
+                    <a th:href="'/employee/accounter/deliveryTasks/detailsDeliveryTask/' + ${task.id}"
+                       class="btn btn-outline-secondary">Отмена</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>

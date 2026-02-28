@@ -1,0 +1,70 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Задачи на доставку | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+<header th:insert="~{blocks/header :: header}"></header>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+            <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+            <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+            <h1 class="page-title mb-4">Задачи на доставку</h1>
+
+            <div th:if="${#lists.isEmpty(tasks)}" class="alert alert-info">
+                Задач на доставку нет.
+            </div>
+
+            <div th:if="${!#lists.isEmpty(tasks)}" class="table-responsive">
+                <table class="table table-modern">
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Заказ</th>
+                        <th>Водитель</th>
+                        <th>Автомобиль</th>
+                        <th>Статус</th>
+                        <th>ТТН</th>
+                        <th>Действия</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="task, idx : ${tasks}">
+                        <td th:text="${idx.index + 1}"></td>
+                        <td th:text="${task.clientOrderNumber}"></td>
+                        <td th:text="${task.driverFullName}"></td>
+                        <td th:text="${task.vehicleRegistrationNumber}"></td>
+                        <td>
+                            <span class="badge"
+                                  th:text="${task.status.displayName}"
+                                  th:classappend="${task.status.name() == 'PENDING' ? 'bg-secondary' :
+                                                   task.status.name() == 'LOADING' ? 'bg-warning text-dark' :
+                                                   task.status.name() == 'IN_TRANSIT' ? 'bg-primary' :
+                                                   task.status.name() == 'DELIVERED' ? 'bg-success' :
+                                                   task.status.name() == 'CANCELLED' ? 'bg-danger' : 'bg-secondary'}"></span>
+                        </td>
+                        <td>
+                            <span th:if="${task.ttnId != null}" class="badge bg-success">Оформлена</span>
+                            <span th:unless="${task.ttnId != null}" class="badge bg-warning text-dark">Не оформлена</span>
+                        </td>
+                        <td>
+                            <a th:href="'/employee/accounter/deliveryTasks/detailsDeliveryTask/' + ${task.id}"
+                               class="btn btn-sm btn-outline-primary">Подробнее</a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>

@@ -25,7 +25,9 @@ public class ClientOrderController {
             ClientOrderStatus.CONFIRMED,
             ClientOrderStatus.RESERVED,
             ClientOrderStatus.IN_PROGRESS,
-            ClientOrderStatus.READY
+            ClientOrderStatus.READY,
+            ClientOrderStatus.SHIPPED,
+            ClientOrderStatus.DELIVERED
     );
 
     private final ClientOrderService clientOrderService;
