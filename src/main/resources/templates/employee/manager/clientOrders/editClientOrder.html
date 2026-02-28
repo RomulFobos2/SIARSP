@@ -92,6 +92,13 @@
 <script>
     var rowIndex = 0;
 
+    function toJsNumber(value) {
+        if (value === null || value === undefined) return 0;
+        var normalized = String(value).replace(/\s/g, '').replace(',', '.').replace(/[^0-9.-]/g, '');
+        var num = parseFloat(normalized);
+        return isNaN(num) ? 0 : num;
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         // Загрузить существующие позиции
         for (var i = 0; i < existingProducts.length; i++) {
@@ -119,16 +126,16 @@
             '</div>' +
             '<div class="col-md-2">' +
                 '<label class="form-label">Кол-во *</label>' +
-                '<input type="number" name="quantity" class="form-control quantity-input" min="1" required oninput="calculateRowTotal(this)" value="' + data.quantity + '">' +
+                '<input type="number" name="quantity" class="form-control quantity-input" min="1" required oninput="calculateRowTotal(this)" value="' + toJsNumber(data.quantity) + '">' +
                 '<small class="text-muted available-hint"></small>' +
             '</div>' +
             '<div class="col-md-2">' +
                 '<label class="form-label">Цена *</label>' +
-                '<input type="number" name="price" class="form-control price-input" min="0.01" step="0.01" required oninput="calculateRowTotal(this)" value="' + data.price + '">' +
+                '<input type="number" name="price" class="form-control price-input" min="0.01" step="0.01" required oninput="calculateRowTotal(this)" value="' + toJsNumber(data.price) + '">' +
             '</div>' +
             '<div class="col-md-2">' +
                 '<label class="form-label">Сумма</label>' +
-                '<input type="text" class="form-control row-total" readonly value="' + (data.quantity * data.price).toFixed(2) + '">' +
+                '<input type="text" class="form-control row-total" readonly value="' + (toJsNumber(data.quantity) * toJsNumber(data.price)).toFixed(2) + '">' +
             '</div>' +
             '<div class="col-md-2 d-flex align-items-end">' +
                 '<button type="button" class="btn btn-outline-danger" onclick="removeProductRow(this)">Удалить</button>' +
@@ -191,6 +198,9 @@
     }
 
     function onProductChange(select) {
+        if (!select) {
+            return;
+        }
         // запрет дубля: если выбран уже где-то ещё — сбросить и выйти
         var allSelects = document.querySelectorAll('.product-select');
         for (var i = 0; i < allSelects.length; i++) {
@@ -199,8 +209,16 @@
                 select.value = '';
 
                 var row = select.closest('.product-row');
+                if (!row) {
+                    updateSelectOptions();
+                    return;
+                }
                 var qtyInput = row.querySelector('.quantity-input');
                 var hint = row.querySelector('.available-hint');
+                if (!qtyInput || !hint) {
+                    updateSelectOptions();
+                    return;
+                }
 
                 qtyInput.removeAttribute('max');
                 qtyInput.value = '';
@@ -217,8 +235,16 @@
 
         // обычная логика
         var row = select.closest('.product-row');
+        if (!selectedOption || !qtyInput || !hint) {
+            updateSelectOptions();
+            return;
+        }
         var selectedOption = select.options[select.selectedIndex];
         var hint = row.querySelector('.available-hint');
+        if (!selectedOption || !qtyInput || !hint) {
+            updateSelectOptions();
+            return;
+        }
 
         if (selectedOption.value) {
             var available = parseInt(selectedOption.getAttribute('data-available'), 10);

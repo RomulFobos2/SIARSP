@@ -26,8 +26,8 @@ public interface RequestForDeliveryRepository extends JpaRepository<RequestForDe
      * на основе завершённых заявок (статус RECEIVED)
      */
     @Query(value = "SELECT rp.product_id, AVG(DATEDIFF(r.received_date, r.request_date)) " +
-            "FROM t_requestForDelivery r " +
-            "JOIN t_requestedProduct rp ON rp.request_id = r.id " +
+            "FROM t_request_for_delivery r " +
+            "JOIN t_requested_product rp ON rp.request_id = r.id " +
             "WHERE r.status = 'RECEIVED' AND r.received_date IS NOT NULL " +
             "GROUP BY rp.product_id", nativeQuery = true)
     List<Object[]> findAverageDeliveryDaysByProduct();
