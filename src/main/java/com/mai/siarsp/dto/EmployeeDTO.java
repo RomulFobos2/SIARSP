@@ -16,4 +16,5 @@ public class EmployeeDTO {
     private String roleDescription;
     private LocalDate dateOfRegistration;
     private boolean needChangePass;
+    private boolean isActive;
 }

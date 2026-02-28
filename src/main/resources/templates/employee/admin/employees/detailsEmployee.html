@@ -5,11 +5,11 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
     <link href="/css/style.css" rel="stylesheet">
     <script src="/js/bootstrap.bundle.min.js"></script>
-    <script src="/js/javascript.js"></script>
 </head>
-<body>
+<body class="admin-page">
 <header th:insert="~{blocks/header :: header}"></header>
 <div class="container my-5">
     <div class="row justify-content-center">
@@ -19,6 +19,8 @@
         <h1 class="page-title">Информация о пользователе</h1>
         <p class="page-subtitle">Просмотр и управление данными сотрудника</p>
 
+        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
         <div th:if="${deleteError}" class="alert alert-danger" th:text="${deleteError}"></div>
 
         <div class="mb-4">
@@ -57,6 +59,14 @@
                        id="inputRole" placeholder="Роль"
                        th:value="${employeeDTO.getRoleDescription()}" disabled>
             </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Статус аккаунта</label>
+                <div>
+                    <span th:if="${employeeDTO.isActive()}" class="badge bg-success fs-6">Активен</span>
+                    <span th:unless="${employeeDTO.isActive()}" class="badge bg-danger fs-6">Деактивирован</span>
+                </div>
+            </div>
         </div>
 
         <!-- Action Buttons -->
@@ -68,6 +78,20 @@
             <button class="btn btn-warning btn-profile"
                     data-bs-toggle="modal" data-bs-target="#resetPasswordModal">
                 Сбросить пароль
+            </button>
+            <button th:if="${employeeDTO.isActive()}"
+                    class="btn btn-secondary btn-profile"
+                    th:data-username="${employeeDTO.getUsername()}"
+                    th:data-userid="${employeeDTO.getId()}"
+                    onclick="confirmDeactivate(this)">
+                Деактивировать
+            </button>
+            <button th:unless="${employeeDTO.isActive()}"
+                    class="btn btn-success btn-profile"
+                    th:data-username="${employeeDTO.getUsername()}"
+                    th:data-userid="${employeeDTO.getId()}"
+                    onclick="confirmActivate(this)">
+                Активировать
             </button>
             <button class="btn btn-danger btn-profile"
                     th:data-username="${employeeDTO.getUsername()}"
@@ -167,7 +191,7 @@
 
             const userId = (/*[[${employeeDTO.getId()}]]*/);
 
-            fetch(`/employee/admin/employees/resetPassword/${userId}`, {
+            fetch(`/employee/admin/employees/resetEmployeePassword/${userId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -192,11 +216,29 @@
         });
     });
 
+    function confirmDeactivate(button) {
+        const username = button.getAttribute('data-username');
+        const userId = button.getAttribute('data-userid');
+
+        if (confirm("Вы точно хотите деактивировать аккаунт пользователя " + username + "?")) {
+            window.location.href = '/employee/admin/employees/deactivateEmployee/' + userId;
+        }
+    }
+
+    function confirmActivate(button) {
+        const username = button.getAttribute('data-username');
+        const userId = button.getAttribute('data-userid');
+
+        if (confirm("Активировать аккаунт пользователя " + username + "?")) {
+            window.location.href = '/employee/admin/employees/activateEmployee/' + userId;
+        }
+    }
+
     function confirmDelete(button) {
         const username = button.getAttribute('data-username');
         const userId = button.getAttribute('data-userid');
 
-        if (confirm("Вы точно хотите удалить пользователя " + username + "?")) {
+        if (confirm("Вы точно хотите УДАЛИТЬ пользователя " + username + "? Это действие необратимо!")) {
             window.location.href = '/employee/admin/employees/deleteEmployee/' + userId;
         }
     }
