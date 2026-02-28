@@ -78,7 +78,11 @@
                     </thead>
                     <tbody>
                     <tr th:each="eq : ${equipment}"
-                        th:attr="data-name=${eq.name},data-serial=${eq.serialNumber != null ? eq.serialNumber : ''},data-warehouse=${eq.warehouseName},data-status=${eq.status != null ? eq.status.name() : ''},data-expired=${eq.expired ? 'expired' : 'ok'}">
+                        th:data-name="${eq.name}"
+                        th:data-serial="${eq.serialNumber != null ? eq.serialNumber : ''}"
+                        th:data-warehouse="${eq.warehouseName}"
+                        th:data-status="${eq.status != null ? eq.status.name() : ''}"
+                        th:data-expired="${eq.expired ? 'expired' : 'ok'}">
                         <td class="fw-semibold" th:text="${eq.name}"></td>
                         <td th:text="${eq.equipmentTypeName}"></td>
                         <td>
