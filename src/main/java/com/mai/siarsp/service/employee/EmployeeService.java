@@ -204,6 +204,29 @@ public class EmployeeService implements UserDetailsService {
         return true;
     }
 
+    public boolean accountEmployeeUnlocked(Long id) {
+        Optional<Employee> employeeOptional = employeeRepository.findById(id);
+
+        if (employeeOptional.isEmpty()) {
+            log.error("Не найден сотрудник с id = {}...", id);
+            return false;
+        }
+
+        Employee employee = employeeOptional.get();
+        log.info("Начинаем разблокировку аккаунта сотрудника с username = {}...", employee.getUsername());
+        employee.setActive(true);
+
+        try {
+            employeeRepository.save(employee);
+        } catch (Exception e) {
+            log.error("Ошибка при разблокировке аккаунта сотрудника: {}", e.getMessage(), e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return false;
+        }
+        log.info("Аккаунт сотрудника успешно разблокирован.");
+        return true;
+    }
+
     public List<EmployeeDTO> getAllEmployees() {
         List<Employee> employees = employeeRepository.findAll()
                 .stream().filter(e -> !e.getId().equals(getAuthenticationEmployeeDTO().getId()))

@@ -7,8 +7,6 @@ import com.mai.siarsp.service.employee.EmployeeService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +15,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 @Controller
 @Slf4j
@@ -115,15 +112,24 @@ public class EmployeeController {
         }
     }
 
-    @PostMapping("/employee/admin/employees/resetPassword/{id}")
-    public ResponseEntity<?> resetPassword(@PathVariable long id, @RequestBody Map<String, String> payload) {
-        String newPassword = payload.get("newPassword");
-
-        if (employeeService.resetEmployeePassword(id, newPassword)) {
-            return ResponseEntity.ok().build();
+    @GetMapping("/employee/admin/employees/deactivateEmployee/{id}")
+    public String deactivateEmployee(@PathVariable long id, RedirectAttributes redirectAttributes) {
+        if (employeeService.accountEmployeeLocked(id)) {
+            redirectAttributes.addFlashAttribute("successMessage", "Аккаунт сотрудника деактивирован.");
         } else {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при деактивации аккаунта.");
         }
+        return "redirect:/employee/admin/employees/detailsEmployee/" + id;
+    }
+
+    @GetMapping("/employee/admin/employees/activateEmployee/{id}")
+    public String activateEmployee(@PathVariable long id, RedirectAttributes redirectAttributes) {
+        if (employeeService.accountEmployeeUnlocked(id)) {
+            redirectAttributes.addFlashAttribute("successMessage", "Аккаунт сотрудника активирован.");
+        } else {
+            redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при активации аккаунта.");
+        }
+        return "redirect:/employee/admin/employees/detailsEmployee/" + id;
     }
 
     @GetMapping("/employee/admin/employees/deleteEmployee/{id}")

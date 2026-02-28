@@ -5,9 +5,9 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
     <link href="/css/style.css" rel="stylesheet">
     <script src="/js/bootstrap.bundle.min.js"></script>
-    <script src="/js/javascript.js"></script>
 </head>
 <body class="admin-page">
 <header th:insert="~{blocks/header :: header}"></header>
@@ -16,9 +16,9 @@
     <!-- Action Buttons -->
     <div class="profile-card mb-4">
         <div class="profile-actions">
-            <a th:href="'/employee/admin/administrationPanel'"
+            <a th:href="'/'"
                class="btn btn-secondary btn-profile">
-                ← Админ панель
+                ← Главная
             </a>
             <a th:href="'/employee/admin/employees/addEmployee'"
                class="btn btn-success btn-profile">
@@ -26,6 +26,9 @@
             </a>
         </div>
     </div>
+
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
     <!-- Users Table -->
     <div class="table-container">
@@ -40,6 +43,7 @@
                     <th>Роль</th>
                     <th>Логин</th>
                     <th>Дата регистрации</th>
+                    <th>Статус</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -52,6 +56,10 @@
                     <td th:text="${employee.getRoleDescription()}"></td>
                     <td th:text="${employee.getUsername()}"></td>
                     <td th:text="${#temporals.format(employee.getDateOfRegistration(), 'dd.MM.yyyy')}"></td>
+                    <td>
+                        <span th:if="${employee.isActive()}" class="badge bg-success">Активен</span>
+                        <span th:unless="${employee.isActive()}" class="badge bg-danger">Деактивирован</span>
+                    </td>
                 </tr>
                 </tbody>
             </table>
