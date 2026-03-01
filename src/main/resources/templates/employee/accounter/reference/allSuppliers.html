@@ -5,6 +5,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
     <link href="/css/style.css" rel="stylesheet">
     <script src="/js/bootstrap.bundle.min.js"></script>
 </head>
@@ -18,30 +19,99 @@
     </div>
     <div class="table-container">
         <h2 class="h3 mb-4 fw-bold">Поставщики</h2>
-        <div class="table-responsive">
-            <table class="table table-modern">
-                <thead>
-                <tr>
-                    <th>№</th>
-                    <th>Наименование</th>
-                    <th>ИНН</th>
-                    <th>Директор</th>
-                    <th>Контакт</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="supplier, index : ${allSuppliers}">
-                    <td th:text="${index.index+1}"></td>
-                    <td th:text="${supplier.getName()}"></td>
-                    <td th:text="${supplier.getInn()}"></td>
-                    <td th:text="${supplier.getDirectorShortName()}"></td>
-                    <td th:text="${supplier.getContactInfo()}"></td>
-                </tr>
-                </tbody>
-            </table>
+
+        <div th:if="${#lists.isEmpty(allSuppliers)}" class="text-center text-muted py-5">
+            <i class="bi bi-building" style="font-size: 3rem;"></i>
+            <p class="mt-3 fs-5">Поставщики не добавлены</p>
+        </div>
+
+        <div th:unless="${#lists.isEmpty(allSuppliers)}">
+            <div class="row g-2 mb-3">
+                <div class="col-md-8">
+                    <input type="text" id="searchInput" class="form-control"
+                           placeholder="Поиск по наименованию, ИНН, директору или контакту...">
+                </div>
+                <div class="col-md-2">
+                    <span id="resultCount" class="text-muted small d-flex align-items-center h-100"></span>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-outline-secondary w-100" onclick="resetFilters()">
+                        <i class="bi bi-x-circle me-1"></i>Сбросить
+                    </button>
+                </div>
+            </div>
+            <div id="noResultsMsg" class="text-center text-muted py-4" style="display:none;">
+                <i class="bi bi-search" style="font-size: 2rem;"></i>
+                <p class="mt-2">Ничего не найдено</p>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-modern" id="supplierTable">
+                    <thead>
+                    <tr>
+                        <th>№</th>
+                        <th>Наименование</th>
+                        <th>ИНН</th>
+                        <th>Директор</th>
+                        <th>Контакт</th>
+                        <th>Действия</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="supplier, index : ${allSuppliers}"
+                        th:data-name="${supplier.getName()}"
+                        th:data-inn="${supplier.getInn() != null ? supplier.getInn() : ''}"
+                        th:data-director="${supplier.getDirectorShortName() != null ? supplier.getDirectorShortName() : ''}"
+                        th:data-contact="${supplier.getContactInfo() != null ? supplier.getContactInfo() : ''}">
+                        <td th:text="${index.index+1}"></td>
+                        <td th:text="${supplier.getName()}"></td>
+                        <td th:text="${supplier.getInn()}"></td>
+                        <td th:text="${supplier.getDirectorShortName()}"></td>
+                        <td th:text="${supplier.getContactInfo()}"></td>
+                        <td>
+                            <a th:href="'/employee/accounter/reference/detailsSupplier/' + ${supplier.getId()}"
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> Подробнее
+                            </a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
 <div th:insert="~{blocks/footer :: footer}"></div>
+
+<script>
+    function filterSuppliers() {
+        var search = document.getElementById('searchInput').value.toLowerCase().trim();
+        var rows = document.querySelectorAll('#supplierTable tbody tr');
+        var visible = 0;
+        rows.forEach(function(row) {
+            var matchSearch = !search ||
+                row.dataset.name.toLowerCase().includes(search) ||
+                row.dataset.inn.toLowerCase().includes(search) ||
+                row.dataset.director.toLowerCase().includes(search) ||
+                row.dataset.contact.toLowerCase().includes(search);
+            row.style.display = matchSearch ? '' : 'none';
+            if (matchSearch) visible++;
+        });
+        var total = rows.length;
+        var counter = document.getElementById('resultCount');
+        var noResults = document.getElementById('noResultsMsg');
+        if (search) {
+            counter.textContent = 'Показано: ' + visible + ' из ' + total;
+            noResults.style.display = visible === 0 ? '' : 'none';
+        } else {
+            counter.textContent = '';
+            noResults.style.display = 'none';
+        }
+    }
+    function resetFilters() {
+        document.getElementById('searchInput').value = '';
+        filterSuppliers();
+    }
+    document.getElementById('searchInput').addEventListener('input', filterSuppliers);
+</script>
 </body>
 </html>

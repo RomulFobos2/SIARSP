@@ -1,0 +1,105 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Информация о клиенте (справочник) | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+            <div class="profile-card p-4">
+
+                <h1 class="page-title">Информация о клиенте</h1>
+                <p class="page-subtitle">Просмотр данных клиента (справочник)</p>
+
+                <div class="mb-4">
+                    <h6 class="form-section-title">Основные данные</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <input type="text" class="form-control info-display"
+                                   placeholder="Наименование"
+                                   th:value="${clientDTO.getOrganizationName()}" disabled>
+                        </div>
+                        <div class="col-md-6">
+                            <input type="text" class="form-control info-display"
+                                   placeholder="Тип организации"
+                                   th:value="${clientDTO.getOrganizationType()}" disabled>
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" class="form-control info-display"
+                                   placeholder="ИНН"
+                                   th:value="${clientDTO.getInn()}" disabled>
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" class="form-control info-display"
+                                   placeholder="КПП"
+                                   th:value="${clientDTO.getKpp()}" disabled>
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" class="form-control info-display"
+                                   placeholder="ОГРН"
+                                   th:value="${clientDTO.getOgrn()}" disabled>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <h6 class="form-section-title">Адреса</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <input type="text" class="form-control info-display"
+                                   placeholder="Юридический адрес"
+                                   th:value="${clientDTO.getLegalAddress()}" disabled>
+                        </div>
+                        <div class="col-md-6">
+                            <input type="text" class="form-control info-display"
+                                   placeholder="Адрес доставки"
+                                   th:value="${clientDTO.getDeliveryAddress()}" disabled>
+                        </div>
+                        <div class="col-md-6" th:if="${clientDTO.getDeliveryLatitude() != null and clientDTO.getDeliveryLongitude() != null}">
+                            <input type="text" class="form-control info-display"
+                                   placeholder="Координаты доставки"
+                                   th:value="${clientDTO.getDeliveryLatitude() + ', ' + clientDTO.getDeliveryLongitude()}" disabled>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <h6 class="form-section-title">Контактные данные</h6>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control info-display"
+                                   placeholder="Контактное лицо"
+                                   th:value="${clientDTO.getContactPerson()}" disabled>
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" class="form-control info-display"
+                                   placeholder="Телефон"
+                                   th:value="${clientDTO.getPhoneNumber()}" disabled>
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" class="form-control info-display"
+                                   placeholder="Email"
+                                   th:value="${clientDTO.getEmail()}" disabled>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="link-section">
+                    <a th:href="'/employee/accounter/reference/allClients'">← К списку клиентов</a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>

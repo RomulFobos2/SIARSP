@@ -137,4 +137,17 @@ public class SupplierService {
         List<Supplier> suppliers = supplierRepository.findAll();
         return SupplierMapper.INSTANCE.toDTOList(suppliers);
     }
+
+    /**
+     * Возвращает поставщика по ID в виде DTO
+     *
+     * @param id ID поставщика
+     * @return SupplierDTO или null если не найден
+     */
+    @Transactional(readOnly = true)
+    public SupplierDTO getSupplierById(Long id) {
+        return supplierRepository.findById(id)
+                .map(SupplierMapper.INSTANCE::toDTO)
+                .orElse(null);
+    }
 }

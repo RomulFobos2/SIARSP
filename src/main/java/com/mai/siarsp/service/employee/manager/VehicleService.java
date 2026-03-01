@@ -185,4 +185,17 @@ public class VehicleService {
         List<Vehicle> vehicles = vehicleRepository.findAll();
         return VehicleMapper.INSTANCE.toDTOList(vehicles);
     }
+
+    /**
+     * Возвращает ТС по ID в виде DTO
+     *
+     * @param id ID транспортного средства
+     * @return VehicleDTO или null если не найдено
+     */
+    @Transactional(readOnly = true)
+    public VehicleDTO getVehicleById(Long id) {
+        return vehicleRepository.findById(id)
+                .map(VehicleMapper.INSTANCE::toDTO)
+                .orElse(null);
+    }
 }

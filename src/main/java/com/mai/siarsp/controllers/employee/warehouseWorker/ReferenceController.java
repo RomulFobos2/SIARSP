@@ -1,5 +1,6 @@
 package com.mai.siarsp.controllers.employee.warehouseWorker;
 
+import com.mai.siarsp.dto.VehicleDTO;
 import com.mai.siarsp.models.Shelf;
 import com.mai.siarsp.models.StorageZone;
 import com.mai.siarsp.models.Warehouse;
@@ -69,5 +70,16 @@ public class ReferenceController {
         model.addAttribute("occupancyPercent", occupancyPercent);
 
         return "employee/warehouseWorker/reference/detailsWarehouse";
+    }
+
+    @Transactional(readOnly = true)
+    @GetMapping("/detailsVehicle/{id}")
+    public String detailsVehicle(@PathVariable Long id, Model model) {
+        VehicleDTO vehicleDTO = vehicleService.getVehicleById(id);
+        if (vehicleDTO == null) {
+            return "redirect:/employee/warehouseWorker/reference/allVehicles";
+        }
+        model.addAttribute("vehicleDTO", vehicleDTO);
+        return "employee/warehouseWorker/reference/detailsVehicle";
     }
 }
