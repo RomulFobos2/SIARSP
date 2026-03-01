@@ -30,6 +30,10 @@
                     <i class="bi bi-geo-alt"></i>
                     <span th:text="${warehouse.getAddress() != null ? warehouse.getAddress() : '—'}"></span>
                 </p>
+                <p th:if="${warehouse.getLatitude() != null and warehouse.getLongitude() != null}" class="text-muted mb-0">
+                    <i class="bi bi-pin-map"></i>
+                    Координаты: <span th:text="${warehouse.getLatitude()}"></span>, <span th:text="${warehouse.getLongitude()}"></span>
+                </p>
             </div>
             <span class="badge fs-6"
                   th:classappend="${warehouse.getType().name() == 'REFRIGERATOR'} ? 'bg-info text-dark' : 'bg-secondary'"
