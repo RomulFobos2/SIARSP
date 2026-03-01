@@ -4,6 +4,7 @@ import com.mai.siarsp.service.employee.manager.ClientService;
 import com.mai.siarsp.service.employee.manager.SupplierService;
 import com.mai.siarsp.service.employee.manager.VehicleService;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,18 +27,21 @@ public class ReferenceController {
         this.clientService = clientService;
     }
 
+    @Transactional
     @GetMapping("/allVehicles")
     public String allVehicles(Model model) {
         model.addAttribute("allVehicles", vehicleService.getAllVehicles());
         return "employee/accounter/reference/allVehicles";
     }
 
+    @Transactional
     @GetMapping("/allSuppliers")
     public String allSuppliers(Model model) {
         model.addAttribute("allSuppliers", supplierService.getAllSuppliers());
         return "employee/accounter/reference/allSuppliers";
     }
 
+    @Transactional
     @GetMapping("/allClients")
     public String allClients(Model model) {
         model.addAttribute("allClients", clientService.getAllClients().stream()

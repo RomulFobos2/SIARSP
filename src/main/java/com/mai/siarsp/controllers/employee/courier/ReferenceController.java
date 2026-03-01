@@ -28,6 +28,7 @@ public class ReferenceController {
         this.warehouseRepository = warehouseRepository;
     }
 
+    @Transactional
     @GetMapping("/allVehicles")
     public String allVehicles(Model model) {
         model.addAttribute("allVehicles", vehicleService.getAllVehicles());
