@@ -31,6 +31,9 @@
                 </div>
             </div>
 
+            <!-- Прогресс-бар доставки -->
+            <div th:replace="~{blocks/deliveryProgressBar :: progressBar(${task.status})}"></div>
+
             <!-- Информация о заказе -->
             <div class="row g-4 mb-4">
                 <div class="col-md-6">

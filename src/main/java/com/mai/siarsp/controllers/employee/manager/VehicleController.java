@@ -1,10 +1,13 @@
 package com.mai.siarsp.controllers.employee.manager;
 
 import com.mai.siarsp.dto.VehicleDTO;
+import com.mai.siarsp.enumeration.DeliveryTaskStatus;
 import com.mai.siarsp.enumeration.VehicleStatus;
 import com.mai.siarsp.enumeration.VehicleType;
 import com.mai.siarsp.mapper.VehicleMapper;
+import com.mai.siarsp.models.DeliveryTask;
 import com.mai.siarsp.models.Vehicle;
+import com.mai.siarsp.repo.DeliveryTaskRepository;
 import com.mai.siarsp.service.employee.manager.VehicleService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +19,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -37,9 +41,12 @@ import java.util.Map;
 public class VehicleController {
 
     private final VehicleService vehicleService;
+    private final DeliveryTaskRepository deliveryTaskRepository;
 
-    public VehicleController(VehicleService vehicleService) {
+    public VehicleController(VehicleService vehicleService,
+                             DeliveryTaskRepository deliveryTaskRepository) {
         this.vehicleService = vehicleService;
+        this.deliveryTaskRepository = deliveryTaskRepository;
     }
 
     /**
@@ -121,6 +128,22 @@ public class VehicleController {
         VehicleDTO vehicleDTO = VehicleMapper.INSTANCE.toDTO(vehicle);
 
         model.addAttribute("vehicleDTO", vehicleDTO);
+
+        // История доставок и пробеги
+        List<DeliveryTask> deliveryTasks = deliveryTaskRepository.findByVehicleIdWithDetails(id);
+        model.addAttribute("deliveryTasks", deliveryTasks);
+
+        long totalDeliveries = deliveryTasks.stream()
+                .filter(dt -> dt.getStatus() == DeliveryTaskStatus.DELIVERED)
+                .count();
+        model.addAttribute("totalDeliveries", totalDeliveries);
+
+        int totalMileage = deliveryTasks.stream()
+                .filter(dt -> dt.getTotalMileage() != null)
+                .mapToInt(DeliveryTask::getTotalMileage)
+                .sum();
+        model.addAttribute("totalMileage", totalMileage);
+
         return "employee/manager/vehicles/detailsVehicle";
     }
 
