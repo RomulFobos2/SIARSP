@@ -46,6 +46,7 @@
                                   th:text="${task.status.displayName}"
                                   th:classappend="${task.status.name() == 'PENDING' ? 'bg-secondary' :
                                                    task.status.name() == 'LOADING' ? 'bg-warning text-dark' :
+                                                   task.status.name() == 'LOADED' ? 'bg-info' :
                                                    task.status.name() == 'IN_TRANSIT' ? 'bg-primary' :
                                                    task.status.name() == 'DELIVERED' ? 'bg-success' :
                                                    task.status.name() == 'CANCELLED' ? 'bg-danger' : 'bg-secondary'}"></span>

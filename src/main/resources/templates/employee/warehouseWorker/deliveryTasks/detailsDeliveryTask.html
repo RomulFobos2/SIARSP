@@ -24,8 +24,10 @@
                           th:text="${task.status.displayName}"
                           th:classappend="${task.status.name() == 'PENDING' ? 'bg-secondary' :
                                            task.status.name() == 'LOADING' ? 'bg-warning text-dark' :
+                                           task.status.name() == 'LOADED' ? 'bg-info' :
                                            task.status.name() == 'IN_TRANSIT' ? 'bg-primary' :
-                                           task.status.name() == 'DELIVERED' ? 'bg-success' : 'bg-secondary'}"></span>
+                                           task.status.name() == 'DELIVERED' ? 'bg-success' :
+                                           task.status.name() == 'CANCELLED' ? 'bg-danger' : 'bg-secondary'}"></span>
                 </div>
             </div>
 
@@ -62,6 +64,7 @@
                         <th>Товар</th>
                         <th>Артикул</th>
                         <th>Количество</th>
+                        <th>Местоположение на складе</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -70,6 +73,21 @@
                         <td th:text="${op.product.name}"></td>
                         <td th:text="${op.product.article}"></td>
                         <td th:text="${op.quantity}"></td>
+                        <td>
+                            <th:block th:with="locations=${productLocations.get(op.product.id)}">
+                                <div th:if="${locations != null and !locations.isEmpty()}">
+                                    <div th:each="zp : ${locations}" class="mb-1">
+                                        <small>
+                                            <span th:text="${zp.zone.shelf.warehouse.name}" class="fw-semibold"></span>
+                                            &rarr; <span th:text="${zp.zone.shelf.code}"></span>
+                                            &rarr; <span th:text="${zp.zone.label}"></span>:
+                                            <span th:text="${zp.quantity}" class="fw-bold"></span> шт.
+                                        </small>
+                                    </div>
+                                </div>
+                                <span th:if="${locations == null or locations.isEmpty()}" class="text-muted">—</span>
+                            </th:block>
+                        </td>
                     </tr>
                     </tbody>
                 </table>
@@ -91,6 +109,11 @@
                       onsubmit="return confirm('Вы уверены? После завершения погрузки товар будет отгружен (списан со склада).');">
                     <button type="submit" class="btn btn-success">Погрузка завершена</button>
                 </form>
+
+                <!-- LOADED -->
+                <div th:if="${task.status.name() == 'LOADED'}" class="alert alert-info mb-0">
+                    Погрузка завершена. Ожидает отправки.
+                </div>
 
                 <!-- Другие статусы -->
                 <div th:if="${task.status.name() == 'IN_TRANSIT'}" class="alert alert-info mb-0">
