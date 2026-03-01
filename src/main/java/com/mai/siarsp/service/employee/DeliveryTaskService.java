@@ -358,6 +358,93 @@ public class DeliveryTaskService {
         }
     }
 
+    // ========== ПОДГОТОВКА ДОКУМЕНТОВ (COURIER) ==========
+
+    /**
+     * Создаёт или обновляет ТТН для задачи на доставку
+     */
+    @Transactional
+    public boolean createOrUpdateTTN(Long taskId, String cargoDescription,
+                                     Double totalWeight, Double totalVolume, String comment) {
+        try {
+            Optional<DeliveryTask> optTask = deliveryTaskRepository.findByIdWithDetails(taskId);
+            if (optTask.isEmpty()) {
+                log.error("Задача с id={} не найдена", taskId);
+                return false;
+            }
+            DeliveryTask task = optTask.get();
+
+            TTN ttn = task.getTtn();
+            if (ttn == null) {
+                String ttnNumber = generateTTNNumber();
+                ttn = new TTN(ttnNumber, task, task.getVehicle(), task.getDriver());
+                task.setTtnNumber(ttnNumber);
+            }
+
+            ttn.setCargoDescription(cargoDescription);
+            ttn.setTotalWeight(totalWeight);
+            ttn.setTotalVolume(totalVolume);
+            ttn.setComment(comment);
+
+            ttnRepository.save(ttn);
+            deliveryTaskRepository.save(task);
+
+            log.info("ТТН для задачи id={} сохранена (номер {})", taskId, ttn.getTtnNumber());
+            return true;
+
+        } catch (Exception e) {
+            log.error("Ошибка при сохранении ТТН: {}", e.getMessage(), e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return false;
+        }
+    }
+
+    /**
+     * Создаёт или обновляет акт приёма-передачи для задачи
+     */
+    @Transactional
+    public boolean createOrUpdateAcceptanceAct(Long taskId, String actComment) {
+        try {
+            Optional<DeliveryTask> optTask = deliveryTaskRepository.findByIdWithDetails(taskId);
+            if (optTask.isEmpty()) {
+                log.error("Задача с id={} не найдена", taskId);
+                return false;
+            }
+            DeliveryTask task = optTask.get();
+            ClientOrder order = task.getClientOrder();
+
+            Optional<AcceptanceAct> optAct = acceptanceActRepository.findByClientOrder(order);
+            AcceptanceAct act;
+            if (optAct.isPresent()) {
+                act = optAct.get();
+            } else {
+                String actNumber = generateActNumber();
+                act = new AcceptanceAct(actNumber, order, order.getClient(), task.getDriver());
+            }
+
+            act.setComment(actComment);
+            acceptanceActRepository.save(act);
+
+            log.info("Акт приёма-передачи для задачи id={} сохранён (номер {})", taskId, act.getActNumber());
+            return true;
+
+        } catch (Exception e) {
+            log.error("Ошибка при сохранении акта: {}", e.getMessage(), e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return false;
+        }
+    }
+
+    /**
+     * Получить акт приёма-передачи для задачи (если создан)
+     */
+    @Transactional(readOnly = true)
+    public Optional<AcceptanceAct> getAcceptanceActByTask(Long taskId) {
+        Optional<DeliveryTask> optTask = deliveryTaskRepository.findById(taskId);
+        if (optTask.isEmpty()) return Optional.empty();
+        return acceptanceActRepository.findByClientOrder(optTask.get().getClientOrder());
+    }
+
     // ========== ДОСТАВКА (COURIER) ==========
 
     /**
@@ -505,10 +592,18 @@ public class DeliveryTaskService {
             vehicle.setStatus(VehicleStatus.AVAILABLE);
             vehicleRepository.save(vehicle);
 
-            // AcceptanceAct
-            String actNumber = generateActNumber();
-            AcceptanceAct act = new AcceptanceAct(actNumber, order, order.getClient(), task.getDriver());
-            act.setComment(actComment);
+            // AcceptanceAct — использовать существующий или создать новый
+            Optional<AcceptanceAct> optAct = acceptanceActRepository.findByClientOrder(order);
+            AcceptanceAct act;
+            if (optAct.isPresent()) {
+                act = optAct.get();
+            } else {
+                String actNumber = generateActNumber();
+                act = new AcceptanceAct(actNumber, order, order.getClient(), task.getDriver());
+            }
+            if (actComment != null && !actComment.isBlank()) {
+                act.setComment(actComment);
+            }
             if (clientRepresentative != null && !clientRepresentative.isBlank()) {
                 act.markAsSigned(clientRepresentative);
             }

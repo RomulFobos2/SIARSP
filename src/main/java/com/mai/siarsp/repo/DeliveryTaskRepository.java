@@ -55,4 +55,10 @@ public interface DeliveryTaskRepository extends JpaRepository<DeliveryTask, Long
     List<DeliveryTask> findByDriverIdOrderByPlannedStartTimeDesc(Long driverId);
 
     List<DeliveryTask> findByDriverIdAndStatusInOrderByPlannedStartTimeDesc(Long driverId, List<DeliveryTaskStatus> statuses);
+
+    @Query("SELECT DISTINCT dt FROM DeliveryTask dt LEFT JOIN FETCH dt.clientOrder co " +
+           "LEFT JOIN FETCH co.client LEFT JOIN FETCH dt.driver " +
+           "LEFT JOIN FETCH dt.vehicle " +
+           "WHERE dt.vehicle.id = :vehicleId ORDER BY dt.plannedStartTime DESC")
+    List<DeliveryTask> findByVehicleIdWithDetails(@Param("vehicleId") Long vehicleId);
 }

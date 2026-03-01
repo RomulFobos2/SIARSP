@@ -31,6 +31,9 @@
                 </div>
             </div>
 
+            <!-- Прогресс-бар доставки -->
+            <div th:replace="~{blocks/deliveryProgressBar :: progressBar(${task.status})}"></div>
+
             <!-- Информация -->
             <div class="row g-4 mb-4">
                 <div class="col-md-6">
@@ -105,22 +108,39 @@
                 Идёт погрузка. Ожидайте завершения.
             </div>
 
-            <!-- LOADED: начать доставку -->
-            <div th:if="${task.status.name() == 'LOADED'}" class="card border-0 bg-light mb-4">
-                <div class="card-body">
-                    <h6 class="card-title fw-bold">Начать доставку</h6>
-                    <form th:action="'/employee/courier/deliveryTasks/startDelivery/' + ${task.id}" method="post">
-                        <div class="row g-3 align-items-end">
-                            <div class="col-md-4">
-                                <label for="startMileage" class="form-label">Начальный пробег (км)</label>
-                                <input type="number" id="startMileage" name="startMileage" class="form-control"
-                                       min="0" required placeholder="Текущий пробег">
-                            </div>
-                            <div class="col-md-4">
-                                <button type="submit" class="btn btn-primary">Начать доставку</button>
-                            </div>
+            <!-- LOADED: документы и начало доставки -->
+            <div th:if="${task.status.name() == 'LOADED'}" class="mb-4">
+                <!-- Статус документов -->
+                <div class="card border-0 bg-light mb-3">
+                    <div class="card-body">
+                        <h6 class="card-title fw-bold">Документы</h6>
+                        <div class="d-flex gap-3 align-items-center mb-3">
+                            <span>ТТН:</span>
+                            <span th:if="${task.ttn != null}" class="badge bg-success">Оформлена</span>
+                            <span th:unless="${task.ttn != null}" class="badge bg-warning text-dark">Не оформлена</span>
                         </div>
-                    </form>
+                        <a th:href="'/employee/courier/deliveryTasks/editDocuments/' + ${task.id}"
+                           class="btn btn-outline-primary">Подготовить документы</a>
+                    </div>
+                </div>
+
+                <!-- Начать доставку -->
+                <div class="card border-0 bg-light">
+                    <div class="card-body">
+                        <h6 class="card-title fw-bold">Начать доставку</h6>
+                        <form th:action="'/employee/courier/deliveryTasks/startDelivery/' + ${task.id}" method="post">
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-4">
+                                    <label for="startMileage" class="form-label">Начальный пробег (км)</label>
+                                    <input type="number" id="startMileage" name="startMileage" class="form-control"
+                                           min="0" required placeholder="Текущий пробег">
+                                </div>
+                                <div class="col-md-4">
+                                    <button type="submit" class="btn btn-primary">Начать доставку</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
 
@@ -165,9 +185,9 @@
                                            min="0" required placeholder="Текущий пробег">
                                 </div>
                                 <div class="col-md-4">
-                                    <label for="clientRepresentative" class="form-label">ФИО представителя клиента</label>
+                                    <label for="clientRepresentative" class="form-label">ФИО представителя клиента <span class="text-danger">*</span></label>
                                     <input type="text" id="clientRepresentative" name="clientRepresentative"
-                                           class="form-control" placeholder="Иванова М.П., заведующая">
+                                           class="form-control" required placeholder="Иванова М.П., заведующая">
                                 </div>
                                 <div class="col-md-4">
                                     <label for="actComment" class="form-label">Комментарий к акту</label>
