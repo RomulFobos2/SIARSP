@@ -90,6 +90,71 @@
             </div>
         </div>
 
+        <!-- Статистика пробегов -->
+        <div class="mb-4">
+            <h6 class="form-section-title">Статистика</h6>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body text-center">
+                            <h4 class="fw-bold mb-1" th:text="${totalDeliveries}"></h4>
+                            <small class="text-muted">Завершённых доставок</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body text-center">
+                            <h4 class="fw-bold mb-1" th:text="${totalMileage + ' км'}"></h4>
+                            <small class="text-muted">Общий пробег</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- История доставок -->
+        <div class="mb-4" th:if="${!#lists.isEmpty(deliveryTasks)}">
+            <h6 class="form-section-title">История доставок</h6>
+            <div class="table-responsive">
+                <table class="table table-modern">
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Заказ</th>
+                        <th>Клиент</th>
+                        <th>Дата</th>
+                        <th>Пробег нач.</th>
+                        <th>Пробег кон.</th>
+                        <th>Пробег</th>
+                        <th>Статус</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="dt, idx : ${deliveryTasks}">
+                        <td th:text="${idx.index + 1}"></td>
+                        <td th:text="${dt.clientOrder.orderNumber}"></td>
+                        <td th:text="${dt.clientOrder.client.organizationName}"></td>
+                        <td th:text="${dt.actualStartTime != null ? #temporals.format(dt.actualStartTime, 'dd.MM.yyyy') : (dt.plannedStartTime != null ? #temporals.format(dt.plannedStartTime, 'dd.MM.yyyy') : '—')}"></td>
+                        <td th:text="${dt.startMileage != null ? dt.startMileage + ' км' : '—'}"></td>
+                        <td th:text="${dt.endMileage != null ? dt.endMileage + ' км' : '—'}"></td>
+                        <td th:text="${dt.totalMileage != null ? dt.totalMileage + ' км' : '—'}"></td>
+                        <td>
+                            <span class="badge"
+                                  th:text="${dt.status.displayName}"
+                                  th:classappend="${dt.status.name() == 'PENDING' ? 'bg-secondary' :
+                                                   dt.status.name() == 'LOADING' ? 'bg-warning text-dark' :
+                                                   dt.status.name() == 'LOADED' ? 'bg-info' :
+                                                   dt.status.name() == 'IN_TRANSIT' ? 'bg-primary' :
+                                                   dt.status.name() == 'DELIVERED' ? 'bg-success' :
+                                                   dt.status.name() == 'CANCELLED' ? 'bg-danger' : 'bg-secondary'}"></span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <div class="action-buttons mb-4">
             <button th:onclick="'window.location.href=\'/employee/manager/vehicles/editVehicle/' + ${vehicleDTO.getId()} + '\';'"
                     class="btn btn-primary btn-profile">

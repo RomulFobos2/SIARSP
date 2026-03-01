@@ -1,5 +1,6 @@
 package com.mai.siarsp.controllers.employee.courier;
 
+import com.mai.siarsp.models.AcceptanceAct;
 import com.mai.siarsp.models.DeliveryTask;
 import com.mai.siarsp.models.Employee;
 import com.mai.siarsp.service.employee.DeliveryTaskService;
@@ -79,10 +80,47 @@ public class DeliveryTaskController {
         return "redirect:/employee/courier/deliveryTasks/detailsDeliveryTask/" + id;
     }
 
+    @Transactional(readOnly = true)
+    @GetMapping("/editDocuments/{id}")
+    public String editDocuments(@PathVariable Long id, Model model) {
+        Optional<DeliveryTask> optTask = deliveryTaskService.getTaskById(id);
+        if (optTask.isEmpty()) {
+            return "redirect:/employee/courier/deliveryTasks/myDeliveryTasks";
+        }
+
+        DeliveryTask task = optTask.get();
+        model.addAttribute("task", task);
+
+        // Предзаполнить акт если есть
+        Optional<AcceptanceAct> optAct = deliveryTaskService.getAcceptanceActByTask(id);
+        optAct.ifPresent(act -> model.addAttribute("acceptanceAct", act));
+
+        return "employee/courier/deliveryTasks/editDocuments";
+    }
+
+    @PostMapping("/saveDocuments/{id}")
+    public String saveDocuments(@PathVariable Long id,
+                                @RequestParam(required = false) String cargoDescription,
+                                @RequestParam(required = false) Double totalWeight,
+                                @RequestParam(required = false) Double totalVolume,
+                                @RequestParam(required = false) String ttnComment,
+                                @RequestParam(required = false) String actComment,
+                                RedirectAttributes redirectAttributes) {
+        boolean ttnOk = deliveryTaskService.createOrUpdateTTN(id, cargoDescription, totalWeight, totalVolume, ttnComment);
+        boolean actOk = deliveryTaskService.createOrUpdateAcceptanceAct(id, actComment);
+
+        if (!ttnOk || !actOk) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при сохранении документов.");
+        } else {
+            redirectAttributes.addFlashAttribute("successMessage", "Документы сохранены.");
+        }
+        return "redirect:/employee/courier/deliveryTasks/detailsDeliveryTask/" + id;
+    }
+
     @PostMapping("/completeDelivery/{id}")
     public String completeDelivery(@PathVariable Long id,
                                    @RequestParam Integer endMileage,
-                                   @RequestParam(required = false) String clientRepresentative,
+                                   @RequestParam String clientRepresentative,
                                    @RequestParam(required = false) String actComment,
                                    RedirectAttributes redirectAttributes) {
         if (!deliveryTaskService.completeDelivery(id, endMileage, clientRepresentative, actComment)) {

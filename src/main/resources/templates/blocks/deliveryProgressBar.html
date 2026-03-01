@@ -1,0 +1,78 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<!--
+    Прогресс-бар доставки
+    Использование: <div th:replace="~{blocks/deliveryProgressBar :: progressBar(${task.status})}"></div>
+-->
+<div th:fragment="progressBar(status)">
+
+    <!-- Обычный прогресс (не CANCELLED) -->
+    <div th:if="${status.name() != 'CANCELLED'}" class="delivery-progress">
+
+        <!--/*@thymesVar id="stepIndex" type="int"*/-->
+        <th:block th:with="stepIndex=${
+            status.name() == 'PENDING' ? 0 :
+            status.name() == 'LOADING' ? 1 :
+            status.name() == 'LOADED' ? 2 :
+            status.name() == 'IN_TRANSIT' ? 3 : 4}">
+
+            <!-- Шаг 1: Ожидание -->
+            <div class="delivery-progress-step"
+                 th:classappend="${stepIndex > 0 ? 'completed' : (stepIndex == 0 ? 'active' : '')}">
+                <div class="delivery-progress-icon">&#9200;</div>
+                <div class="delivery-progress-label">Ожидание</div>
+            </div>
+
+            <div class="delivery-progress-line"
+                 th:classappend="${stepIndex > 1 ? 'completed' : (stepIndex == 1 ? 'active' : '')}"></div>
+
+            <!-- Шаг 2: Погрузка -->
+            <div class="delivery-progress-step"
+                 th:classappend="${stepIndex > 1 ? 'completed' : (stepIndex == 1 ? 'active' : '')}">
+                <div class="delivery-progress-icon">&#128230;</div>
+                <div class="delivery-progress-label">Погрузка</div>
+            </div>
+
+            <div class="delivery-progress-line"
+                 th:classappend="${stepIndex > 2 ? 'completed' : (stepIndex == 2 ? 'active' : '')}"></div>
+
+            <!-- Шаг 3: Готово к отправке -->
+            <div class="delivery-progress-step"
+                 th:classappend="${stepIndex > 2 ? 'completed' : (stepIndex == 2 ? 'active' : '')}">
+                <div class="delivery-progress-icon">&#9989;</div>
+                <div class="delivery-progress-label">Готово</div>
+            </div>
+
+            <div class="delivery-progress-line"
+                 th:classappend="${stepIndex > 3 ? 'completed' : (stepIndex == 3 ? 'active' : '')}"></div>
+
+            <!-- Шаг 4: В пути -->
+            <div class="delivery-progress-step"
+                 th:classappend="${stepIndex > 3 ? 'completed' : (stepIndex == 3 ? 'active' : '')}">
+                <div class="delivery-progress-icon">&#128666;</div>
+                <div class="delivery-progress-label">В пути</div>
+            </div>
+
+            <div class="delivery-progress-line"
+                 th:classappend="${stepIndex == 4 ? 'completed' : ''}"></div>
+
+            <!-- Шаг 5: Доставлено -->
+            <div class="delivery-progress-step"
+                 th:classappend="${stepIndex == 4 ? 'active' : ''}">
+                <div class="delivery-progress-icon">&#127937;</div>
+                <div class="delivery-progress-label">Доставлено</div>
+            </div>
+
+        </th:block>
+    </div>
+
+    <!-- CANCELLED -->
+    <div th:if="${status.name() == 'CANCELLED'}" class="delivery-progress">
+        <div class="delivery-progress-step cancelled">
+            <div class="delivery-progress-icon">&#10060;</div>
+            <div class="delivery-progress-label">Отменено</div>
+        </div>
+    </div>
+
+</div>
+</html>
