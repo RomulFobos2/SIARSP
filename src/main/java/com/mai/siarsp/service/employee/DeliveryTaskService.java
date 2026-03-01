@@ -22,7 +22,7 @@ import java.util.Random;
  *
  * Бизнес-процесс доставки:
  * 1. Заведующий складом создаёт задачу → PENDING, назначает водителя и автомобиль
- * 2. Складской работник выполняет погрузку → LOADING, завершает → LOADED, ClientOrder SHIPPED, stock↓, ZoneProduct↓
+ * 2. Складской работник выполняет погрузку → LOADING, завершает → ClientOrder SHIPPED, stock↓
  * 3. Бухгалтер оформляет ТТН
  * 4. Водитель-экспедитор начинает доставку → IN_TRANSIT, завершает → DELIVERED, ClientOrder DELIVERED
  */
@@ -40,7 +40,6 @@ public class DeliveryTaskService {
     private final ProductRepository productRepository;
     private final TTNRepository ttnRepository;
     private final AcceptanceActRepository acceptanceActRepository;
-    private final ZoneProductRepository zoneProductRepository;
     private final NotificationService notificationService;
 
     public DeliveryTaskService(DeliveryTaskRepository deliveryTaskRepository,
@@ -50,7 +49,6 @@ public class DeliveryTaskService {
                                ProductRepository productRepository,
                                TTNRepository ttnRepository,
                                AcceptanceActRepository acceptanceActRepository,
-                               ZoneProductRepository zoneProductRepository,
                                NotificationService notificationService) {
         this.deliveryTaskRepository = deliveryTaskRepository;
         this.clientOrderRepository = clientOrderRepository;
@@ -59,7 +57,6 @@ public class DeliveryTaskService {
         this.productRepository = productRepository;
         this.ttnRepository = ttnRepository;
         this.acceptanceActRepository = acceptanceActRepository;
-        this.zoneProductRepository = zoneProductRepository;
         this.notificationService = notificationService;
     }
 
@@ -266,31 +263,13 @@ public class DeliveryTaskService {
                 return false;
             }
 
-            // Списание со склада: уменьшить stockQuantity, reservedQuantity и ZoneProduct
+            // Списание со склада: уменьшить stockQuantity и reservedQuantity
             for (OrderedProduct op : order.getOrderedProducts()) {
                 Product product = op.getProduct();
                 product.setStockQuantity(Math.max(0, product.getStockQuantity() - op.getQuantity()));
                 product.setReservedQuantity(Math.max(0, product.getReservedQuantity() - op.getQuantity()));
                 productRepository.save(product);
-
-                // Списание из зон хранения
-                List<ZoneProduct> zoneProducts = zoneProductRepository.findByProduct(product);
-                int remaining = op.getQuantity();
-                for (ZoneProduct zp : zoneProducts) {
-                    if (remaining <= 0) break;
-                    if (zp.getQuantity() <= remaining) {
-                        remaining -= zp.getQuantity();
-                        zoneProductRepository.delete(zp);
-                    } else {
-                        zp.setQuantity(zp.getQuantity() - remaining);
-                        zoneProductRepository.save(zp);
-                        remaining = 0;
-                    }
-                }
             }
-
-            // DeliveryTask → LOADED (ожидает отправки)
-            task.setStatus(DeliveryTaskStatus.LOADED);
 
             // ClientOrder → SHIPPED
             order.setStatus(ClientOrderStatus.SHIPPED);
@@ -302,7 +281,7 @@ public class DeliveryTaskService {
             notificationService.createNotification(task.getDriver(),
                     "Погрузка заказа №" + order.getOrderNumber() + " завершена. Можно начинать доставку.");
 
-            log.info("Задача id={}: погрузка завершена (статус LOADED), заказ №{} отгружен",
+            log.info("Задача id={}: погрузка завершена, заказ №{} отгружен",
                     taskId, order.getOrderNumber());
             return true;
 
@@ -361,7 +340,7 @@ public class DeliveryTaskService {
     // ========== ДОСТАВКА (COURIER) ==========
 
     /**
-     * Начинает доставку (LOADED → IN_TRANSIT)
+     * Начинает доставку (LOADING → IN_TRANSIT)
      */
     @Transactional
     public boolean startDelivery(Long taskId, Integer startMileage) {
@@ -373,8 +352,8 @@ public class DeliveryTaskService {
             }
             DeliveryTask task = optTask.get();
 
-            if (task.getStatus() != DeliveryTaskStatus.LOADED) {
-                log.error("Задача id={} не в статусе LOADED (текущий: {})", taskId, task.getStatus());
+            if (task.getStatus() != DeliveryTaskStatus.LOADING) {
+                log.error("Задача id={} не в статусе LOADING (текущий: {})", taskId, task.getStatus());
                 return false;
             }
 

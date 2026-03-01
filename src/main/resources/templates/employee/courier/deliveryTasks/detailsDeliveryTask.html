@@ -24,7 +24,6 @@
                           th:text="${task.status.displayName}"
                           th:classappend="${task.status.name() == 'PENDING' ? 'bg-secondary' :
                                            task.status.name() == 'LOADING' ? 'bg-warning text-dark' :
-                                           task.status.name() == 'LOADED' ? 'bg-info' :
                                            task.status.name() == 'IN_TRANSIT' ? 'bg-primary' :
                                            task.status.name() == 'DELIVERED' ? 'bg-success' :
                                            task.status.name() == 'CANCELLED' ? 'bg-danger' : 'bg-secondary'}"></span>
@@ -100,13 +99,8 @@
                 Ожидание начала погрузки.
             </div>
 
-            <!-- LOADING: идёт погрузка -->
-            <div th:if="${task.status.name() == 'LOADING'}" class="alert alert-warning mb-4">
-                Идёт погрузка. Ожидайте завершения.
-            </div>
-
-            <!-- LOADED: начать доставку -->
-            <div th:if="${task.status.name() == 'LOADED'}" class="card border-0 bg-light mb-4">
+            <!-- LOADING: начать доставку -->
+            <div th:if="${task.status.name() == 'LOADING'}" class="card border-0 bg-light mb-4">
                 <div class="card-body">
                     <h6 class="card-title fw-bold">Начать доставку</h6>
                     <form th:action="'/employee/courier/deliveryTasks/startDelivery/' + ${task.id}" method="post">
