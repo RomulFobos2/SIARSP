@@ -87,7 +87,7 @@ public class NotificationService {
      * @return список NotificationDTO
      */
     public List<NotificationDTO> getNotificationsForEmployee(Long employeeId) {
-        List<Notification> notifications = notificationRepository.findByRecipientIdOrderByCreatedAtDesc(employeeId);
+        List<Notification> notifications = notificationRepository.findByRecipientIdAndVisibleTrueOrderByCreatedAtDesc(employeeId);
         return NotificationMapper.INSTANCE.toDTOList(notifications);
     }
 
@@ -105,13 +105,13 @@ public class NotificationService {
         boolean hasSearch = search != null && !search.isBlank();
 
         if (status != null && hasSearch) {
-            page = notificationRepository.findByRecipientIdAndStatusAndTextContainingIgnoreCaseOrderByCreatedAtDesc(employeeId, status, search, pageable);
+            page = notificationRepository.findByRecipientIdAndVisibleTrueAndStatusAndTextContainingIgnoreCaseOrderByCreatedAtDesc(employeeId, status, search, pageable);
         } else if (status != null) {
-            page = notificationRepository.findByRecipientIdAndStatusOrderByCreatedAtDesc(employeeId, status, pageable);
+            page = notificationRepository.findByRecipientIdAndVisibleTrueAndStatusOrderByCreatedAtDesc(employeeId, status, pageable);
         } else if (hasSearch) {
-            page = notificationRepository.findByRecipientIdAndTextContainingIgnoreCaseOrderByCreatedAtDesc(employeeId, search, pageable);
+            page = notificationRepository.findByRecipientIdAndVisibleTrueAndTextContainingIgnoreCaseOrderByCreatedAtDesc(employeeId, search, pageable);
         } else {
-            page = notificationRepository.findByRecipientIdOrderByCreatedAtDesc(employeeId, pageable);
+            page = notificationRepository.findByRecipientIdAndVisibleTrueOrderByCreatedAtDesc(employeeId, pageable);
         }
 
         return page.map(NotificationMapper.INSTANCE::toDTO);
@@ -124,7 +124,7 @@ public class NotificationService {
      * @return количество непрочитанных
      */
     public long getUnreadCount(Long employeeId) {
-        return notificationRepository.countByRecipientIdAndStatus(employeeId, NotificationStatus.NEW);
+        return notificationRepository.countByRecipientIdAndStatusAndVisibleTrue(employeeId, NotificationStatus.NEW);
     }
 
     /**
@@ -150,11 +150,31 @@ public class NotificationService {
     @Transactional
     public void markAllAsRead(Long employeeId) {
         List<Notification> unread = notificationRepository
-                .findByRecipientIdAndStatusOrderByCreatedAtDesc(employeeId, NotificationStatus.NEW);
+                .findByRecipientIdAndVisibleTrueAndStatusOrderByCreatedAtDesc(employeeId, NotificationStatus.NEW);
         for (Notification notification : unread) {
             notification.setStatus(NotificationStatus.READ);
         }
         notificationRepository.saveAll(unread);
         log.info("Все уведомления сотрудника id={} отмечены как прочитанные ({} шт.).", employeeId, unread.size());
+    }
+
+    /**
+     * Скрывает уведомление (устанавливает visible = false).
+     * Уведомление остаётся в БД для расследования, но не отображается пользователю.
+     *
+     * @param notificationId ID уведомления
+     * @return true при успешном скрытии
+     */
+    @Transactional
+    public boolean hideNotification(Long notificationId) {
+        Optional<Notification> optional = notificationRepository.findById(notificationId);
+        if (optional.isPresent()) {
+            Notification notification = optional.get();
+            notification.setVisible(false);
+            notificationRepository.save(notification);
+            log.info("Уведомление id={} скрыто.", notificationId);
+            return true;
+        }
+        return false;
     }
 }

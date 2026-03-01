@@ -103,6 +103,15 @@ public class NotificationController {
     }
 
     /**
+     * Скрывает уведомление (устанавливает visible = false)
+     */
+    @GetMapping("/employee/notifications/hide/{id}")
+    public String hideNotification(@PathVariable Long id) {
+        notificationService.hideNotification(id);
+        return "redirect:/employee/notifications/";
+    }
+
+    /**
      * AJAX-эндпоинт: возвращает количество непрочитанных уведомлений
      * Используется для badge в header
      */
