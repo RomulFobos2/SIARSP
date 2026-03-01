@@ -97,7 +97,15 @@ public class DeliveryTaskService {
 
     @Transactional(readOnly = true)
     public Optional<DeliveryTask> getTaskById(Long id) {
-        return deliveryTaskRepository.findByIdWithDetails(id);
+        Optional<DeliveryTask> optTask = deliveryTaskRepository.findByIdWithDetails(id);
+        optTask.ifPresent(task -> {
+            ClientOrder clientOrder = task.getClientOrder();
+            if (clientOrder != null) {
+                clientOrderRepository.findByIdWithDetails(clientOrder.getId())
+                        .ifPresent(task::setClientOrder);
+            }
+        });
+        return optTask;
     }
 
     @Transactional(readOnly = true)
