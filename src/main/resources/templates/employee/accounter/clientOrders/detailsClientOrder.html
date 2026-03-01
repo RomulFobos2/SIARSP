@@ -104,6 +104,19 @@
                 <p class="text-muted" th:text="${order.comment}"></p>
             </div>
 
+            <!-- Документы -->
+            <div th:if="${order.deliveryTask != null and (order.deliveryTask.ttn != null or order.acceptanceAct != null)}" class="mb-4">
+                <h5 class="fw-bold mb-3">Документы</h5>
+                <div class="d-flex gap-2">
+                    <a th:if="${order.deliveryTask.ttn != null}"
+                       th:href="'/employee/accounter/clientOrders/detailsTTN/' + ${order.id}"
+                       class="btn btn-outline-secondary">Просмотр ТТН</a>
+                    <a th:if="${order.acceptanceAct != null}"
+                       th:href="'/employee/accounter/clientOrders/detailsAcceptanceAct/' + ${order.id}"
+                       class="btn btn-outline-secondary">Просмотр акта</a>
+                </div>
+            </div>
+
             <div class="link-section">
                 <a href="/employee/accounter/clientOrders/allClientOrders">&larr; К списку заказов</a>
             </div>

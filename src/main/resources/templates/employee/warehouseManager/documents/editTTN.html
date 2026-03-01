@@ -1,0 +1,69 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Редактирование ТТН | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+<header th:insert="~{blocks/header :: header}"></header>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+
+            <h1 class="page-title mb-4">Редактирование ТТН <span th:text="${ttn.ttnNumber}"></span></h1>
+
+            <div class="card border-0 bg-light mb-4">
+                <div class="card-body">
+                    <p class="mb-1"><strong>Заказ:</strong> <span th:text="${order.orderNumber}"></span></p>
+                    <p class="mb-1"><strong>Клиент:</strong> <span th:text="${order.client.organizationName}"></span></p>
+                    <p class="mb-0"><strong>Дата выдачи:</strong>
+                        <span th:text="${#temporals.format(ttn.issueDate, 'dd.MM.yyyy')}"></span></p>
+                </div>
+            </div>
+
+            <form th:action="'/employee/warehouseManager/clientOrders/saveTTN/' + ${order.id}" method="post">
+                <input type="hidden" name="ttnId" th:value="${ttn.id}"/>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Описание груза</label>
+                    <textarea name="cargoDescription" class="form-control" rows="3"
+                              placeholder="Например: Молочная продукция, хлебобулочные изделия"
+                              th:text="${ttn.cargoDescription}"></textarea>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Общий вес (кг)</label>
+                        <input type="number" name="totalWeight" class="form-control" step="0.1"
+                               placeholder="0.0" th:value="${ttn.totalWeight}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Общий объём (м³)</label>
+                        <input type="number" name="totalVolume" class="form-control" step="0.01"
+                               placeholder="0.00" th:value="${ttn.totalVolume}">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Комментарий</label>
+                    <textarea name="comment" class="form-control" rows="2"
+                              placeholder="Особые условия перевозки..."
+                              th:text="${ttn.comment}"></textarea>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                    <a th:href="'/employee/warehouseManager/clientOrders/detailsTTN/' + ${order.id}"
+                       class="btn btn-outline-secondary">Отмена</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>

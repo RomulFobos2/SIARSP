@@ -119,8 +119,14 @@
                             <span th:if="${task.ttn != null}" class="badge bg-success">Оформлена</span>
                             <span th:unless="${task.ttn != null}" class="badge bg-warning text-dark">Не оформлена</span>
                         </div>
-                        <a th:href="'/employee/courier/deliveryTasks/editDocuments/' + ${task.id}"
-                           class="btn btn-outline-primary">Подготовить документы</a>
+                        <div class="d-flex gap-2">
+                            <a th:if="${task.ttn != null}"
+                               th:href="'/employee/courier/deliveryTasks/detailsTTN/' + ${task.id}"
+                               class="btn btn-outline-secondary">Просмотр ТТН</a>
+                            <a th:if="${task.clientOrder != null and task.clientOrder.acceptanceAct != null}"
+                               th:href="'/employee/courier/deliveryTasks/detailsAcceptanceAct/' + ${task.id}"
+                               class="btn btn-outline-secondary">Просмотр акта</a>
+                        </div>
                     </div>
                 </div>
 

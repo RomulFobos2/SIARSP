@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Мои доставки | СИАРСП</title>
+    <title>Задачи на доставку | СИАРСП</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="/css/bootstrap.min.css" rel="stylesheet">
@@ -16,10 +16,10 @@
             <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
             <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
-            <h1 class="page-title mb-4">Мои доставки</h1>
+            <h1 class="page-title mb-4">Задачи на доставку</h1>
 
             <!-- Фильтр и поиск -->
-            <form method="get" action="/employee/courier/deliveryTasks/myDeliveryTasks" class="mb-4">
+            <form method="get" action="/employee/manager/deliveryTasks/allDeliveryTasks" class="mb-4">
                 <div class="row g-3 align-items-end">
                     <div class="col-md-5">
                         <label class="form-label fw-semibold">Поиск по номеру заказа</label>
@@ -30,9 +30,9 @@
                     <div class="col-md-4">
                         <label class="form-label fw-semibold">Статус</label>
                         <select name="status" class="form-select">
+                            <option value="all" th:selected="${currentStatus == 'all'}">Все</option>
                             <option value="active" th:selected="${currentStatus == 'active'}">Активные</option>
                             <option value="completed" th:selected="${currentStatus == 'completed'}">Завершённые</option>
-                            <option value="all" th:selected="${currentStatus == 'all'}">Все</option>
                         </select>
                     </div>
                     <div class="col-md-3">
@@ -51,6 +51,7 @@
                     <tr>
                         <th>#</th>
                         <th>Заказ</th>
+                        <th>Водитель</th>
                         <th>Автомобиль</th>
                         <th>Статус</th>
                         <th>Планируемое начало</th>
@@ -61,6 +62,7 @@
                     <tr th:each="task, idx : ${tasks}">
                         <td th:text="${idx.index + 1}"></td>
                         <td th:text="${task.clientOrderNumber}"></td>
+                        <td th:text="${task.driverFullName}"></td>
                         <td th:text="${task.vehicleRegistrationNumber}"></td>
                         <td>
                             <span class="badge"
@@ -74,7 +76,7 @@
                         </td>
                         <td th:text="${task.plannedStartTime != null ? #temporals.format(task.plannedStartTime, 'dd.MM.yyyy HH:mm') : '—'}"></td>
                         <td>
-                            <a th:href="'/employee/courier/deliveryTasks/detailsDeliveryTask/' + ${task.id}"
+                            <a th:href="'/employee/manager/deliveryTasks/detailsDeliveryTask/' + ${task.id}"
                                class="btn btn-sm btn-outline-primary">Подробнее</a>
                         </td>
                     </tr>

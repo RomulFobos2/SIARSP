@@ -445,6 +445,128 @@ public class DeliveryTaskService {
         return acceptanceActRepository.findByClientOrder(optTask.get().getClientOrder());
     }
 
+    // ========== ДОКУМЕНТЫ ДЛЯ WAREHOUSE_MANAGER ==========
+
+    /**
+     * Получить ТТН для задачи (если создана)
+     */
+    @Transactional(readOnly = true)
+    public Optional<TTN> getTTNByTask(Long taskId) {
+        Optional<DeliveryTask> optTask = deliveryTaskRepository.findById(taskId);
+        if (optTask.isEmpty()) return Optional.empty();
+        return Optional.ofNullable(optTask.get().getTtn());
+    }
+
+    /**
+     * Получить акт приёма-передачи по заказу
+     */
+    @Transactional(readOnly = true)
+    public Optional<AcceptanceAct> getAcceptanceActByOrder(Long orderId) {
+        Optional<ClientOrder> optOrder = clientOrderRepository.findById(orderId);
+        if (optOrder.isEmpty()) return Optional.empty();
+        return acceptanceActRepository.findByClientOrder(optOrder.get());
+    }
+
+    /**
+     * Создаёт ТТН и AcceptanceAct для заказа (вызывается warehouseManager при подготовке документов)
+     * Заказ должен иметь связанную DeliveryTask
+     */
+    @Transactional
+    public boolean createDocumentsForOrder(Long orderId) {
+        try {
+            Optional<ClientOrder> optOrder = clientOrderRepository.findByIdWithDetails(orderId);
+            if (optOrder.isEmpty()) {
+                log.error("Заказ с id={} не найден", orderId);
+                return false;
+            }
+            ClientOrder order = optOrder.get();
+
+            DeliveryTask task = order.getDeliveryTask();
+            if (task == null) {
+                log.error("У заказа №{} нет задачи на доставку", order.getOrderNumber());
+                return false;
+            }
+
+            // Создать ТТН если не существует
+            if (task.getTtn() == null) {
+                String ttnNumber = generateTTNNumber();
+                TTN ttn = new TTN(ttnNumber, task, task.getVehicle(), task.getDriver());
+                ttnRepository.save(ttn);
+                task.setTtnNumber(ttnNumber);
+                deliveryTaskRepository.save(task);
+                log.info("Создана ТТН {} для заказа №{}", ttnNumber, order.getOrderNumber());
+            }
+
+            // Создать AcceptanceAct если не существует
+            Optional<AcceptanceAct> optAct = acceptanceActRepository.findByClientOrder(order);
+            if (optAct.isEmpty()) {
+                String actNumber = generateActNumber();
+                AcceptanceAct act = new AcceptanceAct(actNumber, order, order.getClient(), task.getDriver());
+                acceptanceActRepository.save(act);
+                log.info("Создан акт приёма-передачи {} для заказа №{}", actNumber, order.getOrderNumber());
+            }
+
+            return true;
+
+        } catch (Exception e) {
+            log.error("Ошибка при создании документов: {}", e.getMessage(), e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return false;
+        }
+    }
+
+    /**
+     * Обновляет ТТН по ID
+     */
+    @Transactional
+    public boolean updateTTN(Long ttnId, String cargoDescription,
+                             Double totalWeight, Double totalVolume, String comment) {
+        try {
+            Optional<TTN> optTtn = ttnRepository.findById(ttnId);
+            if (optTtn.isEmpty()) {
+                log.error("ТТН с id={} не найдена", ttnId);
+                return false;
+            }
+            TTN ttn = optTtn.get();
+            ttn.setCargoDescription(cargoDescription);
+            ttn.setTotalWeight(totalWeight);
+            ttn.setTotalVolume(totalVolume);
+            ttn.setComment(comment);
+            ttnRepository.save(ttn);
+            log.info("ТТН {} обновлена", ttn.getTtnNumber());
+            return true;
+
+        } catch (Exception e) {
+            log.error("Ошибка при обновлении ТТН: {}", e.getMessage(), e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return false;
+        }
+    }
+
+    /**
+     * Обновляет акт приёма-передачи по ID
+     */
+    @Transactional
+    public boolean updateAcceptanceAct(Long actId, String comment) {
+        try {
+            Optional<AcceptanceAct> optAct = acceptanceActRepository.findById(actId);
+            if (optAct.isEmpty()) {
+                log.error("Акт с id={} не найден", actId);
+                return false;
+            }
+            AcceptanceAct act = optAct.get();
+            act.setComment(comment);
+            acceptanceActRepository.save(act);
+            log.info("Акт {} обновлён", act.getActNumber());
+            return true;
+
+        } catch (Exception e) {
+            log.error("Ошибка при обновлении акта: {}", e.getMessage(), e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return false;
+        }
+    }
+
     // ========== ДОСТАВКА (COURIER) ==========
 
     /**
