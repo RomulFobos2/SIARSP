@@ -23,37 +23,102 @@
             <i class="bi bi-building" style="font-size: 3rem;"></i>
             <p class="mt-3 fs-5">Склады не добавлены</p>
         </div>
-        <div th:if="${!#lists.isEmpty(warehouses)}" class="table-responsive">
-            <table class="table table-modern">
-                <thead>
-                <tr>
-                    <th>№</th>
-                    <th>Название</th>
-                    <th>Тип</th>
-                    <th>Адрес</th>
-                    <th>Координаты</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="wh, index : ${warehouses}">
-                    <td th:text="${index.index+1}"></td>
-                    <td>
-                        <a th:text="${wh.getName()}"
-                           th:href="'/employee/courier/reference/detailsWarehouse/' + ${wh.getId()}"></a>
-                    </td>
-                    <td th:text="${wh.getType().name() == 'REFRIGERATOR'} ? 'Холодильный' : 'Обычный'"></td>
-                    <td th:text="${wh.getAddress() != null ? wh.getAddress() : '—'}"></td>
-                    <td>
-                        <span th:if="${wh.getLatitude() != null and wh.getLongitude() != null}"
-                              th:text="${wh.getLatitude() + ', ' + wh.getLongitude()}"></span>
-                        <span th:if="${wh.getLatitude() == null or wh.getLongitude() == null}">—</span>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
+        <div th:unless="${#lists.isEmpty(warehouses)}">
+            <div class="row g-2 mb-3">
+                <div class="col-md-6">
+                    <input type="text" id="searchInput" class="form-control"
+                           placeholder="Поиск по названию или адресу...">
+                </div>
+                <div class="col-md-2">
+                    <select id="typeFilter" class="form-select">
+                        <option value="">— Все типы —</option>
+                        <option value="NORMAL">Обычный</option>
+                        <option value="REFRIGERATOR">Холодильный</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <span id="resultCount" class="text-muted small d-flex align-items-center h-100"></span>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-outline-secondary w-100" onclick="resetFilters()">
+                        <i class="bi bi-x-circle me-1"></i>Сбросить
+                    </button>
+                </div>
+            </div>
+            <div id="noResultsMsg" class="text-center text-muted py-4" style="display:none;">
+                <i class="bi bi-search" style="font-size: 2rem;"></i>
+                <p class="mt-2">Ничего не найдено</p>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-modern" id="warehouseTable">
+                    <thead>
+                    <tr>
+                        <th>№</th>
+                        <th>Название</th>
+                        <th>Тип</th>
+                        <th>Адрес</th>
+                        <th>Координаты</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="wh, index : ${warehouses}"
+                        th:data-name="${wh.getName()}"
+                        th:data-type="${wh.getType().name()}"
+                        th:data-address="${wh.getAddress() != null ? wh.getAddress() : ''}">
+                        <td th:text="${index.index+1}"></td>
+                        <td>
+                            <a th:text="${wh.getName()}"
+                               th:href="'/employee/courier/reference/detailsWarehouse/' + ${wh.getId()}"></a>
+                        </td>
+                        <td th:text="${wh.getType().name() == 'REFRIGERATOR'} ? 'Холодильный' : 'Обычный'"></td>
+                        <td th:text="${wh.getAddress() != null ? wh.getAddress() : '—'}"></td>
+                        <td>
+                            <span th:if="${wh.getLatitude() != null and wh.getLongitude() != null}"
+                                  th:text="${wh.getLatitude() + ', ' + wh.getLongitude()}"></span>
+                            <span th:if="${wh.getLatitude() == null or wh.getLongitude() == null}">—</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
 <div th:insert="~{blocks/footer :: footer}"></div>
+
+<script>
+    function filterWarehouses() {
+        var search = document.getElementById('searchInput').value.toLowerCase().trim();
+        var type = document.getElementById('typeFilter').value;
+        var rows = document.querySelectorAll('#warehouseTable tbody tr');
+        var visible = 0;
+        rows.forEach(function(row) {
+            var matchSearch = !search ||
+                row.dataset.name.toLowerCase().includes(search) ||
+                row.dataset.address.toLowerCase().includes(search);
+            var matchType = !type || row.dataset.type === type;
+            var show = matchSearch && matchType;
+            row.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+        var total = rows.length;
+        var counter = document.getElementById('resultCount');
+        var noResults = document.getElementById('noResultsMsg');
+        if (search || type) {
+            counter.textContent = 'Показано: ' + visible + ' из ' + total;
+            noResults.style.display = visible === 0 ? '' : 'none';
+        } else {
+            counter.textContent = '';
+            noResults.style.display = 'none';
+        }
+    }
+    function resetFilters() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('typeFilter').value = '';
+        filterWarehouses();
+    }
+    document.getElementById('searchInput').addEventListener('input', filterWarehouses);
+    document.getElementById('typeFilter').addEventListener('change', filterWarehouses);
+</script>
 </body>
 </html>

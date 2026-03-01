@@ -5,6 +5,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
     <link href="/css/style.css" rel="stylesheet">
     <script src="/js/bootstrap.bundle.min.js"></script>
 </head>
@@ -18,30 +19,111 @@
     </div>
     <div class="table-container">
         <h2 class="h3 mb-4 fw-bold">Клиенты</h2>
-        <div class="table-responsive">
-            <table class="table table-modern">
-                <thead>
-                <tr>
-                    <th>№</th>
-                    <th>Наименование</th>
-                    <th>Тип организации</th>
-                    <th>ИНН</th>
-                    <th>Адрес доставки</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="client, index : ${allClients}">
-                    <td th:text="${index.index+1}"></td>
-                    <td th:text="${client.getOrganizationName()}"></td>
-                    <td th:text="${client.getOrganizationType()}"></td>
-                    <td th:text="${client.getInn()}"></td>
-                    <td th:text="${client.getDeliveryAddress()}"></td>
-                </tr>
-                </tbody>
-            </table>
+
+        <div th:if="${#lists.isEmpty(allClients)}" class="text-center text-muted py-5">
+            <i class="bi bi-people" style="font-size: 3rem;"></i>
+            <p class="mt-3 fs-5">Клиенты не добавлены</p>
+        </div>
+
+        <div th:unless="${#lists.isEmpty(allClients)}">
+            <div class="row g-2 mb-3">
+                <div class="col-md-6">
+                    <input type="text" id="searchInput" class="form-control"
+                           placeholder="Поиск по наименованию, ИНН или адресу...">
+                </div>
+                <div class="col-md-2">
+                    <select id="typeFilter" class="form-select">
+                        <option value="">— Все типы —</option>
+                        <option value="Детский сад">Детский сад</option>
+                        <option value="Школа">Школа</option>
+                        <option value="Больница">Больница</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <span id="resultCount" class="text-muted small d-flex align-items-center h-100"></span>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-outline-secondary w-100" onclick="resetFilters()">
+                        <i class="bi bi-x-circle me-1"></i>Сбросить
+                    </button>
+                </div>
+            </div>
+            <div id="noResultsMsg" class="text-center text-muted py-4" style="display:none;">
+                <i class="bi bi-search" style="font-size: 2rem;"></i>
+                <p class="mt-2">Ничего не найдено</p>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-modern" id="clientTable">
+                    <thead>
+                    <tr>
+                        <th>№</th>
+                        <th>Наименование</th>
+                        <th>Тип организации</th>
+                        <th>ИНН</th>
+                        <th>Адрес доставки</th>
+                        <th>Действия</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="client, index : ${allClients}"
+                        th:data-name="${client.getOrganizationName()}"
+                        th:data-type="${client.getOrganizationType() != null ? client.getOrganizationType() : ''}"
+                        th:data-inn="${client.getInn() != null ? client.getInn() : ''}"
+                        th:data-address="${client.getDeliveryAddress() != null ? client.getDeliveryAddress() : ''}">
+                        <td th:text="${index.index+1}"></td>
+                        <td th:text="${client.getOrganizationName()}"></td>
+                        <td th:text="${client.getOrganizationType()}"></td>
+                        <td th:text="${client.getInn()}"></td>
+                        <td th:text="${client.getDeliveryAddress()}"></td>
+                        <td>
+                            <a th:href="'/employee/warehouseManager/reference/detailsClient/' + ${client.getId()}"
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> Подробнее
+                            </a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
 <div th:insert="~{blocks/footer :: footer}"></div>
+
+<script>
+    function filterClients() {
+        var search = document.getElementById('searchInput').value.toLowerCase().trim();
+        var type = document.getElementById('typeFilter').value;
+        var rows = document.querySelectorAll('#clientTable tbody tr');
+        var visible = 0;
+        rows.forEach(function(row) {
+            var matchSearch = !search ||
+                row.dataset.name.toLowerCase().includes(search) ||
+                row.dataset.inn.toLowerCase().includes(search) ||
+                row.dataset.address.toLowerCase().includes(search);
+            var matchType = !type || row.dataset.type === type;
+            var show = matchSearch && matchType;
+            row.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+        var total = rows.length;
+        var counter = document.getElementById('resultCount');
+        var noResults = document.getElementById('noResultsMsg');
+        if (search || type) {
+            counter.textContent = 'Показано: ' + visible + ' из ' + total;
+            noResults.style.display = visible === 0 ? '' : 'none';
+        } else {
+            counter.textContent = '';
+            noResults.style.display = 'none';
+        }
+    }
+    function resetFilters() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('typeFilter').value = '';
+        filterClients();
+    }
+    document.getElementById('searchInput').addEventListener('input', filterClients);
+    document.getElementById('typeFilter').addEventListener('change', filterClients);
+</script>
 </body>
 </html>

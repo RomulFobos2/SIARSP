@@ -1,0 +1,101 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Информация о ТС (справочник) | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+            <div class="profile-card p-4">
+
+                <h1 class="page-title">Информация о транспортном средстве</h1>
+                <p class="page-subtitle">Просмотр данных ТС (справочник)</p>
+
+                <div class="mb-4">
+                    <h6 class="form-section-title">Основные данные</h6>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control info-display"
+                                   placeholder="Гос. номер"
+                                   th:value="${vehicleDTO.getRegistrationNumber()}" disabled>
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" class="form-control info-display"
+                                   placeholder="Марка"
+                                   th:value="${vehicleDTO.getBrand()}" disabled>
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" class="form-control info-display"
+                                   placeholder="Модель"
+                                   th:value="${vehicleDTO.getModel()}" disabled>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <h6 class="form-section-title">Дополнительно</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <input type="text" class="form-control info-display"
+                                   placeholder="Год выпуска"
+                                   th:value="${vehicleDTO.getYear()}" disabled>
+                        </div>
+                        <div class="col-md-6">
+                            <input type="text" class="form-control info-display"
+                                   placeholder="VIN-код"
+                                   th:value="${vehicleDTO.getVin()}" disabled>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <h6 class="form-section-title">Грузовые характеристики</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <input type="text" class="form-control info-display"
+                                   placeholder="Грузоподъёмность (кг)"
+                                   th:value="${vehicleDTO.getLoadCapacity()}" disabled>
+                        </div>
+                        <div class="col-md-6">
+                            <input type="text" class="form-control info-display"
+                                   placeholder="Объём кузова (м³)"
+                                   th:value="${vehicleDTO.getVolumeCapacity()}" disabled>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <h6 class="form-section-title">Тип и статус</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <input type="text" class="form-control info-display"
+                                   placeholder="Тип ТС"
+                                   th:value="${vehicleDTO.getType().getDisplayName()}" disabled>
+                        </div>
+                        <div class="col-md-6">
+                            <input type="text" class="form-control info-display"
+                                   placeholder="Статус"
+                                   th:value="${vehicleDTO.getStatus().getDisplayName()}" disabled>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="link-section">
+                    <a th:href="'/employee/courier/reference/allVehicles'">← К списку транспортных средств</a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>

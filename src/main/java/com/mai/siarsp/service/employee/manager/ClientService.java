@@ -137,4 +137,17 @@ public class ClientService {
         List<Client> clients = clientRepository.findAll();
         return ClientMapper.INSTANCE.toDTOList(clients);
     }
+
+    /**
+     * Возвращает клиента по ID в виде DTO
+     *
+     * @param id ID клиента
+     * @return ClientDTO или null если не найден
+     */
+    @Transactional(readOnly = true)
+    public ClientDTO getClientById(Long id) {
+        return clientRepository.findById(id)
+                .map(ClientMapper.INSTANCE::toDTO)
+                .orElse(null);
+    }
 }
