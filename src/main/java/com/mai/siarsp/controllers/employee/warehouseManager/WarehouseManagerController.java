@@ -70,6 +70,8 @@ public class WarehouseManagerController {
             @RequestParam String name,
             @RequestParam WarehouseType type,
             @RequestParam String address,
+            @RequestParam(required = false) Double latitude,
+            @RequestParam(required = false) Double longitude,
             @RequestParam int shelfCount,
             @RequestParam int zonesPerShelf,
             @RequestParam double zoneLength,
@@ -87,8 +89,12 @@ public class WarehouseManagerController {
                 name, type, address, shelfCount, zonesPerShelf, zoneLength, zoneWidth, zoneHeight);
 
         if (created.isPresent()) {
-            log.info("✅ Склад '{}' создан с ID={}", name, created.get().getId());
-            return "redirect:/employee/warehouseManager/warehouses/detailsWarehouse/" + created.get().getId();
+            Warehouse wh = created.get();
+            wh.setLatitude(latitude);
+            wh.setLongitude(longitude);
+            warehouseRepository.save(wh);
+            log.info("Склад '{}' создан с ID={}", name, wh.getId());
+            return "redirect:/employee/warehouseManager/warehouses/detailsWarehouse/" + wh.getId();
         } else {
             redirectAttributes.addFlashAttribute("warehouseError",
                     "Не удалось создать склад. Возможно, склад с таким названием уже существует.");
@@ -170,12 +176,21 @@ public class WarehouseManagerController {
     @PostMapping("/editWarehouse/{id}")
     public String saveWarehouseAddress(@PathVariable Long id,
                                         @RequestParam String address,
+                                        @RequestParam(required = false) Double latitude,
+                                        @RequestParam(required = false) Double longitude,
                                         RedirectAttributes redirectAttributes) {
         if (!creationService.updateWarehouseAddress(id, address)) {
-            redirectAttributes.addFlashAttribute("warehouseError", "Ошибка при обновлении адреса склада.");
+            redirectAttributes.addFlashAttribute("warehouseError", "Ошибка при обновлении склада.");
             return "redirect:/employee/warehouseManager/warehouses/editWarehouse/" + id;
         }
-        redirectAttributes.addFlashAttribute("successMessage", "Адрес склада успешно обновлён.");
+        Optional<Warehouse> opt = warehouseRepository.findById(id);
+        if (opt.isPresent()) {
+            Warehouse wh = opt.get();
+            wh.setLatitude(latitude);
+            wh.setLongitude(longitude);
+            warehouseRepository.save(wh);
+        }
+        redirectAttributes.addFlashAttribute("successMessage", "Склад успешно обновлён.");
         return "redirect:/employee/warehouseManager/warehouses/detailsWarehouse/" + id;
     }
 

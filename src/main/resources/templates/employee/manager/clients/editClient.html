@@ -73,6 +73,16 @@
                                id="inputDeliveryAddress" required placeholder="Адрес доставки"
                                maxlength="500" th:value="${clientDTO.getDeliveryAddress()}">
                     </div>
+                    <div class="col-md-6">
+                        <input type="number" class="form-control" name="inputDeliveryLatitude"
+                               id="inputDeliveryLatitude" placeholder="Широта доставки" step="0.000001"
+                               th:value="${clientDTO.getDeliveryLatitude()}">
+                    </div>
+                    <div class="col-md-6">
+                        <input type="number" class="form-control" name="inputDeliveryLongitude"
+                               id="inputDeliveryLongitude" placeholder="Долгота доставки" step="0.000001"
+                               th:value="${clientDTO.getDeliveryLongitude()}">
+                    </div>
                 </div>
             </div>
 

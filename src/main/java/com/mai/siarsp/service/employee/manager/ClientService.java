@@ -60,6 +60,7 @@ public class ClientService {
     public boolean editClient(Long id, String inputOrganizationType, String inputOrganizationName,
                               String inputInn, String inputKpp, String inputOgrn,
                               String inputLegalAddress, String inputDeliveryAddress,
+                              Double inputDeliveryLatitude, Double inputDeliveryLongitude,
                               String inputContactPerson, String inputPhoneNumber, String inputEmail) {
         Optional<Client> clientOptional = clientRepository.findById(id);
 
@@ -83,6 +84,8 @@ public class ClientService {
         client.setOgrn(inputOgrn);
         client.setLegalAddress(inputLegalAddress);
         client.setDeliveryAddress(inputDeliveryAddress);
+        client.setDeliveryLatitude(inputDeliveryLatitude);
+        client.setDeliveryLongitude(inputDeliveryLongitude);
         client.setContactPerson(inputContactPerson);
         client.setPhoneNumber(inputPhoneNumber);
         client.setEmail(inputEmail);

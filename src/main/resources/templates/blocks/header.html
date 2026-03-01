@@ -153,6 +153,17 @@
                             <li><a class="dropdown-item" href="/employee/warehouseManager/writeOffActs/allWriteOffActs">Акты списания</a></li>
                         </ul>
                     </li>
+                    <!-- Dropdown: Справочники -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Справочники
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/reference/allVehicles">Транспорт</a></li>
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/reference/allSuppliers">Поставщики</a></li>
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/reference/allClients">Клиенты</a></li>
+                        </ul>
+                    </li>
 
                     <!-- ========== WAREHOUSE_WORKER ========== -->
                     <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_WORKER')">
@@ -161,6 +172,16 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="/employee/warehouseWorker/deliveryTasks/allDeliveryTasks">Задачи на погрузку</a></li>
+                        </ul>
+                    </li>
+                    <!-- Dropdown: Справочники -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_WORKER')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Справочники
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/warehouseWorker/reference/allVehicles">Транспорт</a></li>
+                            <li><a class="dropdown-item" href="/employee/warehouseWorker/reference/allWarehouses">Склады</a></li>
                         </ul>
                     </li>
 
@@ -195,6 +216,17 @@
                             <li><a class="dropdown-item" href="/employee/accounter/writeOffActs/allWriteOffActs">Акты списания</a></li>
                         </ul>
                     </li>
+                    <!-- Dropdown: Справочники -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_ACCOUNTER')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Справочники
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/accounter/reference/allVehicles">Транспорт</a></li>
+                            <li><a class="dropdown-item" href="/employee/accounter/reference/allSuppliers">Поставщики</a></li>
+                            <li><a class="dropdown-item" href="/employee/accounter/reference/allClients">Клиенты</a></li>
+                        </ul>
+                    </li>
 
                     <!-- ========== COURIER ========== -->
                     <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_COURIER')">
@@ -203,6 +235,16 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="/employee/courier/deliveryTasks/myDeliveryTasks">Мои доставки</a></li>
+                        </ul>
+                    </li>
+                    <!-- Dropdown: Справочники -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_COURIER')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Справочники
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/courier/reference/allVehicles">Транспорт</a></li>
+                            <li><a class="dropdown-item" href="/employee/courier/reference/allWarehouses">Склады</a></li>
                         </ul>
                     </li>
 
