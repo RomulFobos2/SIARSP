@@ -59,6 +59,14 @@ public class Notification {
     @Column(nullable = false)
     private NotificationStatus status = NotificationStatus.NEW;
 
+    /**
+     * Видимость уведомления для пользователя.
+     * При "удалении" уведомление скрывается (visible = false),
+     * но остаётся в БД для расследования.
+     */
+    @Column(nullable = false)
+    private boolean visible = true;
+
     // ========== КОНСТРУКТОРЫ ==========
 
     public Notification(Employee recipient, String text) {
@@ -66,5 +74,6 @@ public class Notification {
         this.text = text;
         this.createdAt = LocalDateTime.now();
         this.status = NotificationStatus.NEW;
+        this.visible = true;
     }
 }
