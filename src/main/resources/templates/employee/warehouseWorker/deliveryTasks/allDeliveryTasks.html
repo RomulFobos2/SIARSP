@@ -18,8 +18,31 @@
 
             <h1 class="page-title mb-4">Задачи на погрузку</h1>
 
+            <!-- Фильтр и поиск -->
+            <form method="get" action="/employee/warehouseWorker/deliveryTasks/allDeliveryTasks" class="mb-4">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                        <label class="form-label fw-semibold">Поиск по номеру заказа</label>
+                        <input type="text" name="search" class="form-control"
+                               placeholder="Номер заказа..."
+                               th:value="${currentSearch}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Статус</label>
+                        <select name="status" class="form-select">
+                            <option value="active" th:selected="${currentStatus == 'active'}">Активные</option>
+                            <option value="completed" th:selected="${currentStatus == 'completed'}">Завершённые</option>
+                            <option value="all" th:selected="${currentStatus == 'all'}">Все</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary w-100">Найти</button>
+                    </div>
+                </div>
+            </form>
+
             <div th:if="${#lists.isEmpty(tasks)}" class="alert alert-info">
-                Нет задач, ожидающих погрузки.
+                Нет задач по выбранным критериям.
             </div>
 
             <div th:if="${!#lists.isEmpty(tasks)}" class="table-responsive">
@@ -44,7 +67,11 @@
                             <span class="badge"
                                   th:text="${task.status.displayName}"
                                   th:classappend="${task.status.name() == 'PENDING' ? 'bg-secondary' :
-                                                   task.status.name() == 'LOADING' ? 'bg-warning text-dark' : 'bg-secondary'}"></span>
+                                                   task.status.name() == 'LOADING' ? 'bg-warning text-dark' :
+                                                   task.status.name() == 'LOADED' ? 'bg-info' :
+                                                   task.status.name() == 'IN_TRANSIT' ? 'bg-primary' :
+                                                   task.status.name() == 'DELIVERED' ? 'bg-success' :
+                                                   task.status.name() == 'CANCELLED' ? 'bg-danger' : 'bg-secondary'}"></span>
                         </td>
                         <td>
                             <a th:href="'/employee/warehouseWorker/deliveryTasks/detailsDeliveryTask/' + ${task.id}"
