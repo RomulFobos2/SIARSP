@@ -54,8 +54,22 @@
                        th:value="${warehouse.getAddress()}"
                        placeholder="Введите адрес склада">
             </div>
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label for="latitude" class="form-label fw-semibold">Широта</label>
+                    <input type="number" id="latitude" name="latitude" class="form-control"
+                           step="0.000001" th:value="${warehouse.getLatitude()}"
+                           placeholder="Например: 55.751244">
+                </div>
+                <div class="col-md-6">
+                    <label for="longitude" class="form-label fw-semibold">Долгота</label>
+                    <input type="number" id="longitude" name="longitude" class="form-control"
+                           step="0.000001" th:value="${warehouse.getLongitude()}"
+                           placeholder="Например: 37.618423">
+                </div>
+            </div>
             <button type="submit" class="btn btn-primary">
-                <i class="bi bi-check-lg"></i> Сохранить адрес
+                <i class="bi bi-check-lg"></i> Сохранить
             </button>
         </form>
     </div>

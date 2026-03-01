@@ -71,6 +71,16 @@
                            placeholder="Адрес доставки"
                            th:value="${clientDTO.getDeliveryAddress()}" disabled>
                 </div>
+                <div class="col-md-6">
+                    <input type="text" class="form-control info-display"
+                           placeholder="Широта доставки"
+                           th:value="${clientDTO.getDeliveryLatitude()}" disabled>
+                </div>
+                <div class="col-md-6">
+                    <input type="text" class="form-control info-display"
+                           placeholder="Долгота доставки"
+                           th:value="${clientDTO.getDeliveryLongitude()}" disabled>
+                </div>
             </div>
         </div>
 

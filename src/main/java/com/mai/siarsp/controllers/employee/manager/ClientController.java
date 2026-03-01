@@ -58,6 +58,8 @@ public class ClientController {
                             @RequestParam(required = false) String inputOgrn,
                             @RequestParam(required = false) String inputLegalAddress,
                             @RequestParam String inputDeliveryAddress,
+                            @RequestParam(required = false) Double inputDeliveryLatitude,
+                            @RequestParam(required = false) Double inputDeliveryLongitude,
                             @RequestParam(required = false) String inputContactPerson,
                             @RequestParam(required = false) String inputPhoneNumber,
                             @RequestParam(required = false) String inputEmail,
@@ -68,6 +70,8 @@ public class ClientController {
         client.setKpp(inputKpp);
         client.setOgrn(inputOgrn);
         client.setLegalAddress(inputLegalAddress);
+        client.setDeliveryLatitude(inputDeliveryLatitude);
+        client.setDeliveryLongitude(inputDeliveryLongitude);
         client.setPhoneNumber(inputPhoneNumber);
         client.setEmail(inputEmail);
 
@@ -114,12 +118,15 @@ public class ClientController {
                              @RequestParam(required = false) String inputOgrn,
                              @RequestParam(required = false) String inputLegalAddress,
                              @RequestParam String inputDeliveryAddress,
+                             @RequestParam(required = false) Double inputDeliveryLatitude,
+                             @RequestParam(required = false) Double inputDeliveryLongitude,
                              @RequestParam(required = false) String inputContactPerson,
                              @RequestParam(required = false) String inputPhoneNumber,
                              @RequestParam(required = false) String inputEmail,
                              RedirectAttributes redirectAttributes) {
         if (!clientService.editClient(id, inputOrganizationType, inputOrganizationName,
                 inputInn, inputKpp, inputOgrn, inputLegalAddress, inputDeliveryAddress,
+                inputDeliveryLatitude, inputDeliveryLongitude,
                 inputContactPerson, inputPhoneNumber, inputEmail)) {
             redirectAttributes.addFlashAttribute("clientError", "Ошибка при сохранении изменений.");
             return "redirect:/employee/manager/clients/editClient/" + id;

@@ -65,7 +65,7 @@
             </div>
 
             <!-- Маршрут -->
-            <div th:if="${!task.routePoints.isEmpty()}" class="mb-4">
+            <div th:if="${not #lists.isEmpty(task.routePoints)}" class="mb-4">
                 <h5 class="fw-bold mb-3">Маршрут</h5>
                 <div class="list-group">
                     <div th:each="rp : ${task.routePoints}" class="list-group-item d-flex justify-content-between align-items-center">

@@ -3,6 +3,8 @@ package com.mai.siarsp.controllers.employee.warehouseManager;
 import com.mai.siarsp.enumeration.RoutePointType;
 import com.mai.siarsp.models.ClientOrder;
 import com.mai.siarsp.models.DeliveryTask;
+import com.mai.siarsp.models.Warehouse;
+import com.mai.siarsp.repo.WarehouseRepository;
 import com.mai.siarsp.service.employee.ClientOrderService;
 import com.mai.siarsp.service.employee.DeliveryTaskService;
 import lombok.extern.slf4j.Slf4j;
@@ -25,11 +27,14 @@ public class DeliveryTaskController {
 
     private final DeliveryTaskService deliveryTaskService;
     private final ClientOrderService clientOrderService;
+    private final WarehouseRepository warehouseRepository;
 
     public DeliveryTaskController(DeliveryTaskService deliveryTaskService,
-                                  ClientOrderService clientOrderService) {
+                                  ClientOrderService clientOrderService,
+                                  WarehouseRepository warehouseRepository) {
         this.deliveryTaskService = deliveryTaskService;
         this.clientOrderService = clientOrderService;
+        this.warehouseRepository = warehouseRepository;
     }
 
     @GetMapping("/allDeliveryTasks")
@@ -49,6 +54,7 @@ public class DeliveryTaskController {
         model.addAttribute("order", optOrder.get());
         model.addAttribute("drivers", deliveryTaskService.getAvailableDrivers());
         model.addAttribute("vehicles", deliveryTaskService.getAvailableVehicles());
+        model.addAttribute("warehouses", warehouseRepository.findAll());
         model.addAttribute("routePointTypes", RoutePointType.values());
         return "employee/warehouseManager/deliveryTasks/createDeliveryTask";
     }

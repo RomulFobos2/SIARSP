@@ -70,31 +70,31 @@ public class DeliveryTaskService {
 
     @Transactional(readOnly = true)
     public List<DeliveryTaskDTO> getAllTasks() {
-        List<DeliveryTask> tasks = deliveryTaskRepository.findAllByOrderByPlannedStartTimeDesc();
+        List<DeliveryTask> tasks = deliveryTaskRepository.findAllWithDetails();
         return DeliveryTaskMapper.INSTANCE.toDTOList(tasks);
     }
 
     @Transactional(readOnly = true)
     public List<DeliveryTaskDTO> getTasksByStatuses(List<DeliveryTaskStatus> statuses) {
-        List<DeliveryTask> tasks = deliveryTaskRepository.findByStatusInOrderByPlannedStartTimeDesc(statuses);
+        List<DeliveryTask> tasks = deliveryTaskRepository.findByStatusInWithDetails(statuses);
         return DeliveryTaskMapper.INSTANCE.toDTOList(tasks);
     }
 
     @Transactional(readOnly = true)
     public List<DeliveryTaskDTO> getTasksByDriver(Long driverId) {
-        List<DeliveryTask> tasks = deliveryTaskRepository.findByDriverIdOrderByPlannedStartTimeDesc(driverId);
+        List<DeliveryTask> tasks = deliveryTaskRepository.findByDriverIdWithDetails(driverId);
         return DeliveryTaskMapper.INSTANCE.toDTOList(tasks);
     }
 
     @Transactional(readOnly = true)
     public List<DeliveryTaskDTO> getTasksByDriverAndStatuses(Long driverId, List<DeliveryTaskStatus> statuses) {
-        List<DeliveryTask> tasks = deliveryTaskRepository.findByDriverIdAndStatusInOrderByPlannedStartTimeDesc(driverId, statuses);
+        List<DeliveryTask> tasks = deliveryTaskRepository.findByDriverIdAndStatusInWithDetails(driverId, statuses);
         return DeliveryTaskMapper.INSTANCE.toDTOList(tasks);
     }
 
     @Transactional(readOnly = true)
     public Optional<DeliveryTask> getTaskById(Long id) {
-        return deliveryTaskRepository.findById(id);
+        return deliveryTaskRepository.findByIdWithDetails(id);
     }
 
     @Transactional(readOnly = true)

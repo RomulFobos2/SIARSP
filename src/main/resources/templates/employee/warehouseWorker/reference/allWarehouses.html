@@ -1,0 +1,59 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Склады (справочник) | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+<div class="container my-5">
+    <div class="profile-card mb-4">
+        <div class="profile-actions">
+            <a th:href="'/'" class="btn btn-secondary btn-profile">← Главная</a>
+        </div>
+    </div>
+    <div class="table-container">
+        <h2 class="h3 mb-4 fw-bold">Склады</h2>
+        <div th:if="${#lists.isEmpty(warehouses)}" class="text-center text-muted py-5">
+            <i class="bi bi-building" style="font-size: 3rem;"></i>
+            <p class="mt-3 fs-5">Склады не добавлены</p>
+        </div>
+        <div th:if="${!#lists.isEmpty(warehouses)}" class="table-responsive">
+            <table class="table table-modern">
+                <thead>
+                <tr>
+                    <th>№</th>
+                    <th>Название</th>
+                    <th>Тип</th>
+                    <th>Адрес</th>
+                    <th>Координаты</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="wh, index : ${warehouses}">
+                    <td th:text="${index.index+1}"></td>
+                    <td>
+                        <a th:text="${wh.getName()}"
+                           th:href="'/employee/warehouseWorker/reference/detailsWarehouse/' + ${wh.getId()}"></a>
+                    </td>
+                    <td th:text="${wh.getType().name() == 'REFRIGERATOR'} ? 'Холодильный' : 'Обычный'"></td>
+                    <td th:text="${wh.getAddress() != null ? wh.getAddress() : '—'}"></td>
+                    <td>
+                        <span th:if="${wh.getLatitude() != null and wh.getLongitude() != null}"
+                              th:text="${wh.getLatitude() + ', ' + wh.getLongitude()}"></span>
+                        <span th:if="${wh.getLatitude() == null or wh.getLongitude() == null}">—</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>

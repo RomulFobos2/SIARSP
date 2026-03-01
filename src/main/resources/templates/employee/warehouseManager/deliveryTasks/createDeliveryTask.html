@@ -71,58 +71,64 @@
                 <!-- Маршрутные точки -->
                 <h5 class="fw-bold mb-3">Маршрут</h5>
                 <div id="routePointsContainer">
-                    <!-- Точка 1: Склад (автоматически) -->
+                    <!-- Точка 1: Склад (выбор из списка) -->
                     <div class="card mb-2 route-point">
                         <div class="card-body py-2">
                             <div class="row g-2 align-items-center">
                                 <div class="col-md-2">
-                                    <select name="rpType" class="form-select form-select-sm">
-                                        <option th:each="rpt : ${routePointTypes}" th:value="${rpt.name()}"
-                                                th:text="${rpt.displayName}"
-                                                th:selected="${rpt.name() == 'WAREHOUSE'}"></option>
-                                    </select>
+                                    <input type="hidden" name="rpType" value="WAREHOUSE">
+                                    <span class="badge bg-secondary">Склад</span>
                                 </div>
                                 <div class="col-md-4">
-                                    <input type="text" name="rpAddress" class="form-control form-control-sm"
-                                           placeholder="Адрес" value="Склад ИП Левчук">
+                                    <select id="warehouseSelect" class="form-select form-select-sm" required>
+                                        <option value="" disabled selected>Выберите склад</option>
+                                        <option th:each="wh : ${warehouses}"
+                                                th:value="${wh.id}"
+                                                th:data-address="${wh.address}"
+                                                th:data-latitude="${wh.latitude}"
+                                                th:data-longitude="${wh.longitude}"
+                                                th:text="${wh.name}"></option>
+                                    </select>
+                                    <input type="hidden" name="rpAddress" id="warehouseAddress" value="">
                                 </div>
                                 <div class="col-md-2">
-                                    <input type="text" name="rpLatitude" class="form-control form-control-sm"
-                                           placeholder="Широта">
+                                    <input type="text" name="rpLatitude" id="warehouseLatitude"
+                                           class="form-control form-control-sm" placeholder="Широта" readonly>
                                 </div>
                                 <div class="col-md-2">
-                                    <input type="text" name="rpLongitude" class="form-control form-control-sm"
-                                           placeholder="Долгота">
+                                    <input type="text" name="rpLongitude" id="warehouseLongitude"
+                                           class="form-control form-control-sm" placeholder="Долгота" readonly>
                                 </div>
                                 <div class="col-md-2">
                                     <input type="text" name="rpComment" class="form-control form-control-sm"
                                            placeholder="Комментарий">
                                 </div>
                             </div>
+                            <div id="warehouseAddressDisplay" class="text-muted small mt-1" style="display:none;">
+                            </div>
                         </div>
                     </div>
-                    <!-- Точка 2: Адрес доставки (автоматически) -->
+                    <!-- Точка 2: Адрес доставки (из данных клиента, readonly) -->
                     <div class="card mb-2 route-point">
                         <div class="card-body py-2">
                             <div class="row g-2 align-items-center">
                                 <div class="col-md-2">
-                                    <select name="rpType" class="form-select form-select-sm">
-                                        <option th:each="rpt : ${routePointTypes}" th:value="${rpt.name()}"
-                                                th:text="${rpt.displayName}"
-                                                th:selected="${rpt.name() == 'DELIVERY_ADDRESS'}"></option>
-                                    </select>
+                                    <input type="hidden" name="rpType" value="DELIVERY_ADDRESS">
+                                    <span class="badge bg-primary">Доставка</span>
                                 </div>
                                 <div class="col-md-4">
                                     <input type="text" name="rpAddress" class="form-control form-control-sm"
-                                           placeholder="Адрес" th:value="${order.client.deliveryAddress}">
+                                           th:value="${order.client.deliveryAddress}" readonly>
                                 </div>
                                 <div class="col-md-2">
                                     <input type="text" name="rpLatitude" class="form-control form-control-sm"
-                                           placeholder="Широта">
+                                           placeholder="Широта"
+                                           th:value="${order.client.deliveryLatitude}" readonly>
                                 </div>
                                 <div class="col-md-2">
                                     <input type="text" name="rpLongitude" class="form-control form-control-sm"
-                                           placeholder="Долгота">
+                                           placeholder="Долгота"
+                                           th:value="${order.client.deliveryLongitude}" readonly>
                                 </div>
                                 <div class="col-md-2">
                                     <input type="text" name="rpComment" class="form-control form-control-sm"
@@ -148,8 +154,26 @@
 </div>
 <div th:insert="~{blocks/footer :: footer}"></div>
 
-<script th:inline="javascript">
-    var routePointTypes = [[${routePointTypes}]];
+<script>
+    // Обработка выбора склада — подстановка адреса и координат
+    document.getElementById('warehouseSelect').addEventListener('change', function() {
+        var selected = this.options[this.selectedIndex];
+        var address = selected.getAttribute('data-address') || '';
+        var lat = selected.getAttribute('data-latitude') || '';
+        var lng = selected.getAttribute('data-longitude') || '';
+
+        document.getElementById('warehouseAddress').value = address;
+        document.getElementById('warehouseLatitude').value = lat;
+        document.getElementById('warehouseLongitude').value = lng;
+
+        var display = document.getElementById('warehouseAddressDisplay');
+        if (address) {
+            display.textContent = 'Адрес: ' + address;
+            display.style.display = 'block';
+        } else {
+            display.style.display = 'none';
+        }
+    });
 
     function addRoutePoint() {
         var container = document.getElementById('routePointsContainer');
