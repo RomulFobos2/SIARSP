@@ -1,0 +1,49 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Редактирование акта | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+<header th:insert="~{blocks/header :: header}"></header>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+
+            <h1 class="page-title mb-4">Редактирование акта <span th:text="${act.actNumber}"></span></h1>
+
+            <div class="card border-0 bg-light mb-4">
+                <div class="card-body">
+                    <p class="mb-1"><strong>Заказ:</strong> <span th:text="${order.orderNumber}"></span></p>
+                    <p class="mb-1"><strong>Клиент:</strong> <span th:text="${act.client.organizationName}"></span></p>
+                    <p class="mb-0"><strong>Дата:</strong>
+                        <span th:text="${#temporals.format(act.actDate, 'dd.MM.yyyy')}"></span></p>
+                </div>
+            </div>
+
+            <form th:action="'/employee/warehouseManager/clientOrders/saveAcceptanceAct/' + ${order.id}" method="post">
+                <input type="hidden" name="actId" th:value="${act.id}"/>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Комментарий</label>
+                    <textarea name="comment" class="form-control" rows="3"
+                              placeholder="Примечания к акту приёма-передачи..."
+                              th:text="${act.comment}"></textarea>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                    <a th:href="'/employee/warehouseManager/clientOrders/detailsAcceptanceAct/' + ${order.id}"
+                       class="btn btn-outline-secondary">Отмена</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>

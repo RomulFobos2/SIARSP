@@ -3,14 +3,13 @@ package com.mai.siarsp.controllers.employee.manager;
 import com.mai.siarsp.dto.ClientOrderDTO;
 import com.mai.siarsp.enumeration.ClientOrderStatus;
 import com.mai.siarsp.mapper.ClientOrderMapper;
-import com.mai.siarsp.models.Client;
-import com.mai.siarsp.models.ClientOrder;
-import com.mai.siarsp.models.Employee;
-import com.mai.siarsp.models.Product;
+import com.mai.siarsp.models.*;
+import com.mai.siarsp.models.AcceptanceAct;
 import com.mai.siarsp.repo.ClientRepository;
 import com.mai.siarsp.repo.ProductRepository;
 import com.mai.siarsp.repo.RequestForDeliveryRepository;
 import com.mai.siarsp.service.employee.ClientOrderService;
+import com.mai.siarsp.service.employee.DeliveryTaskService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -32,15 +31,18 @@ public class ClientOrderController {
     private final ClientRepository clientRepository;
     private final ProductRepository productRepository;
     private final RequestForDeliveryRepository requestForDeliveryRepository;
+    private final DeliveryTaskService deliveryTaskService;
 
     public ClientOrderController(ClientOrderService clientOrderService,
                                  ClientRepository clientRepository,
                                  ProductRepository productRepository,
-                                 RequestForDeliveryRepository requestForDeliveryRepository) {
+                                 RequestForDeliveryRepository requestForDeliveryRepository,
+                                 DeliveryTaskService deliveryTaskService) {
         this.clientOrderService = clientOrderService;
         this.clientRepository = clientRepository;
         this.productRepository = productRepository;
         this.requestForDeliveryRepository = requestForDeliveryRepository;
+        this.deliveryTaskService = deliveryTaskService;
     }
 
     @Transactional(readOnly = true)
@@ -181,6 +183,41 @@ public class ClientOrderController {
             redirectAttributes.addFlashAttribute("successMessage", "Заказ отменён.");
         }
         return "redirect:/employee/manager/clientOrders/detailsClientOrder/" + id;
+    }
+
+    // ========== ПРОСМОТР ДОКУМЕНТОВ (read-only) ==========
+
+    @Transactional(readOnly = true)
+    @GetMapping("/detailsTTN/{orderId}")
+    public String detailsTTN(@PathVariable Long orderId, Model model) {
+        Optional<ClientOrder> optOrder = clientOrderService.getOrderById(orderId);
+        if (optOrder.isEmpty() || optOrder.get().getDeliveryTask() == null
+                || optOrder.get().getDeliveryTask().getTtn() == null) {
+            return "redirect:/employee/manager/clientOrders/detailsClientOrder/" + orderId;
+        }
+        model.addAttribute("order", optOrder.get());
+        model.addAttribute("ttn", optOrder.get().getDeliveryTask().getTtn());
+        model.addAttribute("canEdit", false);
+        model.addAttribute("backUrl", "/employee/manager/clientOrders/detailsClientOrder/" + orderId);
+        return "employee/warehouseManager/documents/detailsTTN";
+    }
+
+    @Transactional(readOnly = true)
+    @GetMapping("/detailsAcceptanceAct/{orderId}")
+    public String detailsAcceptanceAct(@PathVariable Long orderId, Model model) {
+        Optional<ClientOrder> optOrder = clientOrderService.getOrderById(orderId);
+        if (optOrder.isEmpty()) {
+            return "redirect:/employee/manager/clientOrders/allClientOrders";
+        }
+        Optional<AcceptanceAct> optAct = deliveryTaskService.getAcceptanceActByOrder(orderId);
+        if (optAct.isEmpty()) {
+            return "redirect:/employee/manager/clientOrders/detailsClientOrder/" + orderId;
+        }
+        model.addAttribute("order", optOrder.get());
+        model.addAttribute("act", optAct.get());
+        model.addAttribute("canEdit", false);
+        model.addAttribute("backUrl", "/employee/manager/clientOrders/detailsClientOrder/" + orderId);
+        return "employee/warehouseManager/documents/detailsAcceptanceAct";
     }
 
     /**

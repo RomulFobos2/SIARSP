@@ -120,19 +120,15 @@
                     <button type="submit" class="btn btn-primary">Зарезервировать товар</button>
                 </form>
 
-                <!-- RESERVED → Начать сборку -->
-                <form th:if="${order.status.name() == 'RESERVED'}"
-                      th:action="'/employee/warehouseManager/clientOrders/startAssembly/' + ${order.id}"
-                      method="post" class="d-inline">
-                    <button type="submit" class="btn btn-warning">Начать сборку</button>
-                </form>
+                <!-- RESERVED: ожидает сборки -->
+                <div th:if="${order.status.name() == 'RESERVED'}" class="alert alert-primary mb-0">
+                    Товар зарезервирован. Ожидает сборки складским работником.
+                </div>
 
-                <!-- IN_PROGRESS → Завершить сборку -->
-                <form th:if="${order.status.name() == 'IN_PROGRESS'}"
-                      th:action="'/employee/warehouseManager/clientOrders/completeAssembly/' + ${order.id}"
-                      method="post" class="d-inline">
-                    <button type="submit" class="btn btn-success">Сборка завершена</button>
-                </form>
+                <!-- IN_PROGRESS: в сборке -->
+                <div th:if="${order.status.name() == 'IN_PROGRESS'}" class="alert alert-warning mb-0">
+                    Заказ в сборке у складского работника.
+                </div>
 
                 <!-- READY: создать задачу на доставку -->
                 <div th:if="${order.status.name() == 'READY'}">
@@ -157,6 +153,31 @@
                     Заказ доставлен
                     <span th:if="${order.actualDeliveryDate != null}"
                           th:text="${#temporals.format(order.actualDeliveryDate, 'dd.MM.yyyy')}"></span>.
+                </div>
+            </div>
+
+            <!-- Документы -->
+            <div th:if="${order.deliveryTask != null}" class="mb-4">
+                <h5 class="fw-bold mb-3">Документы</h5>
+                <div th:if="${order.deliveryTask.ttn == null and order.acceptanceAct == null}" class="mb-3">
+                    <form th:action="'/employee/warehouseManager/clientOrders/createDocuments/' + ${order.id}"
+                          method="post" class="d-inline">
+                        <button type="submit" class="btn btn-outline-primary">Подготовить документы</button>
+                    </form>
+                </div>
+                <div th:if="${order.deliveryTask.ttn != null or order.acceptanceAct != null}" class="d-flex flex-wrap gap-2">
+                    <a th:if="${order.deliveryTask.ttn != null}"
+                       th:href="'/employee/warehouseManager/clientOrders/detailsTTN/' + ${order.id}"
+                       class="btn btn-outline-secondary">Просмотр ТТН</a>
+                    <a th:if="${order.deliveryTask.ttn != null}"
+                       th:href="'/employee/warehouseManager/clientOrders/editTTN/' + ${order.id}"
+                       class="btn btn-outline-primary">Редактировать ТТН</a>
+                    <a th:if="${order.acceptanceAct != null}"
+                       th:href="'/employee/warehouseManager/clientOrders/detailsAcceptanceAct/' + ${order.id}"
+                       class="btn btn-outline-secondary">Просмотр акта</a>
+                    <a th:if="${order.acceptanceAct != null}"
+                       th:href="'/employee/warehouseManager/clientOrders/editAcceptanceAct/' + ${order.id}"
+                       class="btn btn-outline-primary">Редактировать акт</a>
                 </div>
             </div>
 

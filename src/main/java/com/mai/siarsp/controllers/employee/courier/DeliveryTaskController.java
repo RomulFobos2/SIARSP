@@ -1,6 +1,9 @@
 package com.mai.siarsp.controllers.employee.courier;
 
+import com.mai.siarsp.dto.DeliveryTaskDTO;
+import com.mai.siarsp.enumeration.DeliveryTaskStatus;
 import com.mai.siarsp.models.AcceptanceAct;
+import com.mai.siarsp.models.ClientOrder;
 import com.mai.siarsp.models.DeliveryTask;
 import com.mai.siarsp.models.Employee;
 import com.mai.siarsp.service.employee.DeliveryTaskService;
@@ -12,6 +15,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.List;
 import java.util.Optional;
 
 @Controller("courierDeliveryTaskController")
@@ -26,8 +30,37 @@ public class DeliveryTaskController {
     }
 
     @GetMapping("/myDeliveryTasks")
-    public String myDeliveryTasks(@AuthenticationPrincipal Employee currentUser, Model model) {
-        model.addAttribute("tasks", deliveryTaskService.getTasksByDriver(currentUser.getId()));
+    public String myDeliveryTasks(@AuthenticationPrincipal Employee currentUser,
+                                  @RequestParam(required = false) String search,
+                                  @RequestParam(required = false, defaultValue = "active") String status,
+                                  Model model) {
+        List<DeliveryTaskDTO> tasks;
+        switch (status) {
+            case "completed" -> tasks = deliveryTaskService.getTasksByDriverAndStatuses(
+                    currentUser.getId(),
+                    List.of(DeliveryTaskStatus.DELIVERED, DeliveryTaskStatus.CANCELLED));
+            case "all" -> tasks = deliveryTaskService.getTasksByDriver(currentUser.getId());
+            default -> {
+                tasks = deliveryTaskService.getTasksByDriverAndStatuses(
+                        currentUser.getId(),
+                        List.of(DeliveryTaskStatus.PENDING, DeliveryTaskStatus.LOADING,
+                                DeliveryTaskStatus.LOADED, DeliveryTaskStatus.IN_TRANSIT));
+                status = "active";
+            }
+        }
+
+        // Фильтрация по номеру заказа
+        if (search != null && !search.isBlank()) {
+            String searchLower = search.toLowerCase();
+            tasks = tasks.stream()
+                    .filter(t -> t.getClientOrderNumber() != null
+                            && t.getClientOrderNumber().toLowerCase().contains(searchLower))
+                    .toList();
+        }
+
+        model.addAttribute("tasks", tasks);
+        model.addAttribute("currentSearch", search != null ? search : "");
+        model.addAttribute("currentStatus", status);
         return "employee/courier/deliveryTasks/myDeliveryTasks";
     }
 
@@ -80,43 +113,6 @@ public class DeliveryTaskController {
         return "redirect:/employee/courier/deliveryTasks/detailsDeliveryTask/" + id;
     }
 
-    @Transactional(readOnly = true)
-    @GetMapping("/editDocuments/{id}")
-    public String editDocuments(@PathVariable Long id, Model model) {
-        Optional<DeliveryTask> optTask = deliveryTaskService.getTaskById(id);
-        if (optTask.isEmpty()) {
-            return "redirect:/employee/courier/deliveryTasks/myDeliveryTasks";
-        }
-
-        DeliveryTask task = optTask.get();
-        model.addAttribute("task", task);
-
-        // Предзаполнить акт если есть
-        Optional<AcceptanceAct> optAct = deliveryTaskService.getAcceptanceActByTask(id);
-        optAct.ifPresent(act -> model.addAttribute("acceptanceAct", act));
-
-        return "employee/courier/deliveryTasks/editDocuments";
-    }
-
-    @PostMapping("/saveDocuments/{id}")
-    public String saveDocuments(@PathVariable Long id,
-                                @RequestParam(required = false) String cargoDescription,
-                                @RequestParam(required = false) Double totalWeight,
-                                @RequestParam(required = false) Double totalVolume,
-                                @RequestParam(required = false) String ttnComment,
-                                @RequestParam(required = false) String actComment,
-                                RedirectAttributes redirectAttributes) {
-        boolean ttnOk = deliveryTaskService.createOrUpdateTTN(id, cargoDescription, totalWeight, totalVolume, ttnComment);
-        boolean actOk = deliveryTaskService.createOrUpdateAcceptanceAct(id, actComment);
-
-        if (!ttnOk || !actOk) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при сохранении документов.");
-        } else {
-            redirectAttributes.addFlashAttribute("successMessage", "Документы сохранены.");
-        }
-        return "redirect:/employee/courier/deliveryTasks/detailsDeliveryTask/" + id;
-    }
-
     @PostMapping("/completeDelivery/{id}")
     public String completeDelivery(@PathVariable Long id,
                                    @RequestParam Integer endMileage,
@@ -129,5 +125,41 @@ public class DeliveryTaskController {
             redirectAttributes.addFlashAttribute("successMessage", "Доставка завершена. Заказ доставлен.");
         }
         return "redirect:/employee/courier/deliveryTasks/detailsDeliveryTask/" + id;
+    }
+
+    // ========== ПРОСМОТР ДОКУМЕНТОВ (read-only) ==========
+
+    @Transactional(readOnly = true)
+    @GetMapping("/detailsTTN/{taskId}")
+    public String detailsTTN(@PathVariable Long taskId, Model model) {
+        Optional<DeliveryTask> optTask = deliveryTaskService.getTaskById(taskId);
+        if (optTask.isEmpty() || optTask.get().getTtn() == null) {
+            return "redirect:/employee/courier/deliveryTasks/detailsDeliveryTask/" + taskId;
+        }
+        DeliveryTask task = optTask.get();
+        model.addAttribute("order", task.getClientOrder());
+        model.addAttribute("ttn", task.getTtn());
+        model.addAttribute("canEdit", false);
+        model.addAttribute("backUrl", "/employee/courier/deliveryTasks/detailsDeliveryTask/" + taskId);
+        return "employee/warehouseManager/documents/detailsTTN";
+    }
+
+    @Transactional(readOnly = true)
+    @GetMapping("/detailsAcceptanceAct/{taskId}")
+    public String detailsAcceptanceAct(@PathVariable Long taskId, Model model) {
+        Optional<DeliveryTask> optTask = deliveryTaskService.getTaskById(taskId);
+        if (optTask.isEmpty() || optTask.get().getClientOrder() == null) {
+            return "redirect:/employee/courier/deliveryTasks/detailsDeliveryTask/" + taskId;
+        }
+        DeliveryTask task = optTask.get();
+        Optional<AcceptanceAct> optAct = deliveryTaskService.getAcceptanceActByOrder(task.getClientOrder().getId());
+        if (optAct.isEmpty()) {
+            return "redirect:/employee/courier/deliveryTasks/detailsDeliveryTask/" + taskId;
+        }
+        model.addAttribute("order", task.getClientOrder());
+        model.addAttribute("act", optAct.get());
+        model.addAttribute("canEdit", false);
+        model.addAttribute("backUrl", "/employee/courier/deliveryTasks/detailsDeliveryTask/" + taskId);
+        return "employee/warehouseManager/documents/detailsAcceptanceAct";
     }
 }

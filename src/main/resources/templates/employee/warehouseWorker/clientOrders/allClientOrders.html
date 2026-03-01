@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Мои доставки | СИАРСП</title>
+    <title>Заказы на сборку | СИАРСП</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="/css/bootstrap.min.css" rel="stylesheet">
@@ -16,10 +16,10 @@
             <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
             <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
-            <h1 class="page-title mb-4">Мои доставки</h1>
+            <h1 class="page-title mb-4">Заказы на сборку</h1>
 
             <!-- Фильтр и поиск -->
-            <form method="get" action="/employee/courier/deliveryTasks/myDeliveryTasks" class="mb-4">
+            <form method="get" action="/employee/warehouseWorker/clientOrders/allClientOrders" class="mb-4">
                 <div class="row g-3 align-items-end">
                     <div class="col-md-5">
                         <label class="form-label fw-semibold">Поиск по номеру заказа</label>
@@ -30,9 +30,9 @@
                     <div class="col-md-4">
                         <label class="form-label fw-semibold">Статус</label>
                         <select name="status" class="form-select">
-                            <option value="active" th:selected="${currentStatus == 'active'}">Активные</option>
-                            <option value="completed" th:selected="${currentStatus == 'completed'}">Завершённые</option>
                             <option value="all" th:selected="${currentStatus == 'all'}">Все</option>
+                            <option value="reserved" th:selected="${currentStatus == 'reserved'}">Ожидают сборки</option>
+                            <option value="in_progress" th:selected="${currentStatus == 'in_progress'}">В сборке</option>
                         </select>
                     </div>
                     <div class="col-md-3">
@@ -41,40 +41,38 @@
                 </div>
             </form>
 
-            <div th:if="${#lists.isEmpty(tasks)}" class="alert alert-info">
-                Нет задач по выбранным критериям.
+            <div th:if="${#lists.isEmpty(orders)}" class="alert alert-info">
+                Нет заказов по выбранным критериям.
             </div>
 
-            <div th:if="${!#lists.isEmpty(tasks)}" class="table-responsive">
+            <div th:if="${!#lists.isEmpty(orders)}" class="table-responsive">
                 <table class="table table-modern">
                     <thead>
                     <tr>
                         <th>#</th>
-                        <th>Заказ</th>
-                        <th>Автомобиль</th>
+                        <th>Номер заказа</th>
+                        <th>Клиент</th>
+                        <th>Дата доставки</th>
+                        <th>Сумма</th>
                         <th>Статус</th>
-                        <th>Планируемое начало</th>
                         <th>Действия</th>
                     </tr>
                     </thead>
                     <tbody>
-                    <tr th:each="task, idx : ${tasks}">
+                    <tr th:each="order, idx : ${orders}">
                         <td th:text="${idx.index + 1}"></td>
-                        <td th:text="${task.clientOrderNumber}"></td>
-                        <td th:text="${task.vehicleRegistrationNumber}"></td>
+                        <td th:text="${order.orderNumber}"></td>
+                        <td th:text="${order.clientOrganizationName}"></td>
+                        <td th:text="${order.deliveryDate != null ? #temporals.format(order.deliveryDate, 'dd.MM.yyyy') : '—'}"></td>
+                        <td th:text="${#numbers.formatDecimal(order.totalAmount, 1, 2) + ' руб.'}"></td>
                         <td>
                             <span class="badge"
-                                  th:text="${task.status.displayName}"
-                                  th:classappend="${task.status.name() == 'PENDING' ? 'bg-secondary' :
-                                                   task.status.name() == 'LOADING' ? 'bg-warning text-dark' :
-                                                   task.status.name() == 'LOADED' ? 'bg-info' :
-                                                   task.status.name() == 'IN_TRANSIT' ? 'bg-primary' :
-                                                   task.status.name() == 'DELIVERED' ? 'bg-success' :
-                                                   task.status.name() == 'CANCELLED' ? 'bg-danger' : 'bg-secondary'}"></span>
+                                  th:text="${order.status.displayName}"
+                                  th:classappend="${order.status.name() == 'RESERVED' ? 'bg-primary' :
+                                                   order.status.name() == 'IN_PROGRESS' ? 'bg-warning text-dark' : 'bg-secondary'}"></span>
                         </td>
-                        <td th:text="${task.plannedStartTime != null ? #temporals.format(task.plannedStartTime, 'dd.MM.yyyy HH:mm') : '—'}"></td>
                         <td>
-                            <a th:href="'/employee/courier/deliveryTasks/detailsDeliveryTask/' + ${task.id}"
+                            <a th:href="'/employee/warehouseWorker/clientOrders/detailsClientOrder/' + ${order.id}"
                                class="btn btn-sm btn-outline-primary">Подробнее</a>
                         </td>
                     </tr>
