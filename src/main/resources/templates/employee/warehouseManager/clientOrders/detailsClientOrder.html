@@ -153,6 +153,9 @@
                     Заказ доставлен
                     <span th:if="${order.actualDeliveryDate != null}"
                           th:text="${#temporals.format(order.actualDeliveryDate, 'dd.MM.yyyy')}"></span>.
+                    <a th:if="${order.deliveryTask != null}"
+                       th:href="'/employee/warehouseManager/deliveryTasks/detailsDeliveryTask/' + ${order.deliveryTask.id}"
+                       class="alert-link">Перейти к задаче</a>
                 </div>
             </div>
 

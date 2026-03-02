@@ -139,7 +139,9 @@
                                 <div class="col-md-4">
                                     <label for="startMileage" class="form-label">Начальный пробег (км)</label>
                                     <input type="number" id="startMileage" name="startMileage" class="form-control"
-                                           min="0" required placeholder="Текущий пробег">
+                                           th:min="${task.vehicle.currentMileage}" required
+                                           th:placeholder="'Не менее ' + ${task.vehicle.currentMileage} + ' км'">
+                                    <small class="text-muted">Текущий пробег авто: <span th:text="${task.vehicle.currentMileage}"></span> км</small>
                                 </div>
                                 <div class="col-md-4">
                                     <button type="submit" class="btn btn-primary">Начать доставку</button>
@@ -184,24 +186,18 @@
                         <h6 class="card-title fw-bold">Завершить доставку</h6>
                         <form th:action="'/employee/courier/deliveryTasks/completeDelivery/' + ${task.id}" method="post"
                               onsubmit="return confirm('Вы уверены, что хотите завершить доставку?');">
-                            <div class="row g-3 mb-3">
+                            <div class="row g-3 align-items-end">
                                 <div class="col-md-4">
                                     <label for="endMileage" class="form-label">Конечный пробег (км)</label>
                                     <input type="number" id="endMileage" name="endMileage" class="form-control"
-                                           min="0" required placeholder="Текущий пробег">
+                                           th:min="${task.startMileage}" required
+                                           th:placeholder="'Не менее ' + ${task.startMileage} + ' км'">
+                                    <small class="text-muted">Начальный пробег: <span th:text="${task.startMileage}"></span> км</small>
                                 </div>
                                 <div class="col-md-4">
-                                    <label for="clientRepresentative" class="form-label">ФИО представителя клиента <span class="text-danger">*</span></label>
-                                    <input type="text" id="clientRepresentative" name="clientRepresentative"
-                                           class="form-control" required placeholder="Иванова М.П., заведующая">
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="actComment" class="form-label">Комментарий к акту</label>
-                                    <input type="text" id="actComment" name="actComment"
-                                           class="form-control" placeholder="Примечания">
+                                    <button type="submit" class="btn btn-success">Завершить доставку</button>
                                 </div>
                             </div>
-                            <button type="submit" class="btn btn-success">Завершить доставку</button>
                         </form>
                     </div>
                 </div>

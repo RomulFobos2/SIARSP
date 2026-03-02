@@ -73,8 +73,7 @@
                         <th>Товар</th>
                         <th>Артикул</th>
                         <th>Количество</th>
-                        <th>Цена за ед.</th>
-                        <th>Сумма</th>
+                        <th>Местоположение на складе</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -83,16 +82,23 @@
                         <td th:text="${op.product.name}"></td>
                         <td th:text="${op.product.article}"></td>
                         <td th:text="${op.quantity}"></td>
-                        <td th:text="${#numbers.formatDecimal(op.price, 1, 2) + ' руб.'}"></td>
-                        <td th:text="${#numbers.formatDecimal(op.totalPrice, 1, 2) + ' руб.'}"></td>
+                        <td>
+                            <th:block th:with="locations=${productLocations.get(op.product.id)}">
+                                <div th:if="${locations != null and !locations.isEmpty()}">
+                                    <div th:each="zp : ${locations}" class="mb-1">
+                                        <small>
+                                            <span th:text="${zp.zone.shelf.warehouse.name}" class="fw-semibold"></span>
+                                            &rarr; <span th:text="${zp.zone.shelf.code}"></span>
+                                            &rarr; <span th:text="${zp.zone.label}"></span>:
+                                            <span th:text="${zp.quantity}" class="fw-bold"></span> шт.
+                                        </small>
+                                    </div>
+                                </div>
+                                <span th:if="${locations == null or locations.isEmpty()}" class="text-muted">&mdash;</span>
+                            </th:block>
+                        </td>
                     </tr>
                     </tbody>
-                    <tfoot>
-                    <tr>
-                        <td colspan="5" class="text-end fw-bold">Итого:</td>
-                        <td class="fw-bold" th:text="${#numbers.formatDecimal(order.totalAmount, 1, 2) + ' руб.'}"></td>
-                    </tr>
-                    </tfoot>
                 </table>
             </div>
 
@@ -122,6 +128,13 @@
                 <div th:if="${order.status.name() == 'READY'}" class="alert alert-success mb-0">
                     Заказ собран и готов к отгрузке.
                 </div>
+            </div>
+
+            <!-- Задача на доставку -->
+            <div th:if="${order.deliveryTask != null}" class="mb-4">
+                <h5 class="fw-bold mb-3">Задача на доставку</h5>
+                <a th:href="'/employee/warehouseWorker/deliveryTasks/detailsDeliveryTask/' + ${order.deliveryTask.id}"
+                   class="btn btn-outline-primary">Перейти к задаче на доставку</a>
             </div>
 
             <div class="link-section">

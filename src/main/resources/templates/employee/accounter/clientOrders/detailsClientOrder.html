@@ -104,6 +104,13 @@
                 <p class="text-muted" th:text="${order.comment}"></p>
             </div>
 
+            <!-- Задача на доставку -->
+            <div th:if="${order.deliveryTask != null}" class="mb-4">
+                <h5 class="fw-bold mb-3">Задача на доставку</h5>
+                <a th:href="'/employee/accounter/deliveryTasks/detailsDeliveryTask/' + ${order.deliveryTask.id}"
+                   class="btn btn-outline-primary">Перейти к задаче на доставку</a>
+            </div>
+
             <!-- Документы -->
             <div th:if="${order.deliveryTask != null and (order.deliveryTask.ttn != null or order.acceptanceAct != null)}" class="mb-4">
                 <h5 class="fw-bold mb-3">Документы</h5>

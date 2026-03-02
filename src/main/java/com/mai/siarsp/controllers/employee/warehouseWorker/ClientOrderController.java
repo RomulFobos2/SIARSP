@@ -3,6 +3,9 @@ package com.mai.siarsp.controllers.employee.warehouseWorker;
 import com.mai.siarsp.dto.ClientOrderDTO;
 import com.mai.siarsp.enumeration.ClientOrderStatus;
 import com.mai.siarsp.models.ClientOrder;
+import com.mai.siarsp.models.OrderedProduct;
+import com.mai.siarsp.models.ZoneProduct;
+import com.mai.siarsp.repo.ZoneProductRepository;
 import com.mai.siarsp.service.employee.ClientOrderService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -11,9 +14,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Контроллер заказов клиентов для складского работника
@@ -34,9 +35,12 @@ public class ClientOrderController {
     );
 
     private final ClientOrderService clientOrderService;
+    private final ZoneProductRepository zoneProductRepository;
 
-    public ClientOrderController(ClientOrderService clientOrderService) {
+    public ClientOrderController(ClientOrderService clientOrderService,
+                                 ZoneProductRepository zoneProductRepository) {
         this.clientOrderService = clientOrderService;
+        this.zoneProductRepository = zoneProductRepository;
     }
 
     @GetMapping("/allClientOrders")
@@ -76,7 +80,17 @@ public class ClientOrderController {
             return "redirect:/employee/warehouseWorker/clientOrders/allClientOrders";
         }
 
-        model.addAttribute("order", optOrder.get());
+        ClientOrder order = optOrder.get();
+        model.addAttribute("order", order);
+
+        // Местоположение товаров на складе: productId → List<ZoneProduct>
+        Map<Long, List<ZoneProduct>> productLocations = new HashMap<>();
+        for (OrderedProduct op : order.getOrderedProducts()) {
+            List<ZoneProduct> locations = zoneProductRepository.findByProduct(op.getProduct());
+            productLocations.put(op.getProduct().getId(), locations);
+        }
+        model.addAttribute("productLocations", productLocations);
+
         return "employee/warehouseWorker/clientOrders/detailsClientOrder";
     }
 
