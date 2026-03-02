@@ -595,6 +595,14 @@ public class DeliveryTaskService {
                 return false;
             }
 
+            // Валидация: начальный пробег не может быть меньше текущего пробега автомобиля
+            Vehicle vehicle = task.getVehicle();
+            if (vehicle.getCurrentMileage() != null && startMileage < vehicle.getCurrentMileage()) {
+                log.error("Задача id={}: начальный пробег {} км меньше текущего пробега авто {} км",
+                        taskId, startMileage, vehicle.getCurrentMileage());
+                return false;
+            }
+
             task.setStatus(DeliveryTaskStatus.IN_TRANSIT);
             task.setActualStartTime(LocalDateTime.now());
             task.setStartMileage(startMileage);
@@ -717,9 +725,10 @@ public class DeliveryTaskService {
             order.setActualDeliveryDate(LocalDate.now());
             clientOrderRepository.save(order);
 
-            // Vehicle → AVAILABLE
+            // Vehicle → AVAILABLE + обновление пробега
             Vehicle vehicle = task.getVehicle();
             vehicle.setStatus(VehicleStatus.AVAILABLE);
+            vehicle.setCurrentMileage(endMileage);
             vehicleRepository.save(vehicle);
 
             // AcceptanceAct — использовать существующий или создать новый

@@ -116,10 +116,8 @@ public class DeliveryTaskController {
     @PostMapping("/completeDelivery/{id}")
     public String completeDelivery(@PathVariable Long id,
                                    @RequestParam Integer endMileage,
-                                   @RequestParam String clientRepresentative,
-                                   @RequestParam(required = false) String actComment,
                                    RedirectAttributes redirectAttributes) {
-        if (!deliveryTaskService.completeDelivery(id, endMileage, clientRepresentative, actComment)) {
+        if (!deliveryTaskService.completeDelivery(id, endMileage, null, null)) {
             redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при завершении доставки.");
         } else {
             redirectAttributes.addFlashAttribute("successMessage", "Доставка завершена. Заказ доставлен.");

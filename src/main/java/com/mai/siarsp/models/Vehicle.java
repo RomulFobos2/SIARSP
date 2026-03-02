@@ -143,6 +143,13 @@ public class Vehicle {
     @Column(nullable = false)
     private VehicleStatus status;
 
+    /**
+     * Текущий пробег автомобиля в километрах
+     * Обновляется при завершении каждой доставки (endMileage → currentMileage)
+     * При начале доставки startMileage должен быть >= currentMileage
+     */
+    @Column(nullable = false)
+    private Integer currentMileage = 0;
 
     /**
      * История задач на доставку, выполненных на этом автомобиле
