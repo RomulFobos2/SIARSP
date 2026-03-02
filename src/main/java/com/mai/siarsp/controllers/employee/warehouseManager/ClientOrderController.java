@@ -169,9 +169,11 @@ public class ClientOrderController {
     @PostMapping("/saveAcceptanceAct/{orderId}")
     public String saveAcceptanceAct(@PathVariable Long orderId,
                                     @RequestParam Long actId,
+                                    @RequestParam(required = false) String clientRepresentative,
+                                    @RequestParam(required = false, defaultValue = "false") boolean signed,
                                     @RequestParam(required = false) String comment,
                                     RedirectAttributes redirectAttributes) {
-        if (!deliveryTaskService.updateAcceptanceAct(actId, comment)) {
+        if (!deliveryTaskService.updateAcceptanceAct(actId, clientRepresentative, signed, comment)) {
             redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при сохранении акта.");
         } else {
             redirectAttributes.addFlashAttribute("successMessage", "Акт сохранён.");

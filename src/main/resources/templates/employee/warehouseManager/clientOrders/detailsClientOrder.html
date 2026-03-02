@@ -172,15 +172,9 @@
                     <a th:if="${order.deliveryTask.ttn != null}"
                        th:href="'/employee/warehouseManager/clientOrders/detailsTTN/' + ${order.id}"
                        class="btn btn-outline-secondary">Просмотр ТТН</a>
-                    <a th:if="${order.deliveryTask.ttn != null}"
-                       th:href="'/employee/warehouseManager/clientOrders/editTTN/' + ${order.id}"
-                       class="btn btn-outline-primary">Редактировать ТТН</a>
                     <a th:if="${order.acceptanceAct != null}"
                        th:href="'/employee/warehouseManager/clientOrders/detailsAcceptanceAct/' + ${order.id}"
                        class="btn btn-outline-secondary">Просмотр акта</a>
-                    <a th:if="${order.acceptanceAct != null}"
-                       th:href="'/employee/warehouseManager/clientOrders/editAcceptanceAct/' + ${order.id}"
-                       class="btn btn-outline-primary">Редактировать акт</a>
                 </div>
             </div>
 

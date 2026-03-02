@@ -16,6 +16,7 @@ public class VehicleDTO {
     private Double volumeCapacity;
     private VehicleType type;
     private VehicleStatus status;
+    private Integer currentMileage;
     private String fullName;
     private boolean available;
 }
