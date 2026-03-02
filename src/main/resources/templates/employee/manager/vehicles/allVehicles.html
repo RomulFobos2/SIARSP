@@ -39,6 +39,7 @@
                     <th>Тип</th>
                     <th>Грузоподъёмность, кг</th>
                     <th>Объём, м³</th>
+                    <th>Пробег, км</th>
                     <th>Статус</th>
                 </tr>
                 </thead>
@@ -53,6 +54,7 @@
                     <td th:text="${vehicle.getType().getDisplayName()}"></td>
                     <td th:text="${vehicle.getLoadCapacity()}"></td>
                     <td th:text="${vehicle.getVolumeCapacity()}"></td>
+                    <td th:text="${vehicle.getCurrentMileage()}"></td>
                     <td th:text="${vehicle.getStatus().getDisplayName()}"></td>
                 </tr>
                 </tbody>

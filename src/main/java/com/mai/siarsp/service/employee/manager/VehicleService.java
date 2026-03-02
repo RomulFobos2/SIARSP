@@ -99,8 +99,9 @@ public class VehicleService {
      */
     @Transactional
     public boolean editVehicle(Long id, String inputRegistrationNumber, String inputBrand, String inputModel,
-                               Integer inputYear, String inputVin, Double inputLoadCapacity,
-                               Double inputVolumeCapacity, VehicleType inputType, VehicleStatus inputStatus) {
+                               Integer inputYear, String inputVin, Integer inputCurrentMileage,
+                               Double inputLoadCapacity, Double inputVolumeCapacity,
+                               VehicleType inputType, VehicleStatus inputStatus) {
         Optional<Vehicle> vehicleOptional = vehicleRepository.findById(id);
 
         if (vehicleOptional.isEmpty()) {
@@ -121,6 +122,7 @@ public class VehicleService {
         vehicle.setModel(inputModel);
         vehicle.setYear(inputYear);
         vehicle.setVin(inputVin != null ? inputVin : "");
+        vehicle.setCurrentMileage(inputCurrentMileage);
         vehicle.setLoadCapacity(inputLoadCapacity);
         vehicle.setVolumeCapacity(inputVolumeCapacity);
         vehicle.setType(inputType);

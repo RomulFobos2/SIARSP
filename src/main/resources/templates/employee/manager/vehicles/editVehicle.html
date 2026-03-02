@@ -47,15 +47,20 @@
             <div class="mb-4">
                 <h6 class="form-section-title">Дополнительно</h6>
                 <div class="row g-3">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <input type="number" class="form-control" name="inputYear"
                                id="inputYear" placeholder="Год выпуска"
                                min="1900" max="2100" th:value="${vehicleDTO.getYear()}">
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <input type="text" class="form-control" name="inputVin"
                                id="inputVin" placeholder="VIN-код"
                                maxlength="50" th:value="${vehicleDTO.getVin()}">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="number" class="form-control" name="inputCurrentMileage"
+                               id="inputCurrentMileage" placeholder="Текущий пробег (км)"
+                               min="0" th:value="${vehicleDTO.getCurrentMileage()}">
                     </div>
                 </div>
             </div>

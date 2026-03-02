@@ -555,7 +555,7 @@ public class DeliveryTaskService {
      * Обновляет акт приёма-передачи по ID
      */
     @Transactional
-    public boolean updateAcceptanceAct(Long actId, String comment) {
+    public boolean updateAcceptanceAct(Long actId, String clientRepresentative, boolean signed, String comment) {
         try {
             Optional<AcceptanceAct> optAct = acceptanceActRepository.findById(actId);
             if (optAct.isEmpty()) {
@@ -563,7 +563,16 @@ public class DeliveryTaskService {
                 return false;
             }
             AcceptanceAct act = optAct.get();
+            act.setClientRepresentative(clientRepresentative);
             act.setComment(comment);
+
+            if (signed && !act.isSigned()) {
+                act.markAsSigned(clientRepresentative);
+            } else if (!signed && act.isSigned()) {
+                act.setSigned(false);
+                act.setSignedAt(null);
+            }
+
             acceptanceActRepository.save(act);
             log.info("Акт {} обновлён", act.getActNumber());
             return true;

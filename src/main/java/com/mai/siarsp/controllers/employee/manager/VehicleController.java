@@ -97,6 +97,7 @@ public class VehicleController {
                              @RequestParam String inputModel,
                              @RequestParam(required = false) Integer inputYear,
                              @RequestParam(required = false) String inputVin,
+                             @RequestParam(required = false, defaultValue = "0") Integer inputCurrentMileage,
                              @RequestParam Double inputLoadCapacity,
                              @RequestParam Double inputVolumeCapacity,
                              @RequestParam VehicleType inputType,
@@ -105,6 +106,7 @@ public class VehicleController {
                 inputLoadCapacity, inputVolumeCapacity, inputType);
         vehicle.setYear(inputYear);
         vehicle.setVin(inputVin != null ? inputVin : "");
+        vehicle.setCurrentMileage(inputCurrentMileage);
 
         if (!vehicleService.saveVehicle(vehicle)) {
             model.addAttribute("vehicleError", "Ошибка при сохранении транспортного средства.");
@@ -175,13 +177,14 @@ public class VehicleController {
                               @RequestParam String inputModel,
                               @RequestParam(required = false) Integer inputYear,
                               @RequestParam(required = false) String inputVin,
+                              @RequestParam Integer inputCurrentMileage,
                               @RequestParam Double inputLoadCapacity,
                               @RequestParam Double inputVolumeCapacity,
                               @RequestParam VehicleType inputType,
                               @RequestParam VehicleStatus inputStatus,
                               RedirectAttributes redirectAttributes) {
         if (!vehicleService.editVehicle(id, inputRegistrationNumber, inputBrand, inputModel,
-                inputYear, inputVin, inputLoadCapacity, inputVolumeCapacity, inputType, inputStatus)) {
+                inputYear, inputVin, inputCurrentMileage, inputLoadCapacity, inputVolumeCapacity, inputType, inputStatus)) {
             redirectAttributes.addFlashAttribute("vehicleError", "Ошибка при сохранении изменений.");
             return "redirect:/employee/manager/vehicles/editVehicle/" + id;
         }
