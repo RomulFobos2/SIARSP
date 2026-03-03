@@ -2,10 +2,12 @@ package com.mai.siarsp.controllers.employee.manager;
 
 import com.mai.siarsp.dto.DetailedWarehouseStatistics;
 import com.mai.siarsp.dto.ZoneUtilization;
+import com.mai.siarsp.models.ClientOrder;
 import com.mai.siarsp.models.Shelf;
 import com.mai.siarsp.models.StorageZone;
 import com.mai.siarsp.models.Warehouse;
 import com.mai.siarsp.models.ZoneProduct;
+import com.mai.siarsp.repo.ClientOrderRepository;
 import com.mai.siarsp.repo.WarehouseRepository;
 import com.mai.siarsp.service.employee.warehouseManager.WarehouseManagementService;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +19,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.math.BigDecimal;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,11 +38,14 @@ import java.util.Optional;
 public class WarehouseViewController {
 
     private final WarehouseRepository warehouseRepository;
+    private final ClientOrderRepository clientOrderRepository;
     private final WarehouseManagementService managementService;
 
     public WarehouseViewController(WarehouseRepository warehouseRepository,
+                                   ClientOrderRepository clientOrderRepository,
                                    @Qualifier("warehouseManagementService") WarehouseManagementService managementService) {
         this.warehouseRepository = warehouseRepository;
+        this.clientOrderRepository = clientOrderRepository;
         this.managementService = managementService;
     }
 
@@ -93,10 +102,12 @@ public class WarehouseViewController {
         }
 
         List<ZoneUtilization> underutilizedZones = managementService.getUnderutilizedZones(warehouseId, 50.0);
+        AnalyticsChartsData chartsData = buildAnalyticsChartsData(opt.get());
 
         model.addAttribute("warehouse", opt.get());
         model.addAttribute("stats", stats.get());
         model.addAttribute("underutilizedZones", underutilizedZones);
+        model.addAttribute("chartsData", chartsData);
         return "employee/manager/warehouses/analytics";
     }
 
@@ -133,6 +144,55 @@ public class WarehouseViewController {
         return new ShelfStat(shelf, zoneCount, capacity, usedVolume, occupancy);
     }
 
+    private AnalyticsChartsData buildAnalyticsChartsData(Warehouse warehouse) {
+        List<ClientOrder> allOrders = clientOrderRepository.findAllByOrderByOrderDateDesc();
+
+        DateTimeFormatter monthFormatter = DateTimeFormatter.ofPattern("MM.yyyy");
+        Map<YearMonth, Integer> ordersByMonth = new LinkedHashMap<>();
+        Map<YearMonth, BigDecimal> revenueByMonth = new LinkedHashMap<>();
+
+        YearMonth currentMonth = YearMonth.now();
+        for (int i = 5; i >= 0; i--) {
+            YearMonth month = currentMonth.minusMonths(i);
+            ordersByMonth.put(month, 0);
+            revenueByMonth.put(month, BigDecimal.ZERO);
+        }
+
+        for (ClientOrder order : allOrders) {
+            YearMonth orderMonth = YearMonth.from(order.getOrderDate());
+            if (ordersByMonth.containsKey(orderMonth)) {
+                ordersByMonth.put(orderMonth, ordersByMonth.get(orderMonth) + 1);
+                revenueByMonth.put(orderMonth, revenueByMonth.get(orderMonth).add(order.getTotalAmount()));
+            }
+        }
+
+        List<String> periodLabels = ordersByMonth.keySet().stream()
+                .map(monthFormatter::format)
+                .toList();
+
+        List<Integer> orderDynamics = new ArrayList<>(ordersByMonth.values());
+        List<BigDecimal> revenueDynamics = new ArrayList<>(revenueByMonth.values());
+
+        List<String> shelfLabels = warehouse.getShelves().stream()
+                .map(shelf -> "Стеллаж " + shelf.getCode())
+                .toList();
+
+        List<Double> shelfOccupancy = warehouse.getShelves().stream()
+                .map(shelf -> {
+                    double capacity = shelf.getStorageZones().stream()
+                            .mapToDouble(StorageZone::getCapacityVolume)
+                            .sum();
+                    double usedVolume = shelf.getStorageZones().stream()
+                            .flatMap(zone -> zone.getProducts().stream())
+                            .mapToDouble(ZoneProduct::getTotalVolume)
+                            .sum();
+                    return capacity > 0 ? (usedVolume / capacity) * 100.0 : 0.0;
+                })
+                .toList();
+
+        return new AnalyticsChartsData(periodLabels, orderDynamics, revenueDynamics, shelfLabels, shelfOccupancy);
+    }
+
     // ========== ВЛОЖЕННЫЕ ЗАПИСИ ==========
 
     public record WarehouseStat(
@@ -151,6 +211,15 @@ public class WarehouseViewController {
             double capacity,
             double usedVolume,
             double occupancyPercent
+    ) {
+    }
+
+    public record AnalyticsChartsData(
+            List<String> periodLabels,
+            List<Integer> orderDynamics,
+            List<BigDecimal> revenueDynamics,
+            List<String> shelfLabels,
+            List<Double> shelfOccupancy
     ) {
     }
 }
