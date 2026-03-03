@@ -1,6 +1,7 @@
 package com.mai.siarspmobile
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
@@ -29,6 +30,9 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.HttpUrl.Companion.toHttpUrl
 
 private const val BASE_URL = "http://10.0.2.2:8080/"
 
@@ -66,10 +70,12 @@ class InMemoryCookieJar : CookieJar {
 }
 
 class SessionRepository {
-    private val cookieJar = InMemoryCookieJar()
+    val cookieJar = InMemoryCookieJar()
 
     private val okHttpClient = OkHttpClient.Builder()
         .cookieJar(cookieJar)
+        .followRedirects(false)
+        .followSslRedirects(false)
         .addInterceptor(object : Interceptor {
             override fun intercept(chain: Interceptor.Chain): Response {
                 val req: Request = chain.request().newBuilder()
@@ -88,7 +94,7 @@ class SessionRepository {
 
     private val api = retrofit.create(CourierApi::class.java)
 
-    suspend fun login(username: String, password: String): Boolean {
+    suspend fun login(username: String, password: String): Boolean = withContext(Dispatchers.IO) {
         val body = FormBody.Builder()
             .add("username", username)
             .add("password", password)
@@ -99,10 +105,23 @@ class SessionRepository {
             .post(body)
             .build()
 
-        val response = okHttpClient.newCall(request).execute()
-        response.use {
-            val location = it.header("Location")
-            return it.isRedirect && location != null && !location.contains("error")
+        okHttpClient.newCall(request).execute().use { resp ->
+            val location = resp.header("Location")
+            val setCookie = resp.headers("Set-Cookie")
+
+            Log.e("SIARSP", "LOGIN resp.code=${resp.code}, isRedirect=${resp.isRedirect}, Location=$location, Set-Cookie=$setCookie")
+
+            // Временный критерий успеха:
+            // если после запроса в CookieJar появился JSESSIONID — значит сессия есть
+            val hasSession = cookieJar
+                .loadForRequest(BASE_URL.toHttpUrl())
+                .any { it.name.equals("JSESSIONID", ignoreCase = true) }
+
+            Log.e("SIARSP", "LOGIN hasSession=$hasSession, cookies=${cookieJar.loadForRequest(
+                BASE_URL.toHttpUrl()
+            )}")
+
+            hasSession
         }
     }
 
@@ -133,7 +152,10 @@ class MainViewModel : ViewModel() {
                     message = if (it) "Вход выполнен" else "Ошибка логина"
                     if (it) refreshTasks()
                 }
-                .onFailure { message = "Ошибка сети: ${it.message}" }
+                .onFailure {
+                    Log.e("SIARSP", "Login failed", it)
+                    message = "Ошибка сети: $it"
+                }
         }
     }
 
