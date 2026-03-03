@@ -40,9 +40,24 @@
                     <option value="out-of-stock">Нет в наличии</option>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <select id="categoryFilter" class="form-select" onchange="applyFilters()">
                     <option value="all">Все категории</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select id="expirationFilter" class="form-select" onchange="applyFilters()">
+                    <option value="all">Любой срок</option>
+                    <option value="expired">Просрочено</option>
+                    <option value="7days">До 7 дней</option>
+                    <option value="30days">До 30 дней</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select id="expirationSort" class="form-select" onchange="applyFilters()">
+                    <option value="none">Без сортировки</option>
+                    <option value="asc">Срок: раньше → позже</option>
+                    <option value="desc">Срок: позже → раньше</option>
                 </select>
             </div>
         </div>
@@ -65,6 +80,7 @@
                     <th>Тип склада</th>
                     <th>Остаток</th>
                     <th>Доступно</th>
+                    <th>Срок годности</th>
                     <th>Атрибуты</th>
                 </tr>
                 </thead>
@@ -73,7 +89,8 @@
                     th:data-name="${product.getName()}"
                     th:data-article="${product.getArticle()}"
                     th:data-stock="${product.getStockQuantity()}"
-                    th:data-category="${product.getCategoryName()}">
+                    th:data-category="${product.getCategoryName()}"
+                    th:data-expiration="${product.getExpirationDate()}">
                     <td>
                         <img th:src="@{'/image/' + ${product.getId()}}"
                              alt="Фото"
@@ -88,6 +105,7 @@
                     <td th:text="${product.getWarehouseType().getDisplayName()}"></td>
                     <td th:text="${product.getStockQuantity()}"></td>
                     <td th:text="${product.getAvailableQuantity()}"></td>
+                    <td th:text="${product.getExpirationDate() != null ? #temporals.format(product.getExpirationDate(),'dd.MM.yyyy') : '—'}"></td>
                     <td>
                         <button class="btn btn-sm btn-outline-primary"
                                 th:data-productid="${product.getId()}"
@@ -174,6 +192,8 @@
         const search = document.getElementById('searchInput').value.trim().toLowerCase();
         const stockFilter = document.getElementById('stockFilter').value;
         const categoryFilter = document.getElementById('categoryFilter').value;
+        const expirationFilter = document.getElementById('expirationFilter').value;
+        const expirationSort = document.getElementById('expirationSort').value;
         const rows = document.querySelectorAll('#productsTable tbody tr');
         let visibleCount = 0;
 
@@ -182,6 +202,7 @@
             const article = (row.getAttribute('data-article') || '').toLowerCase();
             const stock = parseInt(row.getAttribute('data-stock') || '0');
             const category = row.getAttribute('data-category') || '';
+            const expirationRaw = row.getAttribute('data-expiration') || '';
 
             let show = true;
 
@@ -197,6 +218,22 @@
             // Фильтр категории
             if (categoryFilter !== 'all' && category !== categoryFilter) show = false;
 
+            if (expirationFilter !== 'all') {
+                const expDate = expirationRaw ? new Date(expirationRaw) : null;
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                if (!expDate) {
+                    show = false;
+                } else {
+                    expDate.setHours(0, 0, 0, 0);
+                    const diffDays = Math.floor((expDate - today) / (1000 * 60 * 60 * 24));
+                    if (expirationFilter === 'expired' && diffDays >= 0) show = false;
+                    if (expirationFilter === '7days' && (diffDays < 0 || diffDays > 7)) show = false;
+                    if (expirationFilter === '30days' && (diffDays < 0 || diffDays > 30)) show = false;
+                }
+            }
+
             row.style.display = show ? '' : 'none';
             if (show) visibleCount++;
         });
@@ -205,10 +242,11 @@
         document.getElementById('noResults').style.display = visibleCount === 0 ? '' : 'none';
 
         // Обновить активные фильтры
-        updateActiveFilters(search, stockFilter, categoryFilter);
+        sortRowsByExpiration(expirationSort);
+        updateActiveFilters(search, stockFilter, categoryFilter, expirationFilter, expirationSort);
     }
 
-    function updateActiveFilters(search, stockFilter, categoryFilter) {
+    function updateActiveFilters(search, stockFilter, categoryFilter, expirationFilter, expirationSort) {
         const container = document.getElementById('activeFilters');
         const badges = document.getElementById('filterBadges');
         badges.innerHTML = '';
@@ -227,6 +265,14 @@
             badges.innerHTML += '<span class="badge bg-secondary me-1">' + categoryFilter + '</span>';
             hasFilters = true;
         }
+        if (expirationFilter !== 'all') {
+            badges.innerHTML += '<span class="badge bg-warning text-dark me-1">Срок: ' + expirationFilter + '</span>';
+            hasFilters = true;
+        }
+        if (expirationSort !== 'none') {
+            badges.innerHTML += '<span class="badge bg-dark me-1">Сортировка по сроку</span>';
+            hasFilters = true;
+        }
 
         container.style.display = hasFilters ? '' : 'none';
     }
@@ -235,7 +281,27 @@
         document.getElementById('searchInput').value = '';
         document.getElementById('stockFilter').value = 'all';
         document.getElementById('categoryFilter').value = 'all';
+        document.getElementById('expirationFilter').value = 'all';
+        document.getElementById('expirationSort').value = 'none';
         applyFilters();
+    }
+
+    function sortRowsByExpiration(expirationSort) {
+        if (expirationSort === 'none') return;
+
+        const tbody = document.querySelector('#productsTable tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr')).filter(r => r.style.display !== 'none');
+
+        rows.sort(function (a, b) {
+            const aRaw = a.getAttribute('data-expiration') || '9999-12-31';
+            const bRaw = b.getAttribute('data-expiration') || '9999-12-31';
+            if (expirationSort === 'asc') return aRaw.localeCompare(bRaw);
+            return bRaw.localeCompare(aRaw);
+        });
+
+        rows.forEach(function (row) {
+            tbody.appendChild(row);
+        });
     }
 
     function loadAttributes(button) {

@@ -89,6 +89,7 @@ public class RoleRunner implements CommandLineRunner {
         addAttributeIfNotExists("Длина упаковки", "см", AttributeType.NUMBER, categories);
         addAttributeIfNotExists("Ширина упаковки", "см", AttributeType.NUMBER, categories);
         addAttributeIfNotExists("Высота упаковки", "см", AttributeType.NUMBER, categories);
+        addAttributeIfNotExists("Срок годности", "дата", AttributeType.DATE, categories);
 
         productCategoryRepository.saveAll(categories);
         log.info("✅ Атрибуты добавлены и категории сохранены.");
