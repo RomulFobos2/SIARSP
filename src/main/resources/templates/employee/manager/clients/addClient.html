@@ -5,6 +5,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
     <link href="/css/style.css" rel="stylesheet">
     <script src="/js/bootstrap.bundle.min.js"></script>
     <script src="/js/javascript.js"></script>
@@ -65,13 +66,19 @@
                         <input type="text" class="form-control" name="inputDeliveryAddress"
                                id="inputDeliveryAddress" required placeholder="Адрес доставки" maxlength="500">
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-5">
                         <input type="number" class="form-control" name="inputDeliveryLatitude"
-                               id="inputDeliveryLatitude" placeholder="Широта доставки" step="0.000001">
+                               id="inputDeliveryLatitude" placeholder="Широта доставки" step="0.000001" readonly>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-5">
                         <input type="number" class="form-control" name="inputDeliveryLongitude"
-                               id="inputDeliveryLongitude" placeholder="Долгота доставки" step="0.000001">
+                               id="inputDeliveryLongitude" placeholder="Долгота доставки" step="0.000001" readonly>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" class="btn btn-outline-primary w-100"
+                                onclick="openMapPicker(document.getElementById('inputDeliveryLatitude'), document.getElementById('inputDeliveryLongitude'))">
+                            <i class="bi bi-geo-alt"></i> Карта
+                        </button>
                     </div>
                 </div>
             </div>
@@ -112,6 +119,7 @@
     </div>
 </div>
 <div th:insert="~{blocks/footer :: footer}"></div>
+<div th:insert="~{blocks/map-picker :: mapPicker}"></div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {

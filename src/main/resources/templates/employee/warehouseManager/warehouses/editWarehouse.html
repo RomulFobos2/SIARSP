@@ -55,17 +55,23 @@
                        placeholder="Введите адрес склада">
             </div>
             <div class="row g-3 mb-3">
-                <div class="col-md-6">
+                <div class="col-md-5">
                     <label for="latitude" class="form-label fw-semibold">Широта</label>
                     <input type="number" id="latitude" name="latitude" class="form-control"
                            step="0.000001" th:value="${warehouse.getLatitude()}"
-                           placeholder="Например: 55.751244">
+                           placeholder="Например: 55.751244" readonly>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-5">
                     <label for="longitude" class="form-label fw-semibold">Долгота</label>
                     <input type="number" id="longitude" name="longitude" class="form-control"
                            step="0.000001" th:value="${warehouse.getLongitude()}"
-                           placeholder="Например: 37.618423">
+                           placeholder="Например: 37.618423" readonly>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-outline-primary w-100"
+                            onclick="openMapPicker(document.getElementById('latitude'), document.getElementById('longitude'))">
+                        <i class="bi bi-geo-alt"></i> Карта
+                    </button>
                 </div>
             </div>
             <button type="submit" class="btn btn-primary">
@@ -122,6 +128,7 @@
 </div>
 
 <div th:insert="~{blocks/footer :: footer}"></div>
+<div th:insert="~{blocks/map-picker :: mapPicker}"></div>
 
 <script>
     function updateVolumeInfo() {
