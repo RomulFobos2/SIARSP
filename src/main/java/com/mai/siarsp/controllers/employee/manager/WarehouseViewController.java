@@ -18,8 +18,10 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -90,7 +92,10 @@ public class WarehouseViewController {
 
     @Transactional(readOnly = true)
     @GetMapping("/analytics/{warehouseId}")
-    public String analyticsPage(@PathVariable Long warehouseId, Model model) {
+    public String analyticsPage(@PathVariable Long warehouseId,
+                                @RequestParam(required = false) LocalDate startDate,
+                                @RequestParam(required = false) LocalDate endDate,
+                                Model model) {
         Optional<Warehouse> opt = warehouseRepository.findById(warehouseId);
         if (opt.isEmpty()) {
             return "redirect:/employee/manager/warehouses/allWarehouses";
@@ -101,13 +106,27 @@ public class WarehouseViewController {
             return "redirect:/employee/manager/warehouses/allWarehouses";
         }
 
+        LocalDate defaultEndDate = LocalDate.now();
+        LocalDate defaultStartDate = defaultEndDate.minusMonths(5).withDayOfMonth(1);
+
+        LocalDate normalizedStartDate = startDate != null ? startDate : defaultStartDate;
+        LocalDate normalizedEndDate = endDate != null ? endDate : defaultEndDate;
+
+        if (normalizedStartDate.isAfter(normalizedEndDate)) {
+            LocalDate temp = normalizedStartDate;
+            normalizedStartDate = normalizedEndDate;
+            normalizedEndDate = temp;
+        }
+
         List<ZoneUtilization> underutilizedZones = managementService.getUnderutilizedZones(warehouseId, 50.0);
-        AnalyticsChartsData chartsData = buildAnalyticsChartsData(opt.get());
+        AnalyticsChartsData chartsData = buildAnalyticsChartsData(opt.get(), normalizedStartDate, normalizedEndDate);
 
         model.addAttribute("warehouse", opt.get());
         model.addAttribute("stats", stats.get());
         model.addAttribute("underutilizedZones", underutilizedZones);
         model.addAttribute("chartsData", chartsData);
+        model.addAttribute("startDate", normalizedStartDate);
+        model.addAttribute("endDate", normalizedEndDate);
         return "employee/manager/warehouses/analytics";
     }
 
@@ -144,25 +163,30 @@ public class WarehouseViewController {
         return new ShelfStat(shelf, zoneCount, capacity, usedVolume, occupancy);
     }
 
-    private AnalyticsChartsData buildAnalyticsChartsData(Warehouse warehouse) {
+    private AnalyticsChartsData buildAnalyticsChartsData(Warehouse warehouse, LocalDate startDate, LocalDate endDate) {
         List<ClientOrder> allOrders = clientOrderRepository.findAllByOrderByOrderDateDesc();
 
         DateTimeFormatter monthFormatter = DateTimeFormatter.ofPattern("MM.yyyy");
         Map<YearMonth, Integer> ordersByMonth = new LinkedHashMap<>();
         Map<YearMonth, BigDecimal> revenueByMonth = new LinkedHashMap<>();
 
-        YearMonth currentMonth = YearMonth.now();
-        for (int i = 5; i >= 0; i--) {
-            YearMonth month = currentMonth.minusMonths(i);
+        YearMonth startMonth = YearMonth.from(startDate);
+        YearMonth endMonth = YearMonth.from(endDate);
+        for (YearMonth month = startMonth; !month.isAfter(endMonth); month = month.plusMonths(1)) {
             ordersByMonth.put(month, 0);
             revenueByMonth.put(month, BigDecimal.ZERO);
         }
 
         for (ClientOrder order : allOrders) {
+            LocalDate orderLocalDate = order.getOrderDate().toLocalDate();
+            if (orderLocalDate.isBefore(startDate) || orderLocalDate.isAfter(endDate)) {
+                continue;
+            }
             YearMonth orderMonth = YearMonth.from(order.getOrderDate());
             if (ordersByMonth.containsKey(orderMonth)) {
                 ordersByMonth.put(orderMonth, ordersByMonth.get(orderMonth) + 1);
-                revenueByMonth.put(orderMonth, revenueByMonth.get(orderMonth).add(order.getTotalAmount()));
+                BigDecimal orderAmount = order.getTotalAmount() != null ? order.getTotalAmount() : BigDecimal.ZERO;
+                revenueByMonth.put(orderMonth, revenueByMonth.get(orderMonth).add(orderAmount));
             }
         }
 
