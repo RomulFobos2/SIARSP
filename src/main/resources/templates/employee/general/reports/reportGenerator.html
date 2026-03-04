@@ -65,7 +65,8 @@
         endDateInput.value = formatDate(today);
 
         form.addEventListener('submit', function () {
-            form.action = reportTypeSelect.value;
+            const basePath = window.location.pathname.replace(/\/$/, '');
+            form.action = basePath + '/' + reportTypeSelect.value;
         });
     });
 </script>
