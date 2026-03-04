@@ -215,6 +215,17 @@ fun formatDate(isoDate: String?): String {
     } catch (e: Exception) { isoDate }
 }
 
+/** Конвертирует ISO-дату-время (yyyy-MM-ddTHH:mm:ss) в формат dd.MM.yyyy HH:mm */
+fun formatDateTime(isoDateTime: String?): String {
+    if (isoDateTime.isNullOrBlank()) return "—"
+    return try {
+        val dateTimeParts = isoDateTime.split("T")
+        val datePart = dateTimeParts[0].split("-") // yyyy-MM-dd
+        val timePart = dateTimeParts.getOrElse(1) { "00:00" }.substring(0, 5) // HH:mm
+        "${datePart[2]}.${datePart[1]}.${datePart[0]} $timePart"
+    } catch (e: Exception) { isoDateTime }
+}
+
 /** Возвращает человекочитаемое название по enum-имени */
 fun displayName(value: String?, map: Map<String, String>): String =
     map[value] ?: value ?: "—"
@@ -823,7 +834,7 @@ private fun TaskScreen(vm: MainViewModel, paddingValues: PaddingValues) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text("Задача #${task.id}, заказ: ${task.clientOrderNumber ?: "—"}")
                         Text("Статус: ${displayName(task.status, deliveryTaskStatusNames)}")
-                        Text("План: ${formatDate(task.plannedStartTime)}")
+                        Text("План: ${formatDateTime(task.plannedStartTime)}")
                         Text("Координаты: ${task.currentLatitude ?: "—"}, ${task.currentLongitude ?: "—"}")
                     }
                 }
@@ -1000,7 +1011,7 @@ private fun DeliveryTasksScreen(vm: MainViewModel, paddingValues: PaddingValues)
                     Text("Статус: ${displayName(task.status, deliveryTaskStatusNames)}")
                     Text("Водитель: ${task.driverFullName ?: "—"}")
                     Text("Автомобиль: ${task.vehicleRegistrationNumber ?: "—"}")
-                    Text("Плановый старт: ${formatDate(task.plannedStartTime)}")
+                    Text("Плановый старт: ${formatDateTime(task.plannedStartTime)}")
                     if (task.totalMileage != null) Text("Пробег: ${task.totalMileage} км")
                 }
             }

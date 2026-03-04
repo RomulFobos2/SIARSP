@@ -44,7 +44,8 @@
                 <select id="warehouseId" name="warehouseId" class="form-select" required>
                     <option th:each="warehouse : ${allWarehouses}"
                             th:value="${warehouse.getId()}"
-                            th:text="${warehouse.getName() + ' (' + warehouse.getAddress() + ')'}"
+                            th:data-type="${warehouse.getType().name()}"
+                            th:text="${warehouse.getName() + ' (' + warehouse.getAddress() + ') — ' + warehouse.getType().getDisplayName()}"
                             th:selected="${warehouse.getId() == requestDTO.getWarehouseId()}"></option>
                 </select>
             </div>
@@ -69,6 +70,7 @@
                             <option value="">Поиск товара...</option>
                             <option th:each="product : ${allProducts}"
                                     th:value="${product.getId()}"
+                                    th:data-warehouse-type="${product.getWarehouseType().name()}"
                                     th:text="${product.getName() + ' (' + product.getArticle() + ')'}"></option>
                         </select>
                     </div>
@@ -174,6 +176,64 @@
                 }
             });
         });
+
+        // Обновить доступные склады на основе типов хранения выбранных товаров
+        updateWarehouseOptions();
+    }
+
+    /**
+     * Фильтрует список складов на основе типов хранения выбранных товаров.
+     * Если среди товаров есть REFRIGERATOR — показать только холодильные склады.
+     * Если все REGULAR — показать только обычные склады.
+     * Если товары не выбраны — показать все склады.
+     */
+    function updateWarehouseOptions() {
+        var rows = document.querySelectorAll('.product-row');
+        var warehouseTypes = new Set();
+
+        rows.forEach(function(row) {
+            var select = row.querySelector('select.product-select');
+            var val = $(select).val();
+            if (val) {
+                var selectedOption = select.querySelector('option[value="' + val + '"]');
+                if (selectedOption) {
+                    var wt = selectedOption.getAttribute('data-warehouse-type');
+                    if (wt) warehouseTypes.add(wt);
+                }
+            }
+        });
+
+        var warehouseSelect = document.getElementById('warehouseId');
+        var currentWarehouse = warehouseSelect.value;
+
+        warehouseSelect.querySelectorAll('option').forEach(function(opt) {
+            if (!opt.value) return; // пропустить placeholder
+            var whType = opt.getAttribute('data-type');
+            if (warehouseTypes.size === 0) {
+                opt.disabled = false;
+                opt.style.display = '';
+            } else if (warehouseTypes.has('REFRIGERATOR') && warehouseTypes.has('REGULAR')) {
+                // Смешанные типы — показываем все
+                opt.disabled = false;
+                opt.style.display = '';
+            } else {
+                // Один тип — фильтруем
+                var requiredType = warehouseTypes.values().next().value;
+                if (whType === requiredType) {
+                    opt.disabled = false;
+                    opt.style.display = '';
+                } else {
+                    opt.disabled = true;
+                    opt.style.display = 'none';
+                }
+            }
+        });
+
+        // Если текущий выбранный склад стал недоступен, сбросить выбор
+        var currentOption = warehouseSelect.querySelector('option[value="' + currentWarehouse + '"]');
+        if (currentOption && currentOption.disabled) {
+            warehouseSelect.value = '';
+        }
     }
 
     document.addEventListener('DOMContentLoaded', function() {

@@ -51,9 +51,12 @@ public class DeliveryTaskController {
             return "redirect:/employee/warehouseManager/clientOrders/allClientOrders";
         }
 
-        model.addAttribute("order", optOrder.get());
+        ClientOrder order = optOrder.get();
+        boolean needsRefrigeration = deliveryTaskService.orderNeedsRefrigeration(order);
+
+        model.addAttribute("order", order);
         model.addAttribute("drivers", deliveryTaskService.getAvailableDrivers());
-        model.addAttribute("vehicles", deliveryTaskService.getAvailableVehicles());
+        model.addAttribute("vehicles", deliveryTaskService.getAvailableVehicles(needsRefrigeration));
         model.addAttribute("warehouses", warehouseRepository.findAll());
         model.addAttribute("routePointTypes", RoutePointType.values());
         return "employee/warehouseManager/deliveryTasks/createDeliveryTask";

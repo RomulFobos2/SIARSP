@@ -33,6 +33,12 @@ public class DeliveryTaskService {
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyyMMdd");
     private static final Random RANDOM = new Random();
 
+    /** Статусы задач, при которых водитель считается занятым */
+    private static final List<DeliveryTaskStatus> ACTIVE_STATUSES = List.of(
+            DeliveryTaskStatus.PENDING, DeliveryTaskStatus.LOADING,
+            DeliveryTaskStatus.LOADED, DeliveryTaskStatus.IN_TRANSIT
+    );
+
     private final DeliveryTaskRepository deliveryTaskRepository;
     private final ClientOrderRepository clientOrderRepository;
     private final VehicleRepository vehicleRepository;
@@ -108,16 +114,43 @@ public class DeliveryTaskService {
         return optTask;
     }
 
+    /**
+     * Возвращает доступных водителей:
+     * 1) Активные (isActive = true)
+     * 2) Без активной задачи на доставку (PENDING/LOADING/LOADED/IN_TRANSIT)
+     */
     @Transactional(readOnly = true)
     public List<Employee> getAvailableDrivers() {
         return employeeRepository.findAllByRoleName("ROLE_EMPLOYEE_COURIER").stream()
                 .filter(Employee::isActive)
+                .filter(driver -> !deliveryTaskRepository.existsByDriverAndStatusIn(driver, ACTIVE_STATUSES))
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<Vehicle> getAvailableVehicles() {
         return vehicleRepository.findByStatus(VehicleStatus.AVAILABLE);
+    }
+
+    /**
+     * Возвращает доступные автомобили с учётом необходимости рефрижератора.
+     * Если заказ содержит товары, требующие холодильного хранения,
+     * возвращаются только автомобили типа REFRIGERATED.
+     */
+    @Transactional(readOnly = true)
+    public List<Vehicle> getAvailableVehicles(boolean needsRefrigeration) {
+        if (needsRefrigeration) {
+            return vehicleRepository.findByStatusAndType(VehicleStatus.AVAILABLE, VehicleType.REFRIGERATED);
+        }
+        return vehicleRepository.findByStatus(VehicleStatus.AVAILABLE);
+    }
+
+    /**
+     * Проверяет, содержит ли заказ товары, требующие холодильного хранения (WarehouseType.REFRIGERATOR)
+     */
+    public boolean orderNeedsRefrigeration(ClientOrder order) {
+        return order.getOrderedProducts().stream()
+                .anyMatch(op -> op.getProduct().getWarehouseType() == WarehouseType.REFRIGERATOR);
     }
 
     // ========== СОЗДАНИЕ ЗАДАЧИ (WAREHOUSE_MANAGER) ==========
@@ -159,6 +192,11 @@ public class DeliveryTaskService {
                 return false;
             }
 
+            if (deliveryTaskRepository.existsByDriverAndStatusIn(driver, ACTIVE_STATUSES)) {
+                log.error("У водителя {} уже есть активная задача на доставку", driver.getFullName());
+                return false;
+            }
+
             Optional<Vehicle> optVehicle = vehicleRepository.findById(vehicleId);
             if (optVehicle.isEmpty()) {
                 log.error("Автомобиль с id={} не найден", vehicleId);
@@ -168,6 +206,15 @@ public class DeliveryTaskService {
 
             if (!vehicle.isAvailable()) {
                 log.error("Автомобиль {} не доступен (статус: {})", vehicle.getFullName(), vehicle.getStatus());
+                return false;
+            }
+
+            // Проверка: если заказ содержит товары, требующие холодильного хранения,
+            // автомобиль должен быть рефрижератором
+            boolean needsRefrigeration = orderNeedsRefrigeration(order);
+            if (needsRefrigeration && vehicle.getType() != VehicleType.REFRIGERATED) {
+                log.error("Заказ №{} содержит товары, требующие рефрижератор, но выбран обычный автомобиль {}",
+                        order.getOrderNumber(), vehicle.getFullName());
                 return false;
             }
 
