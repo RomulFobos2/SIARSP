@@ -9,20 +9,30 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -31,6 +41,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -43,6 +55,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -71,11 +84,15 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
 
+// ========== КОНФИГУРАЦИЯ ==========
+
 private const val BASE_URL = "http://10.0.2.2:8080/"
 
 object AppConfig {
     const val AUTO_LOCATION_SEND_INTERVAL_MS = 60_000L
 }
+
+// ========== DTO ==========
 
 data class DeliveryTaskDto(
     val id: Long,
@@ -83,17 +100,128 @@ data class DeliveryTaskDto(
     val clientOrderNumber: String?,
     val plannedStartTime: String?,
     val currentLatitude: Double?,
-    val currentLongitude: Double?
+    val currentLongitude: Double?,
+    val driverFullName: String?,
+    val vehicleRegistrationNumber: String?,
+    val totalMileage: Int?
 )
 
 data class UpdateLocationRequest(val latitude: Double, val longitude: Double)
 
 data class ApiResponse(val success: Boolean, val message: String)
 
+data class EmployeeProfile(
+    val id: Long,
+    val lastName: String?,
+    val firstName: String?,
+    val patronymicName: String?,
+    val fullName: String?,
+    val username: String?,
+    val roleName: String?,
+    val roleDescription: String?,
+    val active: Boolean
+)
+
+data class ClientDto(
+    val id: Long,
+    val organizationType: String?,
+    val organizationName: String?,
+    val inn: String?,
+    val deliveryAddress: String?,
+    val contactPerson: String?,
+    val phoneNumber: String?,
+    val email: String?
+)
+
+data class SupplierDto(
+    val id: Long,
+    val name: String?,
+    val contactInfo: String?,
+    val address: String?,
+    val inn: String?,
+    val fullName: String?
+)
+
+data class ProductDto(
+    val id: Long,
+    val name: String?,
+    val article: String?,
+    val stockQuantity: Int,
+    val categoryName: String?,
+    val availableQuantity: Int
+)
+
+data class WarehouseDto(
+    val id: Long,
+    val name: String?,
+    val type: String?,
+    val totalVolume: Double
+)
+
+data class VehicleDto(
+    val id: Long,
+    val registrationNumber: String?,
+    val brand: String?,
+    val model: String?,
+    val type: String?,
+    val status: String?,
+    val currentMileage: Int?,
+    val fullName: String?,
+    val available: Boolean
+)
+
+data class ClientOrderDto(
+    val id: Long,
+    val orderNumber: String?,
+    val orderDate: String?,
+    val deliveryDate: String?,
+    val status: String?,
+    val statusDisplayName: String?,
+    val totalAmount: Double?,
+    val clientOrganizationName: String?,
+    val responsibleEmployeeFullName: String?
+)
+
+data class TTNDto(
+    val id: Long,
+    val ttnNumber: String?,
+    val issueDate: String?,
+    val cargoDescription: String?,
+    val totalWeight: Double?,
+    val totalVolume: Double?,
+    val vehicleRegistrationNumber: String?,
+    val driverFullName: String?
+)
+
+data class AcceptanceActDto(
+    val id: Long,
+    val actNumber: String?,
+    val actDate: String?,
+    val clientRepresentative: String?,
+    val signed: Boolean,
+    val clientOrderNumber: String?,
+    val clientOrganizationName: String?,
+    val deliveredByFullName: String?
+)
+
+// ========== НАВИГАЦИЯ ==========
+
 enum class AppPage(val title: String) {
+    HOME("Главная"),
     TASKS("Доставки"),
+    CLIENTS("Клиенты"),
+    SUPPLIERS("Поставщики"),
+    PRODUCTS("Товары"),
+    WAREHOUSES("Склады"),
+    VEHICLES("Транспорт"),
+    ORDERS("Заказы"),
+    DELIVERY_TASKS("Задачи доставки"),
+    DOCUMENTS("Документы"),
+    EMPLOYEES("Сотрудники"),
     PROFILE("Профиль")
 }
+
+// ========== API ==========
 
 interface CourierApi {
     @GET("employee/courier/deliveryTasks/mobile/myDeliveryTasks")
@@ -102,6 +230,43 @@ interface CourierApi {
     @POST("employee/courier/deliveryTasks/mobile/updateLocation/{id}")
     suspend fun updateLocation(@Path("id") id: Long, @Body request: UpdateLocationRequest): ApiResponse
 }
+
+interface MobileApi {
+    @GET("api/mobile/profile")
+    suspend fun getProfile(): EmployeeProfile
+
+    @GET("api/mobile/clients")
+    suspend fun getClients(): List<ClientDto>
+
+    @GET("api/mobile/suppliers")
+    suspend fun getSuppliers(): List<SupplierDto>
+
+    @GET("api/mobile/products")
+    suspend fun getProducts(): List<ProductDto>
+
+    @GET("api/mobile/warehouses")
+    suspend fun getWarehouses(): List<WarehouseDto>
+
+    @GET("api/mobile/vehicles")
+    suspend fun getVehicles(): List<VehicleDto>
+
+    @GET("api/mobile/orders")
+    suspend fun getOrders(): List<ClientOrderDto>
+
+    @GET("api/mobile/deliveryTasks")
+    suspend fun getDeliveryTasks(): List<DeliveryTaskDto>
+
+    @GET("api/mobile/documents/ttn")
+    suspend fun getTTNList(): List<TTNDto>
+
+    @GET("api/mobile/documents/acts")
+    suspend fun getAcceptanceActs(): List<AcceptanceActDto>
+
+    @GET("api/mobile/employees")
+    suspend fun getEmployees(): List<EmployeeProfile>
+}
+
+// ========== СЕТЬ ==========
 
 class InMemoryCookieJar : CookieJar {
     private val cookiesByHost = mutableMapOf<String, MutableList<Cookie>>()
@@ -138,7 +303,8 @@ class SessionRepository {
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
-    private val api = retrofit.create(CourierApi::class.java)
+    private val courierApi = retrofit.create(CourierApi::class.java)
+    val mobileApi: MobileApi = retrofit.create(MobileApi::class.java)
 
     suspend fun login(username: String, password: String): Boolean = withContext(Dispatchers.IO) {
         val body = FormBody.Builder().add("username", username).add("password", password).build()
@@ -151,12 +317,14 @@ class SessionRepository {
         }
     }
 
-    suspend fun loadTasks(status: String = "active"): List<DeliveryTaskDto> = api.myDeliveryTasks(status)
+    suspend fun loadTasks(status: String = "active"): List<DeliveryTaskDto> = courierApi.myDeliveryTasks(status)
 
     suspend fun sendLocation(taskId: Long, latitude: Double, longitude: Double): ApiResponse {
-        return api.updateLocation(taskId, UpdateLocationRequest(latitude, longitude))
+        return courierApi.updateLocation(taskId, UpdateLocationRequest(latitude, longitude))
     }
 }
+
+// ========== VIEWMODEL ==========
 
 class MainViewModel : ViewModel() {
     private val repo = SessionRepository()
@@ -166,8 +334,27 @@ class MainViewModel : ViewModel() {
     var isLoggedIn by mutableStateOf(false)
     var message by mutableStateOf("Введите логин сотрудника")
     var tasks by mutableStateOf<List<DeliveryTaskDto>>(emptyList())
-    var selectedPage by mutableStateOf(AppPage.TASKS)
+    var selectedPage by mutableStateOf(AppPage.HOME)
     var selectedStatus by mutableStateOf("active")
+
+    // Профиль
+    var profile by mutableStateOf<EmployeeProfile?>(null)
+    var userRole by mutableStateOf("")
+
+    // Данные справочников
+    var clients by mutableStateOf<List<ClientDto>>(emptyList())
+    var suppliers by mutableStateOf<List<SupplierDto>>(emptyList())
+    var products by mutableStateOf<List<ProductDto>>(emptyList())
+    var warehouses by mutableStateOf<List<WarehouseDto>>(emptyList())
+    var vehicles by mutableStateOf<List<VehicleDto>>(emptyList())
+    var orders by mutableStateOf<List<ClientOrderDto>>(emptyList())
+    var allDeliveryTasks by mutableStateOf<List<DeliveryTaskDto>>(emptyList())
+    var ttnList by mutableStateOf<List<TTNDto>>(emptyList())
+    var acceptanceActs by mutableStateOf<List<AcceptanceActDto>>(emptyList())
+    var employees by mutableStateOf<List<EmployeeProfile>>(emptyList())
+
+    // Навигация
+    var previousPage by mutableStateOf<AppPage?>(null)
 
     fun doLogin() {
         viewModelScope.launch {
@@ -175,13 +362,49 @@ class MainViewModel : ViewModel() {
                 .onSuccess {
                     isLoggedIn = it
                     message = if (it) "Вход выполнен" else "Ошибка логина"
-                    if (it) refreshTasks()
+                    if (it) {
+                        loadProfile()
+                    }
                 }
                 .onFailure {
                     Log.e("SIARSP", "Login failed", it)
                     message = "Ошибка сети: ${it.message}"
                 }
         }
+    }
+
+    private fun loadProfile() {
+        viewModelScope.launch {
+            runCatching { repo.mobileApi.getProfile() }
+                .onSuccess {
+                    profile = it
+                    userRole = it.roleName ?: ""
+                    if (isCourier()) {
+                        refreshTasks()
+                    }
+                }
+                .onFailure {
+                    Log.e("SIARSP", "Profile load failed", it)
+                    message = "Не удалось загрузить профиль"
+                }
+        }
+    }
+
+    fun isCourier() = userRole == "ROLE_EMPLOYEE_COURIER"
+    fun isAdmin() = userRole == "ROLE_EMPLOYEE_ADMIN"
+    fun isManager() = userRole == "ROLE_EMPLOYEE_MANAGER"
+    fun isWarehouseManager() = userRole == "ROLE_EMPLOYEE_WAREHOUSE_MANAGER"
+    fun isWarehouseWorker() = userRole == "ROLE_EMPLOYEE_WAREHOUSE_WORKER"
+    fun isAccounter() = userRole == "ROLE_EMPLOYEE_ACCOUNTER"
+
+    fun navigateTo(page: AppPage) {
+        previousPage = selectedPage
+        selectedPage = page
+    }
+
+    fun goBack() {
+        selectedPage = previousPage ?: AppPage.HOME
+        previousPage = null
     }
 
     fun refreshTasks(status: String = selectedStatus) {
@@ -209,7 +432,89 @@ class MainViewModel : ViewModel() {
         }
         inTransitTasks.forEach { sendLocationForTask(it.id, latitude, longitude) }
     }
+
+    fun loadClients() {
+        viewModelScope.launch {
+            runCatching { repo.mobileApi.getClients() }
+                .onSuccess { clients = it }
+                .onFailure { message = "Ошибка загрузки клиентов: ${it.message}" }
+        }
+    }
+
+    fun loadSuppliers() {
+        viewModelScope.launch {
+            runCatching { repo.mobileApi.getSuppliers() }
+                .onSuccess { suppliers = it }
+                .onFailure { message = "Ошибка загрузки поставщиков: ${it.message}" }
+        }
+    }
+
+    fun loadProducts() {
+        viewModelScope.launch {
+            runCatching { repo.mobileApi.getProducts() }
+                .onSuccess { products = it }
+                .onFailure { message = "Ошибка загрузки товаров: ${it.message}" }
+        }
+    }
+
+    fun loadWarehouses() {
+        viewModelScope.launch {
+            runCatching { repo.mobileApi.getWarehouses() }
+                .onSuccess { warehouses = it }
+                .onFailure { message = "Ошибка загрузки складов: ${it.message}" }
+        }
+    }
+
+    fun loadVehicles() {
+        viewModelScope.launch {
+            runCatching { repo.mobileApi.getVehicles() }
+                .onSuccess { vehicles = it }
+                .onFailure { message = "Ошибка загрузки транспорта: ${it.message}" }
+        }
+    }
+
+    fun loadOrders() {
+        viewModelScope.launch {
+            runCatching { repo.mobileApi.getOrders() }
+                .onSuccess { orders = it }
+                .onFailure { message = "Ошибка загрузки заказов: ${it.message}" }
+        }
+    }
+
+    fun loadAllDeliveryTasks() {
+        viewModelScope.launch {
+            runCatching { repo.mobileApi.getDeliveryTasks() }
+                .onSuccess { allDeliveryTasks = it }
+                .onFailure { message = "Ошибка загрузки задач: ${it.message}" }
+        }
+    }
+
+    fun loadTTNList() {
+        viewModelScope.launch {
+            runCatching { repo.mobileApi.getTTNList() }
+                .onSuccess { ttnList = it }
+                .onFailure { message = "Ошибка загрузки ТТН: ${it.message}" }
+        }
+    }
+
+    fun loadAcceptanceActs() {
+        viewModelScope.launch {
+            runCatching { repo.mobileApi.getAcceptanceActs() }
+                .onSuccess { acceptanceActs = it }
+                .onFailure { message = "Ошибка загрузки актов: ${it.message}" }
+        }
+    }
+
+    fun loadEmployees() {
+        viewModelScope.launch {
+            runCatching { repo.mobileApi.getEmployees() }
+                .onSuccess { employees = it }
+                .onFailure { message = "Ошибка загрузки сотрудников: ${it.message}" }
+        }
+    }
 }
+
+// ========== ACTIVITY ==========
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -225,6 +530,8 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+// ========== ЭКРАН ЛОГИНА ==========
+
 @Composable
 private fun LoginScreen(vm: MainViewModel) {
     Box(
@@ -236,7 +543,7 @@ private fun LoginScreen(vm: MainViewModel) {
     ) {
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("SIARSP Courier", style = MaterialTheme.typography.headlineSmall)
+                Text("SIARSP Mobile", style = MaterialTheme.typography.headlineSmall)
                 Text("Вход в мобильное приложение")
                 OutlinedTextField(vm.login, { vm.login = it }, label = { Text("Логин") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(
@@ -253,30 +560,157 @@ private fun LoginScreen(vm: MainViewModel) {
     }
 }
 
+// ========== ГЛАВНЫЙ ЭКРАН ==========
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MainAppScreen(vm: MainViewModel) {
     Scaffold(
-        topBar = { TopAppBar(title = { Text(vm.selectedPage.title) }) },
+        topBar = {
+            TopAppBar(
+                title = { Text(vm.selectedPage.title) },
+                navigationIcon = {
+                    if (vm.selectedPage != AppPage.HOME && vm.selectedPage != AppPage.PROFILE) {
+                        IconButton(onClick = { vm.goBack() }) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Назад")
+                        }
+                    }
+                }
+            )
+        },
         bottomBar = {
             NavigationBar {
-                AppPage.entries.forEach { page ->
+                NavigationBarItem(
+                    selected = vm.selectedPage == AppPage.HOME,
+                    onClick = { vm.selectedPage = AppPage.HOME },
+                    icon = { Text("\uD83C\uDFE0") },
+                    label = { Text("Главная") }
+                )
+                if (vm.isCourier()) {
                     NavigationBarItem(
-                        selected = vm.selectedPage == page,
-                        onClick = { vm.selectedPage = page },
-                        icon = { Text(if (page == AppPage.TASKS) "🚚" else "👤") },
-                        label = { Text(page.title) }
+                        selected = vm.selectedPage == AppPage.TASKS,
+                        onClick = { vm.selectedPage = AppPage.TASKS },
+                        icon = { Text("\uD83D\uDE9A") },
+                        label = { Text("Доставки") }
                     )
                 }
+                NavigationBarItem(
+                    selected = vm.selectedPage == AppPage.PROFILE,
+                    onClick = { vm.selectedPage = AppPage.PROFILE },
+                    icon = { Text("\uD83D\uDC64") },
+                    label = { Text("Профиль") }
+                )
             }
         }
     ) { paddingValues ->
         when (vm.selectedPage) {
+            AppPage.HOME -> HomeScreen(vm, paddingValues)
             AppPage.TASKS -> TaskScreen(vm, paddingValues)
+            AppPage.CLIENTS -> ClientsScreen(vm, paddingValues)
+            AppPage.SUPPLIERS -> SuppliersScreen(vm, paddingValues)
+            AppPage.PRODUCTS -> ProductsScreen(vm, paddingValues)
+            AppPage.WAREHOUSES -> WarehousesScreen(vm, paddingValues)
+            AppPage.VEHICLES -> VehiclesScreen(vm, paddingValues)
+            AppPage.ORDERS -> OrdersScreen(vm, paddingValues)
+            AppPage.DELIVERY_TASKS -> DeliveryTasksScreen(vm, paddingValues)
+            AppPage.DOCUMENTS -> DocumentsScreen(vm, paddingValues)
+            AppPage.EMPLOYEES -> EmployeesScreen(vm, paddingValues)
             AppPage.PROFILE -> ProfileScreen(vm, paddingValues)
         }
     }
 }
+
+// ========== ДОМАШНИЙ ЭКРАН ==========
+
+data class MenuTile(val title: String, val emoji: String, val page: AppPage)
+
+@Composable
+private fun HomeScreen(vm: MainViewModel, paddingValues: PaddingValues) {
+    val tiles = buildList {
+        // Курьер — свои задачи
+        if (vm.isCourier()) {
+            add(MenuTile("Мои доставки", "\uD83D\uDE9A", AppPage.TASKS))
+        }
+        // Клиенты
+        if (vm.isAdmin() || vm.isManager() || vm.isWarehouseManager() || vm.isAccounter()) {
+            add(MenuTile("Клиенты", "\uD83C\uDFE2", AppPage.CLIENTS))
+        }
+        // Поставщики
+        if (vm.isAdmin() || vm.isManager() || vm.isWarehouseManager() || vm.isAccounter()) {
+            add(MenuTile("Поставщики", "\uD83D\uDCE6", AppPage.SUPPLIERS))
+        }
+        // Товары
+        if (!vm.isCourier()) {
+            add(MenuTile("Товары", "\uD83D\uDED2", AppPage.PRODUCTS))
+        }
+        // Склады
+        add(MenuTile("Склады", "\uD83C\uDFED", AppPage.WAREHOUSES))
+        // Транспорт
+        if (vm.isManager() || vm.isCourier()) {
+            add(MenuTile("Транспорт", "\uD83D\uDE97", AppPage.VEHICLES))
+        }
+        // Заказы
+        if (!vm.isCourier()) {
+            add(MenuTile("Заказы", "\uD83D\uDCCB", AppPage.ORDERS))
+        }
+        // Задачи на доставку
+        if (vm.isManager() || vm.isWarehouseManager() || vm.isCourier()) {
+            add(MenuTile("Задачи доставки", "\uD83D\uDCCD", AppPage.DELIVERY_TASKS))
+        }
+        // Документы
+        if (vm.isManager() || vm.isAccounter() || vm.isWarehouseManager() || vm.isCourier()) {
+            add(MenuTile("Документы", "\uD83D\uDCC4", AppPage.DOCUMENTS))
+        }
+        // Сотрудники
+        if (vm.isAdmin()) {
+            add(MenuTile("Сотрудники", "\uD83D\uDC65", AppPage.EMPLOYEES))
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .padding(paddingValues)
+            .padding(16.dp)
+    ) {
+        val roleName = vm.profile?.roleDescription ?: vm.userRole
+        Text(
+            "Добро пожаловать, ${vm.profile?.fullName ?: ""}",
+            style = MaterialTheme.typography.titleMedium
+        )
+        Text("Роль: $roleName", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+        Spacer(modifier = Modifier.height(16.dp))
+
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(tiles) { tile ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp)
+                        .clickable { vm.navigateTo(tile.page) },
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(12.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(tile.emoji, style = MaterialTheme.typography.headlineMedium)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(tile.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ========== ЭКРАН ЗАДАЧ КУРЬЕРА (существующий) ==========
 
 @Composable
 private fun TaskScreen(vm: MainViewModel, paddingValues: PaddingValues) {
@@ -357,6 +791,267 @@ private fun TaskScreen(vm: MainViewModel, paddingValues: PaddingValues) {
     }
 }
 
+// ========== ЭКРАН КЛИЕНТОВ ==========
+
+@Composable
+private fun ClientsScreen(vm: MainViewModel, paddingValues: PaddingValues) {
+    LaunchedEffect(Unit) { vm.loadClients() }
+
+    LazyColumn(
+        modifier = Modifier.padding(paddingValues).padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(vertical = 8.dp)
+    ) {
+        items(vm.clients) { client ->
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(client.organizationName ?: "—", fontWeight = FontWeight.Bold)
+                    Text("Тип: ${client.organizationType ?: "—"}")
+                    Text("ИНН: ${client.inn ?: "—"}")
+                    Text("Адрес доставки: ${client.deliveryAddress ?: "—"}")
+                    Text("Контакт: ${client.contactPerson ?: "—"}")
+                    if (!client.phoneNumber.isNullOrBlank()) Text("Тел: ${client.phoneNumber}")
+                    if (!client.email.isNullOrBlank()) Text("Email: ${client.email}")
+                }
+            }
+        }
+    }
+}
+
+// ========== ЭКРАН ПОСТАВЩИКОВ ==========
+
+@Composable
+private fun SuppliersScreen(vm: MainViewModel, paddingValues: PaddingValues) {
+    LaunchedEffect(Unit) { vm.loadSuppliers() }
+
+    LazyColumn(
+        modifier = Modifier.padding(paddingValues).padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(vertical = 8.dp)
+    ) {
+        items(vm.suppliers) { supplier ->
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(supplier.name ?: "—", fontWeight = FontWeight.Bold)
+                    Text("ИНН: ${supplier.inn ?: "—"}")
+                    Text("Адрес: ${supplier.address ?: "—"}")
+                    Text("Контакт: ${supplier.contactInfo ?: "—"}")
+                }
+            }
+        }
+    }
+}
+
+// ========== ЭКРАН ТОВАРОВ ==========
+
+@Composable
+private fun ProductsScreen(vm: MainViewModel, paddingValues: PaddingValues) {
+    LaunchedEffect(Unit) { vm.loadProducts() }
+
+    LazyColumn(
+        modifier = Modifier.padding(paddingValues).padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(vertical = 8.dp)
+    ) {
+        items(vm.products) { product ->
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(product.name ?: "—", fontWeight = FontWeight.Bold)
+                    Text("Артикул: ${product.article ?: "—"}")
+                    Text("Категория: ${product.categoryName ?: "—"}")
+                    Text("На складе: ${product.stockQuantity}, доступно: ${product.availableQuantity}")
+                }
+            }
+        }
+    }
+}
+
+// ========== ЭКРАН СКЛАДОВ ==========
+
+@Composable
+private fun WarehousesScreen(vm: MainViewModel, paddingValues: PaddingValues) {
+    LaunchedEffect(Unit) { vm.loadWarehouses() }
+
+    LazyColumn(
+        modifier = Modifier.padding(paddingValues).padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(vertical = 8.dp)
+    ) {
+        items(vm.warehouses) { warehouse ->
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(warehouse.name ?: "—", fontWeight = FontWeight.Bold)
+                    Text("Тип: ${warehouse.type ?: "—"}")
+                    Text("Объём: ${warehouse.totalVolume} м³")
+                }
+            }
+        }
+    }
+}
+
+// ========== ЭКРАН ТРАНСПОРТА ==========
+
+@Composable
+private fun VehiclesScreen(vm: MainViewModel, paddingValues: PaddingValues) {
+    LaunchedEffect(Unit) { vm.loadVehicles() }
+
+    LazyColumn(
+        modifier = Modifier.padding(paddingValues).padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(vertical = 8.dp)
+    ) {
+        items(vm.vehicles) { vehicle ->
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(vehicle.fullName ?: "${vehicle.brand ?: ""} ${vehicle.model ?: ""}", fontWeight = FontWeight.Bold)
+                    Text("Номер: ${vehicle.registrationNumber ?: "—"}")
+                    Text("Тип: ${vehicle.type ?: "—"}")
+                    Text("Статус: ${vehicle.status ?: "—"}")
+                    if (vehicle.currentMileage != null) Text("Пробег: ${vehicle.currentMileage} км")
+                }
+            }
+        }
+    }
+}
+
+// ========== ЭКРАН ЗАКАЗОВ ==========
+
+@Composable
+private fun OrdersScreen(vm: MainViewModel, paddingValues: PaddingValues) {
+    LaunchedEffect(Unit) { vm.loadOrders() }
+
+    LazyColumn(
+        modifier = Modifier.padding(paddingValues).padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(vertical = 8.dp)
+    ) {
+        items(vm.orders) { order ->
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("${order.orderNumber ?: "—"}", fontWeight = FontWeight.Bold)
+                    Text("Клиент: ${order.clientOrganizationName ?: "—"}")
+                    Text("Статус: ${order.statusDisplayName ?: order.status ?: "—"}")
+                    Text("Дата заказа: ${order.orderDate ?: "—"}")
+                    Text("Дата доставки: ${order.deliveryDate ?: "—"}")
+                    if (order.totalAmount != null) Text("Сумма: ${order.totalAmount} руб.")
+                }
+            }
+        }
+    }
+}
+
+// ========== ЭКРАН ЗАДАЧ НА ДОСТАВКУ ==========
+
+@Composable
+private fun DeliveryTasksScreen(vm: MainViewModel, paddingValues: PaddingValues) {
+    LaunchedEffect(Unit) { vm.loadAllDeliveryTasks() }
+
+    LazyColumn(
+        modifier = Modifier.padding(paddingValues).padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(vertical = 8.dp)
+    ) {
+        items(vm.allDeliveryTasks) { task ->
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Задача #${task.id}, заказ: ${task.clientOrderNumber ?: "—"}", fontWeight = FontWeight.Bold)
+                    Text("Статус: ${task.status}")
+                    Text("Водитель: ${task.driverFullName ?: "—"}")
+                    Text("Автомобиль: ${task.vehicleRegistrationNumber ?: "—"}")
+                    Text("Плановый старт: ${task.plannedStartTime ?: "—"}")
+                    if (task.totalMileage != null) Text("Пробег: ${task.totalMileage} км")
+                }
+            }
+        }
+    }
+}
+
+// ========== ЭКРАН ДОКУМЕНТОВ ==========
+
+@Composable
+private fun DocumentsScreen(vm: MainViewModel, paddingValues: PaddingValues) {
+    var showTTN by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        vm.loadTTNList()
+        vm.loadAcceptanceActs()
+    }
+
+    Column(
+        modifier = Modifier
+            .padding(paddingValues)
+            .padding(horizontal = 16.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilterChip(selected = showTTN, onClick = { showTTN = true }, label = { Text("ТТН") })
+            FilterChip(selected = !showTTN, onClick = { showTTN = false }, label = { Text("Акты приёмки") })
+        }
+
+        if (showTTN) {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(vm.ttnList) { ttn ->
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(ttn.ttnNumber ?: "—", fontWeight = FontWeight.Bold)
+                            Text("Дата: ${ttn.issueDate ?: "—"}")
+                            Text("Груз: ${ttn.cargoDescription ?: "—"}")
+                            Text("Водитель: ${ttn.driverFullName ?: "—"}")
+                            Text("Автомобиль: ${ttn.vehicleRegistrationNumber ?: "—"}")
+                            if (ttn.totalWeight != null) Text("Вес: ${ttn.totalWeight} кг")
+                            if (ttn.totalVolume != null) Text("Объём: ${ttn.totalVolume} м³")
+                        }
+                    }
+                }
+            }
+        } else {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(vm.acceptanceActs) { act ->
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(act.actNumber ?: "—", fontWeight = FontWeight.Bold)
+                            Text("Дата: ${act.actDate ?: "—"}")
+                            Text("Заказ: ${act.clientOrderNumber ?: "—"}")
+                            Text("Клиент: ${act.clientOrganizationName ?: "—"}")
+                            Text("Подписан: ${if (act.signed) "Да" else "Нет"}")
+                            Text("Передал: ${act.deliveredByFullName ?: "—"}")
+                            if (!act.clientRepresentative.isNullOrBlank()) Text("Представитель: ${act.clientRepresentative}")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ========== ЭКРАН СОТРУДНИКОВ ==========
+
+@Composable
+private fun EmployeesScreen(vm: MainViewModel, paddingValues: PaddingValues) {
+    LaunchedEffect(Unit) { vm.loadEmployees() }
+
+    LazyColumn(
+        modifier = Modifier.padding(paddingValues).padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(vertical = 8.dp)
+    ) {
+        items(vm.employees) { employee ->
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(employee.fullName ?: "—", fontWeight = FontWeight.Bold)
+                    Text("Логин: ${employee.username ?: "—"}")
+                    Text("Роль: ${employee.roleDescription ?: employee.roleName ?: "—"}")
+                    Text("Активен: ${if (employee.active) "Да" else "Нет"}")
+                }
+            }
+        }
+    }
+}
+
+// ========== ЭКРАН ПРОФИЛЯ ==========
+
 @Composable
 private fun ProfileScreen(vm: MainViewModel, paddingValues: PaddingValues) {
     Column(
@@ -365,9 +1060,21 @@ private fun ProfileScreen(vm: MainViewModel, paddingValues: PaddingValues) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text("Меню", style = MaterialTheme.typography.headlineSmall)
-        Text("Используйте нижнее меню для перехода между страницами.")
-        Text("Интервал автоотправки: ${AppConfig.AUTO_LOCATION_SEND_INTERVAL_MS / 1000} сек")
-        Button(onClick = { vm.isLoggedIn = false }) { Text("Выйти") }
+        Text("Профиль", style = MaterialTheme.typography.headlineSmall)
+        if (vm.profile != null) {
+            Text("ФИО: ${vm.profile!!.fullName ?: "—"}")
+            Text("Логин: ${vm.profile!!.username ?: "—"}")
+            Text("Роль: ${vm.profile!!.roleDescription ?: vm.profile!!.roleName ?: "—"}")
+        }
+        if (vm.isCourier()) {
+            Text("Интервал автоотправки: ${AppConfig.AUTO_LOCATION_SEND_INTERVAL_MS / 1000} сек")
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(onClick = {
+            vm.isLoggedIn = false
+            vm.profile = null
+            vm.userRole = ""
+            vm.selectedPage = AppPage.HOME
+        }) { Text("Выйти") }
     }
 }
