@@ -32,29 +32,26 @@ public class ReportController {
     public String expiringProducts(@RequestParam(required = false) LocalDate startDate,
                                    @RequestParam(required = false) LocalDate endDate,
                                    Model model) {
-        LocalDate normalizedStartDate = startDate != null ? startDate : LocalDate.now();
-        LocalDate normalizedEndDate = endDate != null ? endDate : normalizedStartDate.plusDays(7);
+        LocalDate s = startDate != null ? startDate : LocalDate.now();
+        LocalDate e = endDate != null ? endDate : s.plusDays(7);
 
-        if (normalizedStartDate.isAfter(normalizedEndDate)) {
-            LocalDate temp = normalizedStartDate;
-            normalizedStartDate = normalizedEndDate;
-            normalizedEndDate = temp;
-        }
+        final LocalDate from = s.isBefore(e) ? s : e;
+        final LocalDate to   = s.isBefore(e) ? e : s;
 
         List<ExpiringProductRow> products = productRepository.findAll().stream()
                 .map(product -> productExpirationService.getExpirationDate(product)
                         .map(expDate -> new ExpiringProductRow(product, expDate))
                         .orElse(null))
                 .filter(row -> row != null
-                        && !row.expirationDate().isBefore(normalizedStartDate)
-                        && !row.expirationDate().isAfter(normalizedEndDate))
+                        && !row.expirationDate().isBefore(from)
+                        && !row.expirationDate().isAfter(to))
                 .sorted(Comparator.comparing(ExpiringProductRow::expirationDate))
                 .toList();
 
         model.addAttribute("reportTitle", "Отчёт по срокам годности");
         model.addAttribute("products", products);
-        model.addAttribute("startDate", normalizedStartDate);
-        model.addAttribute("endDate", normalizedEndDate);
+        model.addAttribute("startDate", from);
+        model.addAttribute("endDate", to);
         model.addAttribute("detailsPrefix", "/employee/warehouseManager/products/detailsProduct/");
         model.addAttribute("formAction", "/employee/warehouseManager/reports/expiring-products");
         return "employee/general/reports/expiringProducts";

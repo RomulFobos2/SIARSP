@@ -131,7 +131,7 @@ public class ScheduleTask {
     public void checkProductExpiration() {
         log.info("Запуск проверки сроков годности товаров");
 
-        List<Product> products = productRepository.findAll();
+        List<Product> products = productRepository.findAllWithAttributeValues();
         LocalDate today = LocalDate.now();
         int notifiedCount = 0;
         int actsCreated = 0;

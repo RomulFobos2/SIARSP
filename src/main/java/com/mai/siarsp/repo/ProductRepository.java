@@ -37,4 +37,12 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     Page<Product> findByNameContainingIgnoreCaseAndQuantityForStockGreaterThan(
             String name, int qty, Pageable pageable);
+
+    @Query("""
+select distinct p
+from Product p
+left join fetch p.attributeValues av
+left join fetch av.attribute
+""")
+    List<Product> findAllWithAttributeValues();
 }
