@@ -1,4 +1,4 @@
-package com.mai.siarsp.controllers.employee.warehouseManager;
+package com.mai.siarsp.controllers.employee.accounter;
 
 import com.mai.siarsp.service.general.ReportDocumentService;
 import org.springframework.http.ContentDisposition;
@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
 
-@Controller("warehouseManagerReportController")
-@RequestMapping("/employee/warehouseManager/reports")
+@Controller("accounterReportController")
+@RequestMapping("/employee/accounter/reports")
 public class ReportController {
 
     private final ReportDocumentService reportDocumentService;
@@ -30,7 +30,7 @@ public class ReportController {
 
     @GetMapping("/expiring-products")
     public String expiringProductsRedirect() {
-        return "redirect:/employee/warehouseManager/reports";
+        return "redirect:/employee/accounter/reports";
     }
     @GetMapping("/download/orders")
     public ResponseEntity<byte[]> downloadOrdersReport(@RequestParam(required = false) LocalDate startDate,
