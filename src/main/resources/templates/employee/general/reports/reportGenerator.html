@@ -1,0 +1,73 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Отчёты | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container my-5">
+    <div class="profile-card p-4">
+        <h2 class="h3 fw-bold mb-3">Формирование отчётов</h2>
+        <p class="text-muted mb-4">Выберите диапазон дат и тип отчёта. Документ будет сформирован и скачан в формате DOCX.</p>
+
+        <form id="reportForm" method="get" class="row g-3 align-items-end">
+            <div class="col-12 col-md-3">
+                <label class="form-label">Период: с</label>
+                <input type="date" class="form-control" id="startDate" name="startDate" required>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label">по</label>
+                <input type="date" class="form-control" id="endDate" name="endDate" required>
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label">Тип отчёта</label>
+                <select class="form-select" id="reportType" required>
+                    <option value="download/orders">Отчёт по заказам</option>
+                    <option value="download/warehouse">Отчёт о товарах на складе</option>
+                    <option value="download/statistics">Статистический отчёт</option>
+                    <option value="download/expiring-products">Отчёт по срокам годности</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-file-earmark-arrow-down me-1"></i>Сформировать
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('reportForm');
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+        const reportTypeSelect = document.getElementById('reportType');
+
+        const today = new Date();
+        const weekAgo = new Date();
+        weekAgo.setDate(today.getDate() - 7);
+
+        const formatDate = function (date) {
+            return date.toISOString().split('T')[0];
+        };
+
+        startDateInput.value = formatDate(weekAgo);
+        endDateInput.value = formatDate(today);
+
+        form.addEventListener('submit', function () {
+            form.action = reportTypeSelect.value;
+        });
+    });
+</script>
+</body>
+</html>
