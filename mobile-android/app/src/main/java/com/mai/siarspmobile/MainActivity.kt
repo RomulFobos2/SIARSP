@@ -204,6 +204,48 @@ data class AcceptanceActDto(
     val deliveredByFullName: String?
 )
 
+// ========== УТИЛИТЫ ФОРМАТИРОВАНИЯ ==========
+
+/** Конвертирует ISO-дату (yyyy-MM-dd) в формат dd.MM.yyyy */
+fun formatDate(isoDate: String?): String {
+    if (isoDate.isNullOrBlank()) return "—"
+    return try {
+        val parts = isoDate.split("-")
+        "${parts[2]}.${parts[1]}.${parts[0]}"
+    } catch (e: Exception) { isoDate }
+}
+
+/** Возвращает человекочитаемое название по enum-имени */
+fun displayName(value: String?, map: Map<String, String>): String =
+    map[value] ?: value ?: "—"
+
+val deliveryTaskStatusNames = mapOf(
+    "PENDING" to "Ожидает выполнения",
+    "LOADING" to "Идет погрузка",
+    "LOADED" to "Ожидает отправки",
+    "IN_TRANSIT" to "В пути",
+    "DELIVERED" to "Доставлено",
+    "CANCELLED" to "Отменено"
+)
+
+val vehicleStatusNames = mapOf(
+    "AVAILABLE" to "Готов к работе",
+    "IN_USE" to "В работе",
+    "MAINTENANCE" to "На обслуживании",
+    "BROKEN" to "Неисправен",
+    "DECOMMISSIONED" to "Списан"
+)
+
+val vehicleTypeNames = mapOf(
+    "STANDARD" to "Обычный",
+    "REFRIGERATED" to "Рефрижератор"
+)
+
+val warehouseTypeNames = mapOf(
+    "REGULAR" to "Обычный склад",
+    "REFRIGERATOR" to "Холодильная камера"
+)
+
 // ========== НАВИГАЦИЯ ==========
 
 enum class AppPage(val title: String) {
@@ -779,10 +821,10 @@ private fun TaskScreen(vm: MainViewModel, paddingValues: PaddingValues) {
             items(vm.tasks) { task ->
                 Card {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("Задача #${task.id}, заказ: ${task.clientOrderNumber ?: "-"}")
-                        Text("Статус: ${task.status}")
-                        Text("План: ${task.plannedStartTime ?: "-"}")
-                        Text("Координаты: ${task.currentLatitude ?: "-"}, ${task.currentLongitude ?: "-"}")
+                        Text("Задача #${task.id}, заказ: ${task.clientOrderNumber ?: "—"}")
+                        Text("Статус: ${displayName(task.status, deliveryTaskStatusNames)}")
+                        Text("План: ${formatDate(task.plannedStartTime)}")
+                        Text("Координаты: ${task.currentLatitude ?: "—"}, ${task.currentLongitude ?: "—"}")
                     }
                 }
             }
@@ -881,7 +923,7 @@ private fun WarehousesScreen(vm: MainViewModel, paddingValues: PaddingValues) {
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(warehouse.name ?: "—", fontWeight = FontWeight.Bold)
-                    Text("Тип: ${warehouse.type ?: "—"}")
+                    Text("Тип: ${displayName(warehouse.type, warehouseTypeNames)}")
                     Text("Объём: ${warehouse.totalVolume} м³")
                 }
             }
@@ -905,8 +947,8 @@ private fun VehiclesScreen(vm: MainViewModel, paddingValues: PaddingValues) {
                 Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(vehicle.fullName ?: "${vehicle.brand ?: ""} ${vehicle.model ?: ""}", fontWeight = FontWeight.Bold)
                     Text("Номер: ${vehicle.registrationNumber ?: "—"}")
-                    Text("Тип: ${vehicle.type ?: "—"}")
-                    Text("Статус: ${vehicle.status ?: "—"}")
+                    Text("Тип: ${displayName(vehicle.type, vehicleTypeNames)}")
+                    Text("Статус: ${displayName(vehicle.status, vehicleStatusNames)}")
                     if (vehicle.currentMileage != null) Text("Пробег: ${vehicle.currentMileage} км")
                 }
             }
@@ -931,8 +973,8 @@ private fun OrdersScreen(vm: MainViewModel, paddingValues: PaddingValues) {
                     Text("${order.orderNumber ?: "—"}", fontWeight = FontWeight.Bold)
                     Text("Клиент: ${order.clientOrganizationName ?: "—"}")
                     Text("Статус: ${order.statusDisplayName ?: order.status ?: "—"}")
-                    Text("Дата заказа: ${order.orderDate ?: "—"}")
-                    Text("Дата доставки: ${order.deliveryDate ?: "—"}")
+                    Text("Дата заказа: ${formatDate(order.orderDate)}")
+                    Text("Дата доставки: ${formatDate(order.deliveryDate)}")
                     if (order.totalAmount != null) Text("Сумма: ${order.totalAmount} руб.")
                 }
             }
@@ -955,10 +997,10 @@ private fun DeliveryTasksScreen(vm: MainViewModel, paddingValues: PaddingValues)
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text("Задача #${task.id}, заказ: ${task.clientOrderNumber ?: "—"}", fontWeight = FontWeight.Bold)
-                    Text("Статус: ${task.status}")
+                    Text("Статус: ${displayName(task.status, deliveryTaskStatusNames)}")
                     Text("Водитель: ${task.driverFullName ?: "—"}")
                     Text("Автомобиль: ${task.vehicleRegistrationNumber ?: "—"}")
-                    Text("Плановый старт: ${task.plannedStartTime ?: "—"}")
+                    Text("Плановый старт: ${formatDate(task.plannedStartTime)}")
                     if (task.totalMileage != null) Text("Пробег: ${task.totalMileage} км")
                 }
             }
@@ -996,7 +1038,7 @@ private fun DocumentsScreen(vm: MainViewModel, paddingValues: PaddingValues) {
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(ttn.ttnNumber ?: "—", fontWeight = FontWeight.Bold)
-                            Text("Дата: ${ttn.issueDate ?: "—"}")
+                            Text("Дата: ${formatDate(ttn.issueDate)}")
                             Text("Груз: ${ttn.cargoDescription ?: "—"}")
                             Text("Водитель: ${ttn.driverFullName ?: "—"}")
                             Text("Автомобиль: ${ttn.vehicleRegistrationNumber ?: "—"}")
@@ -1012,7 +1054,7 @@ private fun DocumentsScreen(vm: MainViewModel, paddingValues: PaddingValues) {
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(act.actNumber ?: "—", fontWeight = FontWeight.Bold)
-                            Text("Дата: ${act.actDate ?: "—"}")
+                            Text("Дата: ${formatDate(act.actDate)}")
                             Text("Заказ: ${act.clientOrderNumber ?: "—"}")
                             Text("Клиент: ${act.clientOrganizationName ?: "—"}")
                             Text("Подписан: ${if (act.signed) "Да" else "Нет"}")
