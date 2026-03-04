@@ -1,6 +1,7 @@
 package com.mai.siarsp.repo;
 
 import com.mai.siarsp.enumeration.VehicleStatus;
+import com.mai.siarsp.enumeration.VehicleType;
 import com.mai.siarsp.models.Vehicle;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -16,4 +17,6 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
     Optional<Vehicle> findByRegistrationNumber(String registrationNumber);
 
     List<Vehicle> findByStatus(VehicleStatus status);
+
+    List<Vehicle> findByStatusAndType(VehicleStatus status, VehicleType type);
 }

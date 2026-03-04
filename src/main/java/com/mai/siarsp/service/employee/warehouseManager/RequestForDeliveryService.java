@@ -128,6 +128,17 @@ public class RequestForDeliveryService {
             request.addRequestedProduct(new RequestedProduct(productOpt.get(), qty, price));
         }
 
+        // Валидация: тип склада должен соответствовать типу хранения всех товаров
+        Warehouse warehouse = warehouseOpt.get();
+        for (RequestedProduct rp : request.getRequestedProducts()) {
+            if (!warehouse.canStoreProduct(rp.getProduct())) {
+                log.error("Товар '{}' (тип хранения: {}) несовместим со складом '{}' (тип: {})",
+                        rp.getProduct().getName(), rp.getProduct().getWarehouseType(),
+                        warehouse.getName(), warehouse.getType());
+                return false;
+            }
+        }
+
         try {
             requestForDeliveryRepository.save(request);
         } catch (Exception e) {
@@ -217,6 +228,17 @@ public class RequestForDeliveryService {
 
         // 4) REMOVE позиций, которых больше нет во входе
         request.getRequestedProducts().removeIf(rp -> !incoming.containsKey(rp.getProduct().getId()));
+
+        // Валидация: тип склада должен соответствовать типу хранения всех товаров
+        Warehouse warehouse = warehouseOpt.get();
+        for (RequestedProduct rpCheck : request.getRequestedProducts()) {
+            if (!warehouse.canStoreProduct(rpCheck.getProduct())) {
+                log.error("Товар '{}' (тип хранения: {}) несовместим со складом '{}' (тип: {})",
+                        rpCheck.getProduct().getName(), rpCheck.getProduct().getWarehouseType(),
+                        warehouse.getName(), warehouse.getType());
+                return false;
+            }
+        }
 
         try {
             requestForDeliveryRepository.save(request);
