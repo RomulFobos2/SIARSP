@@ -16,6 +16,7 @@ import com.mai.siarsp.service.employee.warehouseManager.WarehouseService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,6 +29,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/mobile")
+@Transactional(readOnly = true)
 public class MobileApiController {
 
     private final EmployeeService employeeService;
