@@ -202,9 +202,11 @@ public class MobileApiController {
         if (hasAnyRole(currentUser, "ROLE_EMPLOYEE_COURIER")) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error("Нет доступа"));
         }
-        return clientOrderService.getOrderById(id)
-                .map(order -> (ResponseEntity<?>) ResponseEntity.ok(ClientOrderMapper.INSTANCE.toDTO(order)))
-                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error("Заказ не найден")));
+        var orderOpt = clientOrderService.getOrderById(id);
+        if (orderOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error("Заказ не найден"));
+        }
+        return ResponseEntity.ok(ClientOrderMapper.INSTANCE.toDTO(orderOpt.get()));
     }
 
     // ========== ЗАДАЧИ НА ДОСТАВКУ ==========
