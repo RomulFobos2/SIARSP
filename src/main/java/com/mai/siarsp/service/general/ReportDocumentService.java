@@ -64,8 +64,8 @@ public class ReportDocumentService {
                 ClientOrder order = orders.get(i);
                 table.getRow(i + 1).getCell(0).setText(order.getOrderNumber());
                 table.getRow(i + 1).getCell(1).setText(order.getOrderDate().toLocalDate().format(DATE_FORMATTER));
-                table.getRow(i + 1).getCell(2).setText(order.getClient() != null ? order.getClient().getName() : "—");
-                table.getRow(i + 1).getCell(3).setText(order.getStatus() != null ? order.getStatus().name() : "—");
+                table.getRow(i + 1).getCell(2).setText(order.getClient() != null ? order.getClient().getOrganizationName() : "—");
+                table.getRow(i + 1).getCell(3).setText(order.getStatus() != null ? order.getStatus().getDisplayName() : "—");
                 table.getRow(i + 1).getCell(4).setText(order.getTotalAmount() != null ? order.getTotalAmount().toString() : "0");
             }
 
