@@ -1,0 +1,72 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Отчёт по срокам годности | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container my-5">
+    <div class="profile-card p-4 mb-4">
+        <h2 class="h3 fw-bold mb-3" th:text="${reportTitle}"></h2>
+        <form method="get" th:action="${formAction}" class="row g-3 align-items-end">
+            <div class="col-12 col-md-4">
+                <label class="form-label">Период: с</label>
+                <input type="date" class="form-control" name="startDate" th:value="${startDate}">
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label">по</label>
+                <input type="date" class="form-control" name="endDate" th:value="${endDate}">
+            </div>
+            <div class="col-12 col-md-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-funnel me-1"></i>Показать
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="profile-card p-4">
+        <h5 class="fw-bold mb-3">Товары с истечением срока в выбранный период</h5>
+
+        <div th:if="${products.isEmpty()}" class="text-muted text-center py-4">
+            <i class="bi bi-check-circle" style="font-size: 1.6rem;"></i>
+            <p class="mt-2 mb-0">Товары для выбранного периода не найдены.</p>
+        </div>
+
+        <div th:if="${!products.isEmpty()}" class="table-responsive">
+            <table class="table table-modern">
+                <thead>
+                <tr>
+                    <th>Артикул</th>
+                    <th>Товар</th>
+                    <th>Категория</th>
+                    <th class="text-end">Остаток</th>
+                    <th>Срок годности</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="row : ${products}">
+                    <td>
+                        <a th:href="${detailsPrefix + row.product().id}" th:text="${row.product().article}"></a>
+                    </td>
+                    <td th:text="${row.product().name}"></td>
+                    <td th:text="${row.product().category != null ? row.product().category.name : '—'}"></td>
+                    <td class="text-end" th:text="${row.product().stockQuantity}"></td>
+                    <td th:text="${#temporals.format(row.expirationDate(),'dd.MM.yyyy')}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>

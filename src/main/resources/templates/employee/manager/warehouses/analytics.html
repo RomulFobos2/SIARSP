@@ -7,7 +7,18 @@
     <link href="/css/bootstrap.min.css" rel="stylesheet">
     <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
     <link href="/css/style.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/js/bootstrap.bundle.min.js"></script>
+    <style>
+        .chart-wrapper {
+            position: relative;
+            height: 320px;
+        }
+
+        .chart-wrapper.chart-wrapper-sm {
+            height: 280px;
+        }
+    </style>
 </head>
 <body class="admin-page">
 <header th:insert="~{blocks/header :: header}"></header>
@@ -87,6 +98,52 @@
                      th:style="'width: ' + ${#numbers.formatDecimal(stats.occupancyPercent(), 1, 0)} + '%'"
                      th:text="${#numbers.formatDecimal(stats.occupancyPercent(), 1, 1)} + '%'"
                      aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="profile-card p-4 mb-4">
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+            <h5 class="fw-bold mb-0">Период аналитики</h5>
+            <form class="row g-2 align-items-end"
+                  method="get"
+                  th:action="@{/employee/manager/warehouses/analytics/{warehouseId}(warehouseId=${warehouse.getId()})}">
+                <div class="col-12 col-md-auto">
+                    <label for="startDate" class="form-label mb-1">От</label>
+                    <input id="startDate" class="form-control" type="date" name="startDate" th:value="${startDate}">
+                </div>
+                <div class="col-12 col-md-auto">
+                    <label for="endDate" class="form-label mb-1">До</label>
+                    <input id="endDate" class="form-control" type="date" name="endDate" th:value="${endDate}">
+                </div>
+                <div class="col-12 col-md-auto">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="bi bi-funnel me-1"></i>Применить
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== Секция 2: Графики ===== -->
+    <div class="row g-4 mb-4">
+        <div class="col-12 col-xl-6">
+            <div class="profile-card p-4 h-100">
+                <h5 class="fw-bold mb-3">Динамика заказов по периоду</h5>
+                <div class="chart-wrapper chart-wrapper-sm"><canvas id="ordersDynamicsChart"></canvas></div>
+            </div>
+        </div>
+        <div class="col-12 col-xl-6">
+            <div class="profile-card p-4 h-100">
+                <h5 class="fw-bold mb-3">Выручка по периодам (₽)</h5>
+                <div class="chart-wrapper chart-wrapper-sm"><canvas id="revenueDynamicsChart"></canvas></div>
+            </div>
+        </div>
+        <div class="col-12">
+            <div class="profile-card p-4">
+                <h5 class="fw-bold mb-3">Загрузка склада по стеллажам (%)</h5>
+                <div class="chart-wrapper"><canvas id="warehouseLoadChart"></canvas></div>
             </div>
         </div>
     </div>
@@ -216,5 +273,86 @@
 </div>
 
 <div th:insert="~{blocks/footer :: footer}"></div>
+
+<script th:inline="javascript">
+    const chartLabels = /*[[${chartsData.periodLabels()}]]*/ [];
+    const orderDynamics = /*[[${chartsData.orderDynamics()}]]*/ [];
+    const revenueDynamics = /*[[${chartsData.revenueDynamics()}]]*/ [];
+    const shelfLabels = /*[[${chartsData.shelfLabels()}]]*/ [];
+    const shelfOccupancy = /*[[${chartsData.shelfOccupancy()}]]*/ [];
+
+    const baseChartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+            legend: {display: false}
+        }
+    };
+
+    new Chart(document.getElementById('ordersDynamicsChart'), {
+        type: 'line',
+        data: {
+            labels: chartLabels,
+            datasets: [{
+                label: 'Количество заказов',
+                data: orderDynamics,
+                borderColor: '#0d6efd',
+                backgroundColor: 'rgba(13,110,253,0.2)',
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: {
+            ...baseChartOptions,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {precision: 0}
+                }
+            }
+        }
+    });
+
+    new Chart(document.getElementById('revenueDynamicsChart'), {
+        type: 'bar',
+        data: {
+            labels: chartLabels,
+            datasets: [{
+                label: 'Выручка, ₽',
+                data: revenueDynamics,
+                backgroundColor: '#198754'
+            }]
+        },
+        options: {
+            ...baseChartOptions,
+            scales: {
+                y: {beginAtZero: true}
+            }
+        }
+    });
+
+    new Chart(document.getElementById('warehouseLoadChart'), {
+        type: 'bar',
+        data: {
+            labels: shelfLabels,
+            datasets: [{
+                label: 'Загрузка, %',
+                data: shelfOccupancy,
+                backgroundColor: '#fd7e14'
+            }]
+        },
+        options: {
+            ...baseChartOptions,
+            indexAxis: 'y',
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+</script>
 </body>
 </html>

@@ -3,6 +3,7 @@ package com.mai.siarsp.dto;
 import com.mai.siarsp.enumeration.WarehouseType;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Data
@@ -19,4 +20,5 @@ public class ProductDTO {
     private String categoryName;
     private int availableQuantity;
     private List<ProductAttributeValueDTO> attributeValues;
+    private LocalDate expirationDate;
 }

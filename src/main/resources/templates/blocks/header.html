@@ -99,6 +99,15 @@
                             <li><a class="dropdown-item" href="/employee/manager/writeOffActs/allWriteOffActs">Акты списания</a></li>
                         </ul>
                     </li>
+                    <!-- Dropdown: Отчеты -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Отчеты
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/manager/reports/expiring-products">Сроки годности товаров</a></li>
+                        </ul>
+                    </li>
 
                     <!-- ========== WAREHOUSE_MANAGER ========== -->
                     <!-- Dropdown: Товары -->
@@ -152,6 +161,15 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="/employee/warehouseManager/writeOffActs/allWriteOffActs">Акты списания</a></li>
+                        </ul>
+                    </li>
+                    <!-- Dropdown: Отчеты -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Отчеты
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/reports/expiring-products">Сроки годности товаров</a></li>
                         </ul>
                     </li>
                     <!-- Dropdown: Справочники -->
