@@ -5,11 +5,13 @@ import com.mai.siarsp.models.Product;
 import com.mai.siarsp.repo.ClientOrderRepository;
 import com.mai.siarsp.repo.ProductRepository;
 import org.apache.poi.xwpf.usermodel.ParagraphAlignment;
+import org.apache.poi.xwpf.usermodel.TableRowAlign;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
 import org.apache.poi.xwpf.usermodel.XWPFTable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -37,6 +39,7 @@ public class ReportDocumentService {
         this.productExpirationService = productExpirationService;
     }
 
+    @Transactional(readOnly = true)
     public ReportFile generateOrdersReport(LocalDate startDate, LocalDate endDate) {
         List<ClientOrder> orders = clientOrderRepository.findAllByOrderByOrderDateDesc().stream()
                 .filter(order -> {
@@ -45,11 +48,17 @@ public class ReportDocumentService {
                 })
                 .toList();
 
+        BigDecimal totalAmount = orders.stream()
+                .map(ClientOrder::getTotalAmount)
+                .filter(amount -> amount != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         try (XWPFDocument document = new XWPFDocument()) {
             addTitle(document, "Отчёт по заказам");
             addPeriod(document, startDate, endDate);
 
-            XWPFTable table = document.createTable(Math.max(orders.size() + 1, 2), 5);
+            XWPFTable table = document.createTable(Math.max(orders.size() + 2, 2), 5);
+            formatTable(table);
             setHeader(table, 0, "№ заказа", "Дата заказа", "Клиент", "Статус", "Сумма, руб.");
             for (int i = 0; i < orders.size(); i++) {
                 ClientOrder order = orders.get(i);
@@ -60,12 +69,17 @@ public class ReportDocumentService {
                 table.getRow(i + 1).getCell(4).setText(order.getTotalAmount() != null ? order.getTotalAmount().toString() : "0");
             }
 
+            int totalRowIndex = orders.size() + 1;
+            table.getRow(totalRowIndex).getCell(0).setText("ИТОГО");
+            table.getRow(totalRowIndex).getCell(4).setText(totalAmount.toString());
+
             return new ReportFile(buildFileName("orders", startDate, endDate), toBytes(document));
         } catch (IOException exception) {
             throw new IllegalStateException("Не удалось сформировать отчёт по заказам", exception);
         }
     }
 
+    @Transactional(readOnly = true)
     public ReportFile generateStockReport(LocalDate startDate, LocalDate endDate) {
         List<Product> products = productRepository.findAll().stream()
                 .sorted(Comparator.comparing(Product::getName, String.CASE_INSENSITIVE_ORDER))
@@ -76,6 +90,7 @@ public class ReportDocumentService {
             addPeriod(document, startDate, endDate);
 
             XWPFTable table = document.createTable(Math.max(products.size() + 1, 2), 6);
+            formatTable(table);
             setHeader(table, 0, "Артикул", "Товар", "Категория", "Остаток", "Резерв", "Доступно");
             for (int i = 0; i < products.size(); i++) {
                 Product product = products.get(i);
@@ -94,6 +109,7 @@ public class ReportDocumentService {
         }
     }
 
+    @Transactional(readOnly = true)
     public ReportFile generateStatisticsReport(LocalDate startDate, LocalDate endDate) {
         List<ClientOrder> orders = clientOrderRepository.findAllByOrderByOrderDateDesc().stream()
                 .filter(order -> {
@@ -101,7 +117,7 @@ public class ReportDocumentService {
                     return !orderDate.isBefore(startDate) && !orderDate.isAfter(endDate);
                 })
                 .toList();
-        List<Product> products = productRepository.findAll();
+        List<Product> products = productRepository.findAllWithAttributeValues();
 
         BigDecimal totalRevenue = orders.stream()
                 .map(ClientOrder::getTotalAmount)
@@ -123,6 +139,7 @@ public class ReportDocumentService {
             addPeriod(document, startDate, endDate);
 
             XWPFTable table = document.createTable(6, 2);
+            formatTable(table);
             setHeader(table, 0, "Показатель", "Значение");
             table.getRow(1).getCell(0).setText("Количество заказов за период");
             table.getRow(1).getCell(1).setText(String.valueOf(orders.size()));
@@ -141,8 +158,9 @@ public class ReportDocumentService {
         }
     }
 
+    @Transactional(readOnly = true)
     public ReportFile generateExpirationReport(LocalDate startDate, LocalDate endDate) {
-        List<ExpiringProductRow> products = productRepository.findAll().stream()
+        List<ExpiringProductRow> products = productRepository.findAllWithAttributeValues().stream()
                 .map(product -> productExpirationService.getExpirationDate(product)
                         .map(expirationDate -> new ExpiringProductRow(product, expirationDate))
                         .orElse(null))
@@ -157,6 +175,7 @@ public class ReportDocumentService {
             addPeriod(document, startDate, endDate);
 
             XWPFTable table = document.createTable(Math.max(products.size() + 1, 2), 4);
+            formatTable(table);
             setHeader(table, 0, "Артикул", "Товар", "Остаток", "Срок годности");
             for (int i = 0; i < products.size(); i++) {
                 ExpiringProductRow row = products.get(i);
@@ -183,6 +202,7 @@ public class ReportDocumentService {
 
     private void addPeriod(XWPFDocument document, LocalDate startDate, LocalDate endDate) {
         XWPFParagraph paragraph = document.createParagraph();
+        paragraph.setAlignment(ParagraphAlignment.CENTER);
         XWPFRun run = paragraph.createRun();
         run.setText("Период: " + startDate.format(DATE_FORMATTER) + " - " + endDate.format(DATE_FORMATTER));
     }
@@ -191,6 +211,10 @@ public class ReportDocumentService {
         for (int i = 0; i < headers.length; i++) {
             table.getRow(rowIndex).getCell(i).setText(headers[i]);
         }
+    }
+
+    private void formatTable(XWPFTable table) {
+        table.setTableAlignment(TableRowAlign.CENTER);
     }
 
     private byte[] toBytes(XWPFDocument document) throws IOException {
