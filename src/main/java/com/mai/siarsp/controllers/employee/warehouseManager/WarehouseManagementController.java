@@ -10,6 +10,7 @@ import com.mai.siarsp.repo.ZoneProductRepository;
 import com.mai.siarsp.service.employee.warehouseManager.WarehouseManagementService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.security.core.Authentication;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Controller;
@@ -129,10 +130,14 @@ public class WarehouseManagementController {
     @GetMapping("/employee/warehouseManager/warehouse-management/find-product")
     public String findProductPage(
             @RequestParam(required = false) Long productId,
+            Authentication authentication,
             Model model) {
 
         List<Product> allProducts = productRepository.findAll();
         model.addAttribute("allProducts", allProducts);
+        model.addAttribute("isWarehouseManager", authentication != null
+                && authentication.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_EMPLOYEE_WAREHOUSE_MANAGER".equals(a.getAuthority())));
 
         if (productId != null) {
             Optional<Product> opt = productRepository.findById(productId);

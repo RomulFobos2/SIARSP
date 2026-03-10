@@ -103,10 +103,28 @@ data class DeliveryTaskDto(
     val currentLongitude: Double?,
     val driverFullName: String?,
     val vehicleRegistrationNumber: String?,
-    val totalMileage: Int?
+    val totalMileage: Int?,
+    val routePoints: List<RoutePointDto> = emptyList(),
+    val startMileage: Int?,
+    val endMileage: Int?
+)
+
+data class RoutePointDto(
+    val id: Long,
+    val orderIndex: Int,
+    val address: String?,
+    val reached: Boolean,
+    val actualArrivalTime: String?
 )
 
 data class UpdateLocationRequest(val latitude: Double, val longitude: Double)
+
+data class StartDeliveryRequest(val startMileage: Int)
+data class CompleteDeliveryRequest(
+    val endMileage: Int,
+    val clientRepresentative: String?,
+    val actComment: String?
+)
 
 data class ApiResponse(val success: Boolean, val message: String)
 
@@ -282,6 +300,15 @@ interface CourierApi {
 
     @POST("employee/courier/deliveryTasks/mobile/updateLocation/{id}")
     suspend fun updateLocation(@Path("id") id: Long, @Body request: UpdateLocationRequest): ApiResponse
+
+    @POST("employee/courier/deliveryTasks/mobile/startDelivery/{id}")
+    suspend fun startDelivery(@Path("id") id: Long, @Body request: StartDeliveryRequest): ApiResponse
+
+    @POST("employee/courier/deliveryTasks/mobile/markRoutePoint/{id}/{pointId}")
+    suspend fun markRoutePoint(@Path("id") id: Long, @Path("pointId") pointId: Long): ApiResponse
+
+    @POST("employee/courier/deliveryTasks/mobile/completeDelivery/{id}")
+    suspend fun completeDelivery(@Path("id") id: Long, @Body request: CompleteDeliveryRequest): ApiResponse
 }
 
 interface MobileApi {
@@ -374,6 +401,18 @@ class SessionRepository {
 
     suspend fun sendLocation(taskId: Long, latitude: Double, longitude: Double): ApiResponse {
         return courierApi.updateLocation(taskId, UpdateLocationRequest(latitude, longitude))
+    }
+
+    suspend fun startDelivery(taskId: Long, startMileage: Int): ApiResponse {
+        return courierApi.startDelivery(taskId, StartDeliveryRequest(startMileage))
+    }
+
+    suspend fun markRoutePoint(taskId: Long, pointId: Long): ApiResponse {
+        return courierApi.markRoutePoint(taskId, pointId)
+    }
+
+    suspend fun completeDelivery(taskId: Long, endMileage: Int, clientRepresentative: String?, actComment: String?): ApiResponse {
+        return courierApi.completeDelivery(taskId, CompleteDeliveryRequest(endMileage, clientRepresentative, actComment))
     }
 }
 
@@ -474,6 +513,39 @@ class MainViewModel : ViewModel() {
             runCatching { repo.sendLocation(taskId, latitude, longitude) }
                 .onSuccess { message = it.message }
                 .onFailure { message = "Ошибка отправки: ${it.message}" }
+        }
+    }
+
+    fun startDelivery(taskId: Long, startMileage: Int) {
+        viewModelScope.launch {
+            runCatching { repo.startDelivery(taskId, startMileage) }
+                .onSuccess {
+                    message = it.message
+                    refreshTasks(selectedStatus)
+                }
+                .onFailure { message = "Ошибка начала доставки: ${it.message}" }
+        }
+    }
+
+    fun markRoutePoint(taskId: Long, pointId: Long) {
+        viewModelScope.launch {
+            runCatching { repo.markRoutePoint(taskId, pointId) }
+                .onSuccess {
+                    message = it.message
+                    refreshTasks(selectedStatus)
+                }
+                .onFailure { message = "Ошибка отметки точки: ${it.message}" }
+        }
+    }
+
+    fun completeDelivery(taskId: Long, endMileage: Int, clientRepresentative: String?, actComment: String?) {
+        viewModelScope.launch {
+            runCatching { repo.completeDelivery(taskId, endMileage, clientRepresentative, actComment) }
+                .onSuccess {
+                    message = it.message
+                    refreshTasks(selectedStatus)
+                }
+                .onFailure { message = "Ошибка завершения доставки: ${it.message}" }
         }
     }
 
@@ -830,12 +902,94 @@ private fun TaskScreen(vm: MainViewModel, paddingValues: PaddingValues) {
 
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(vm.tasks) { task ->
+                var startMileageText by remember(task.id) { mutableStateOf("") }
+                var endMileageText by remember(task.id) { mutableStateOf("") }
+                var representativeText by remember(task.id) { mutableStateOf("") }
+                var commentText by remember(task.id) { mutableStateOf("") }
+
                 Card {
-                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text("Задача #${task.id}, заказ: ${task.clientOrderNumber ?: "—"}")
                         Text("Статус: ${displayName(task.status, deliveryTaskStatusNames)}")
                         Text("План: ${formatDateTime(task.plannedStartTime)}")
                         Text("Координаты: ${task.currentLatitude ?: "—"}, ${task.currentLongitude ?: "—"}")
+
+                        if (task.status == "LOADED") {
+                            OutlinedTextField(
+                                value = startMileageText,
+                                onValueChange = { startMileageText = it.filter(Char::isDigit) },
+                                label = { Text("Начальный пробег") },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Button(
+                                onClick = {
+                                    val mileage = startMileageText.toIntOrNull()
+                                    if (mileage == null) {
+                                        vm.message = "Введите корректный начальный пробег"
+                                    } else {
+                                        vm.startDelivery(task.id, mileage)
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) { Text("Начать доставку") }
+                        }
+
+                        if (task.status == "IN_TRANSIT" && task.routePoints.isNotEmpty()) {
+                            Text("Маршрутные точки:", fontWeight = FontWeight.Medium)
+                            task.routePoints.sortedBy { it.orderIndex }.forEach { point ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("${point.orderIndex + 1}. ${point.address ?: "—"}")
+                                    if (point.reached) {
+                                        Text("Пройдена", color = Color(0xFF2E7D32))
+                                    } else {
+                                        Button(onClick = { vm.markRoutePoint(task.id, point.id) }) {
+                                            Text("Отметить")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (task.status == "IN_TRANSIT") {
+                            OutlinedTextField(
+                                value = endMileageText,
+                                onValueChange = { endMileageText = it.filter(Char::isDigit) },
+                                label = { Text("Конечный пробег") },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            OutlinedTextField(
+                                value = representativeText,
+                                onValueChange = { representativeText = it },
+                                label = { Text("Представитель клиента (необязательно)") },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            OutlinedTextField(
+                                value = commentText,
+                                onValueChange = { commentText = it },
+                                label = { Text("Комментарий к акту (необязательно)") },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Button(
+                                onClick = {
+                                    val mileage = endMileageText.toIntOrNull()
+                                    if (mileage == null) {
+                                        vm.message = "Введите корректный конечный пробег"
+                                    } else {
+                                        vm.completeDelivery(
+                                            task.id,
+                                            mileage,
+                                            representativeText.ifBlank { null },
+                                            commentText.ifBlank { null }
+                                        )
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) { Text("Завершить доставку") }
+                        }
                     }
                 }
             }
