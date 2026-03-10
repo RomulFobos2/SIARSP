@@ -16,6 +16,7 @@ public interface DeliveryTaskMapper {
 
     @Mapping(source = "clientOrder.id", target = "clientOrderId")
     @Mapping(source = "clientOrder.orderNumber", target = "clientOrderNumber")
+    @Mapping(source = "clientOrder.client.organizationName", target = "clientOrganizationName")
     @Mapping(source = "driver.id", target = "driverId")
     @Mapping(source = "driver", target = "driverFullName", qualifiedByName = "employeeFullName")
     @Mapping(source = "vehicle.id", target = "vehicleId")

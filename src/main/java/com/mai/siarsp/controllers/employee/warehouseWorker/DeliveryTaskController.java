@@ -14,6 +14,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.LocalDate;
 import java.util.*;
 
 @Controller("warehouseWorkerDeliveryTaskController")
@@ -33,6 +34,8 @@ public class DeliveryTaskController {
     @GetMapping("/allDeliveryTasks")
     public String allDeliveryTasks(@RequestParam(required = false) String search,
                                    @RequestParam(required = false, defaultValue = "active") String status,
+                                   @RequestParam(required = false) String dateFrom,
+                                   @RequestParam(required = false) String dateTo,
                                    Model model) {
         List<DeliveryTaskDTO> tasks;
         switch (status) {
@@ -46,18 +49,40 @@ public class DeliveryTaskController {
             }
         }
 
-        // Фильтрация по номеру заказа
+        // Фильтрация по номеру заказа, имени клиента или водителю
         if (search != null && !search.isBlank()) {
             String searchLower = search.toLowerCase();
             tasks = tasks.stream()
-                    .filter(t -> t.getClientOrderNumber() != null
+                    .filter(t -> (t.getClientOrderNumber() != null
                             && t.getClientOrderNumber().toLowerCase().contains(searchLower))
+                            || (t.getClientOrganizationName() != null
+                            && t.getClientOrganizationName().toLowerCase().contains(searchLower))
+                            || (t.getDriverFullName() != null
+                            && t.getDriverFullName().toLowerCase().contains(searchLower)))
+                    .toList();
+        }
+
+        // Фильтрация по дате (plannedStartTime)
+        if (dateFrom != null && !dateFrom.isBlank()) {
+            LocalDate from = LocalDate.parse(dateFrom);
+            tasks = tasks.stream()
+                    .filter(t -> t.getPlannedStartTime() != null
+                            && !t.getPlannedStartTime().toLocalDate().isBefore(from))
+                    .toList();
+        }
+        if (dateTo != null && !dateTo.isBlank()) {
+            LocalDate to = LocalDate.parse(dateTo);
+            tasks = tasks.stream()
+                    .filter(t -> t.getPlannedStartTime() != null
+                            && !t.getPlannedStartTime().toLocalDate().isAfter(to))
                     .toList();
         }
 
         model.addAttribute("tasks", tasks);
         model.addAttribute("currentSearch", search != null ? search : "");
         model.addAttribute("currentStatus", status);
+        model.addAttribute("currentDateFrom", dateFrom != null ? dateFrom : "");
+        model.addAttribute("currentDateTo", dateTo != null ? dateTo : "");
         return "employee/warehouseWorker/deliveryTasks/allDeliveryTasks";
     }
 

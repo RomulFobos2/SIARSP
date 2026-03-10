@@ -21,13 +21,13 @@
             <!-- Фильтр и поиск -->
             <form method="get" action="/employee/warehouseWorker/clientOrders/allClientOrders" class="mb-4">
                 <div class="row g-3 align-items-end">
-                    <div class="col-md-5">
-                        <label class="form-label fw-semibold">Поиск по номеру заказа</label>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Поиск</label>
                         <input type="text" name="search" class="form-control"
-                               placeholder="Номер заказа..."
+                               placeholder="Номер заказа или клиент..."
                                th:value="${currentSearch}">
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-2">
                         <label class="form-label fw-semibold">Статус</label>
                         <select name="status" class="form-select">
                             <option value="all" th:selected="${currentStatus == 'all'}">Все</option>
@@ -36,7 +36,17 @@
                             <option value="ready" th:selected="${currentStatus == 'ready'}">Собранные</option>
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">Дата от</label>
+                        <input type="date" name="dateFrom" class="form-control"
+                               th:value="${currentDateFrom}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">Дата до</label>
+                        <input type="date" name="dateTo" class="form-control"
+                               th:value="${currentDateTo}">
+                    </div>
+                    <div class="col-md-2">
                         <button type="submit" class="btn btn-primary w-100">Найти</button>
                     </div>
                 </div>

@@ -18,10 +18,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Контроллер расширенного управления складом.
@@ -182,9 +180,63 @@ public class WarehouseManagementController {
 
     @Transactional(readOnly = true)
     @GetMapping("/employee/warehouseManager/warehouse-management/move-product")
-    public String moveProductPage(Model model) {
+    public String moveProductPage(
+            @RequestParam(required = false) Long productId,
+            @RequestParam(required = false) Long fromZoneId,
+            Model model) {
+
+        // Режим с предзаполненными данными (переход из findProduct)
+        if (productId != null && fromZoneId != null) {
+            Optional<Product> optProduct = productRepository.findById(productId);
+            if (optProduct.isPresent()) {
+                Product product = optProduct.get();
+                // Найти ZoneProduct для данной зоны-источника
+                List<ZoneProduct> zoneProducts = zoneProductRepository.findByProduct(product);
+                Optional<ZoneProduct> optFromZp = zoneProducts.stream()
+                        .filter(zp -> zp.getZone().getId().equals(fromZoneId))
+                        .findFirst();
+
+                if (optFromZp.isPresent()) {
+                    ZoneProduct fromZp = optFromZp.get();
+                    // Информация о зоне-источнике
+                    Map<String, Object> fromZone = new HashMap<>();
+                    fromZone.put("zoneId", fromZp.getZone().getId());
+                    fromZone.put("zoneLabel", fromZp.getZone().getLabel());
+                    fromZone.put("shelfCode", fromZp.getZone().getShelf().getCode());
+                    fromZone.put("warehouseName", fromZp.getZone().getShelf().getWarehouse().getName());
+                    fromZone.put("quantity", fromZp.getQuantity());
+
+                    // Получить все совместимые зоны, кроме исходной, сгруппированные по "Склад / Стеллаж"
+                    LinkedHashMap<String, List<ZoneSelectDto>> groupedZones = new LinkedHashMap<>();
+                    List<Warehouse> warehouses = warehouseRepository.findAll();
+                    for (Warehouse wh : warehouses) {
+                        if (!wh.canStoreProduct(product)) continue;
+                        List<ZoneSelectDto> zones = managementService.getZonesByWarehouse(wh.getId())
+                                .stream()
+                                .filter(z -> !z.getId().equals(fromZoneId))
+                                .toList();
+                        if (!zones.isEmpty()) {
+                            // Группировка по стеллажу внутри склада
+                            Map<String, List<ZoneSelectDto>> byShelf = zones.stream()
+                                    .collect(Collectors.groupingBy(
+                                            z -> wh.getName() + " / " + z.getShelfCode(),
+                                            LinkedHashMap::new,
+                                            Collectors.toList()));
+                            groupedZones.putAll(byShelf);
+                        }
+                    }
+
+                    model.addAttribute("selectedProduct", product);
+                    model.addAttribute("fromZone", fromZone);
+                    model.addAttribute("groupedZones", groupedZones);
+                    model.addAttribute("maxQuantity", fromZp.getQuantity());
+                    return "employee/warehouseManager/warehouses/moveProduct";
+                }
+            }
+        }
+
+        // Fallback: текущее поведение (AJAX-форма)
         List<Warehouse> warehouses = warehouseRepository.findAll();
-        // Товары, размещённые на складе
         List<Product> productsOnWarehouse = zoneProductRepository.findAll().stream()
                 .map(ZoneProduct::getProduct)
                 .distinct()

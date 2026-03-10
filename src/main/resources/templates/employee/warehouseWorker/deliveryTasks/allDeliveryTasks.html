@@ -21,19 +21,29 @@
             <!-- Фильтр и поиск -->
             <form method="get" action="/employee/warehouseWorker/deliveryTasks/allDeliveryTasks" class="mb-4">
                 <div class="row g-3 align-items-end">
-                    <div class="col-md-5">
-                        <label class="form-label fw-semibold">Поиск по номеру заказа</label>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Поиск</label>
                         <input type="text" name="search" class="form-control"
-                               placeholder="Номер заказа..."
+                               placeholder="Заказ, клиент или водитель..."
                                th:value="${currentSearch}">
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-2">
                         <label class="form-label fw-semibold">Статус</label>
                         <select name="status" class="form-select">
                             <option value="active" th:selected="${currentStatus == 'active'}">Активные</option>
                             <option value="completed" th:selected="${currentStatus == 'completed'}">Завершённые</option>
                             <option value="all" th:selected="${currentStatus == 'all'}">Все</option>
                         </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">Дата от</label>
+                        <input type="date" name="dateFrom" class="form-control"
+                               th:value="${currentDateFrom}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">Дата до</label>
+                        <input type="date" name="dateTo" class="form-control"
+                               th:value="${currentDateTo}">
                     </div>
                     <div class="col-md-3">
                         <button type="submit" class="btn btn-primary w-100">Найти</button>
@@ -51,6 +61,7 @@
                     <tr>
                         <th>#</th>
                         <th>Заказ</th>
+                        <th>Клиент</th>
                         <th>Водитель</th>
                         <th>Автомобиль</th>
                         <th>Статус</th>
@@ -61,6 +72,7 @@
                     <tr th:each="task, idx : ${tasks}">
                         <td th:text="${idx.index + 1}"></td>
                         <td th:text="${task.clientOrderNumber}"></td>
+                        <td th:text="${task.clientOrganizationName}"></td>
                         <td th:text="${task.driverFullName}"></td>
                         <td th:text="${task.vehicleRegistrationNumber}"></td>
                         <td>

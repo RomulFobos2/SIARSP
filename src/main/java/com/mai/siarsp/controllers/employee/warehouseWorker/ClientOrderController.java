@@ -14,6 +14,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.LocalDate;
 import java.util.*;
 
 /**
@@ -47,6 +48,8 @@ public class ClientOrderController {
     @GetMapping("/allClientOrders")
     public String allClientOrders(@RequestParam(required = false) String search,
                                   @RequestParam(required = false, defaultValue = "all") String status,
+                                  @RequestParam(required = false) String dateFrom,
+                                  @RequestParam(required = false) String dateTo,
                                   Model model) {
         List<ClientOrderDTO> orders;
         switch (status) {
@@ -59,18 +62,36 @@ public class ClientOrderController {
             }
         }
 
-        // Фильтрация по номеру заказа
+        // Фильтрация по номеру заказа или имени клиента
         if (search != null && !search.isBlank()) {
             String searchLower = search.toLowerCase();
             orders = orders.stream()
-                    .filter(o -> o.getOrderNumber() != null
+                    .filter(o -> (o.getOrderNumber() != null
                             && o.getOrderNumber().toLowerCase().contains(searchLower))
+                            || (o.getClientOrganizationName() != null
+                            && o.getClientOrganizationName().toLowerCase().contains(searchLower)))
+                    .toList();
+        }
+
+        // Фильтрация по дате доставки
+        if (dateFrom != null && !dateFrom.isBlank()) {
+            LocalDate from = LocalDate.parse(dateFrom);
+            orders = orders.stream()
+                    .filter(o -> o.getDeliveryDate() != null && !o.getDeliveryDate().isBefore(from))
+                    .toList();
+        }
+        if (dateTo != null && !dateTo.isBlank()) {
+            LocalDate to = LocalDate.parse(dateTo);
+            orders = orders.stream()
+                    .filter(o -> o.getDeliveryDate() != null && !o.getDeliveryDate().isAfter(to))
                     .toList();
         }
 
         model.addAttribute("orders", orders);
         model.addAttribute("currentSearch", search != null ? search : "");
         model.addAttribute("currentStatus", status);
+        model.addAttribute("currentDateFrom", dateFrom != null ? dateFrom : "");
+        model.addAttribute("currentDateTo", dateTo != null ? dateTo : "");
         return "employee/warehouseWorker/clientOrders/allClientOrders";
     }
 
