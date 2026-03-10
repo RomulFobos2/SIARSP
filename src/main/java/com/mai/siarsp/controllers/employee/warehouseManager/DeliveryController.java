@@ -169,6 +169,16 @@ public class DeliveryController {
                 .anyMatch(s -> s.getDeficitQuantity() > 0);
         model.addAttribute("delivery", deliveryDTO);
         model.addAttribute("hasDeficit", hasDeficit);
+
+        // Стоимость доставки и итого с доставкой
+        if (delivery.getRequest() != null && delivery.getRequest().getDeliveryCost() != null) {
+            model.addAttribute("deliveryCost", delivery.getRequest().getDeliveryCost());
+            model.addAttribute("grandTotal", deliveryDTO.getTotalCost().add(delivery.getRequest().getDeliveryCost()));
+        } else {
+            model.addAttribute("deliveryCost", null);
+            model.addAttribute("grandTotal", deliveryDTO.getTotalCost());
+        }
+
         return "employee/warehouseManager/deliveries/detailsDelivery";
     }
 }

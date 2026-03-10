@@ -217,7 +217,8 @@ public class DeliveryService {
             }
 
             // 9. Сохранить (каскад сохранит Delivery и Supply)
-            requestForDeliveryRepository.save(request);
+            request = requestForDeliveryRepository.save(request);
+            delivery = request.getDelivery(); // получить managed copy с ID
 
             // 10. Уведомления
             String supplierName = request.getSupplier().getName();

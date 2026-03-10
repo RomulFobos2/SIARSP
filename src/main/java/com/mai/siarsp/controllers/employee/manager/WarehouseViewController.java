@@ -2,6 +2,7 @@ package com.mai.siarsp.controllers.employee.manager;
 
 import com.mai.siarsp.dto.DetailedWarehouseStatistics;
 import com.mai.siarsp.dto.ZoneUtilization;
+import com.mai.siarsp.enumeration.ClientOrderStatus;
 import com.mai.siarsp.models.ClientOrder;
 import com.mai.siarsp.models.Shelf;
 import com.mai.siarsp.models.StorageZone;
@@ -185,8 +186,11 @@ public class WarehouseViewController {
             YearMonth orderMonth = YearMonth.from(order.getOrderDate());
             if (ordersByMonth.containsKey(orderMonth)) {
                 ordersByMonth.put(orderMonth, ordersByMonth.get(orderMonth) + 1);
-                BigDecimal orderAmount = order.getTotalAmount() != null ? order.getTotalAmount() : BigDecimal.ZERO;
-                revenueByMonth.put(orderMonth, revenueByMonth.get(orderMonth).add(orderAmount));
+                // Выручка считается только по доставленным заказам
+                if (order.getStatus() == ClientOrderStatus.DELIVERED) {
+                    BigDecimal orderAmount = order.getTotalAmount() != null ? order.getTotalAmount() : BigDecimal.ZERO;
+                    revenueByMonth.put(orderMonth, revenueByMonth.get(orderMonth).add(orderAmount));
+                }
             }
         }
 

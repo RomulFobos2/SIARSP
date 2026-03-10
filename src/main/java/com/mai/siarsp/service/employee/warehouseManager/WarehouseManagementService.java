@@ -199,6 +199,23 @@ public class WarehouseManagementService {
         return "Почти заполнена — добавьте осторожно";
     }
 
+    // ========== ПЕРЕМЕЩЕНИЕ ТОВАРА ==========
+
+    /**
+     * Перемещает товар из одной зоны в другую.
+     */
+    @Transactional
+    public MoveInfo moveProduct(Long productId, Long fromZoneId, Long toZoneId, int quantity) {
+        Optional<Product> optP = productRepository.findById(productId);
+        if (optP.isEmpty()) return MoveInfo.failure("Товар не найден");
+        Optional<StorageZone> optFrom = storageZoneRepository.findById(fromZoneId);
+        if (optFrom.isEmpty()) return MoveInfo.failure("Зона-источник не найдена");
+        Optional<StorageZone> optTo = storageZoneRepository.findById(toZoneId);
+        if (optTo.isEmpty()) return MoveInfo.failure("Зона-назначение не найдена");
+
+        return placementService.moveProduct(optP.get(), optFrom.get(), optTo.get(), quantity);
+    }
+
     // ========== ПРОВЕРКА ВОЗМОЖНОСТИ РАЗМЕЩЕНИЯ ==========
 
     /**
