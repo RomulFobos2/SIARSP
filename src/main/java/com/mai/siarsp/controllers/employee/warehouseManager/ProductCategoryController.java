@@ -7,8 +7,10 @@ import com.mai.siarsp.mapper.GlobalProductCategoryMapper;
 import com.mai.siarsp.mapper.ProductAttributeMapper;
 import com.mai.siarsp.mapper.ProductCategoryMapper;
 import com.mai.siarsp.models.GlobalProductCategory;
+import com.mai.siarsp.models.ProductAttribute;
 import com.mai.siarsp.models.ProductCategory;
 import com.mai.siarsp.service.employee.warehouseManager.ProductCategoryService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -135,7 +137,20 @@ public class ProductCategoryController {
         ProductCategory category = productCategoryService.getProductCategoryRepository().findById(id).get();
         ProductCategoryDTO categoryDTO = ProductCategoryMapper.INSTANCE.toDTO(category);
 
+        // ID текущих атрибутов для определения вновь добавленных
+        List<Long> selectedAttributeIds = category.getAttributes().stream()
+                .map(ProductAttribute::getId)
+                .toList();
+
+        // Типы данных всех атрибутов для модального окна
+        Map<Long, String> attributeDataTypes = new HashMap<>();
+        for (ProductAttribute attr : productCategoryService.getProductAttributeRepository().findAll()) {
+            attributeDataTypes.put(attr.getId(), attr.getDataType().name());
+        }
+
         model.addAttribute("categoryDTO", categoryDTO);
+        model.addAttribute("selectedAttributeIds", selectedAttributeIds);
+        model.addAttribute("attributeDataTypes", attributeDataTypes);
         populateDropdowns(model);
         return "employee/warehouseManager/productCategories/editProductCategory";
     }
@@ -148,8 +163,25 @@ public class ProductCategoryController {
                                        @RequestParam String inputName,
                                        @RequestParam Long inputGlobalProductCategoryId,
                                        @RequestParam(required = false) List<Long> inputAttributeIds,
+                                       HttpServletRequest request,
                                        RedirectAttributes redirectAttributes) {
-        if (!productCategoryService.editProductCategory(id, inputName, inputGlobalProductCategoryId, inputAttributeIds)) {
+        // Извлекаем значения атрибутов для существующих товаров (формат: productValue_{productId}_{attributeId})
+        Map<Long, Map<Long, String>> productAttributeValues = new HashMap<>();
+        request.getParameterMap().forEach((key, values) -> {
+            if (key.startsWith("productValue_") && values.length > 0 && !values[0].isBlank()) {
+                String[] parts = key.substring("productValue_".length()).split("_");
+                if (parts.length == 2) {
+                    Long productId = Long.parseLong(parts[0]);
+                    Long attributeId = Long.parseLong(parts[1]);
+                    productAttributeValues
+                            .computeIfAbsent(productId, k -> new HashMap<>())
+                            .put(attributeId, values[0]);
+                }
+            }
+        });
+
+        if (!productCategoryService.editProductCategory(id, inputName, inputGlobalProductCategoryId,
+                inputAttributeIds, productAttributeValues)) {
             redirectAttributes.addFlashAttribute("categoryError", "Ошибка при сохранении изменений.");
             return "redirect:/employee/warehouseManager/productCategories/editProductCategory/" + id;
         }
@@ -183,7 +215,9 @@ public class ProductCategoryController {
         model.addAttribute("allGlobalProductCategories", globalCategories.stream()
                 .sorted(Comparator.comparing(GlobalProductCategoryDTO::getName))
                 .toList());
+        // Исключаем обязательные атрибуты из списка выбора (они добавляются автоматически)
         model.addAttribute("allProductAttributes", productAttributes.stream()
+                .filter(attr -> !ProductCategoryService.MANDATORY_ATTRIBUTE_NAMES.contains(attr.getName()))
                 .sorted(Comparator.comparing(ProductAttributeDTO::getName))
                 .toList());
     }

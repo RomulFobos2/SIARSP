@@ -39,6 +39,9 @@ public class DeliveryTaskService {
             DeliveryTaskStatus.LOADED, DeliveryTaskStatus.IN_TRANSIT
     );
 
+    /** Радиус автоматической отметки маршрутной точки (в метрах) */
+    private static final double ROUTE_POINT_RADIUS_METERS = 500.0;
+
     private final DeliveryTaskRepository deliveryTaskRepository;
     private final ClientOrderRepository clientOrderRepository;
     private final VehicleRepository vehicleRepository;
@@ -695,6 +698,20 @@ public class DeliveryTaskService {
 
             task.setCurrentLatitude(latitude);
             task.setCurrentLongitude(longitude);
+
+            // Авто-отметка маршрутных точек в радиусе 500м
+            for (RoutePoint rp : task.getRoutePoints()) {
+                if (!rp.isReached() && rp.getLatitude() != null && rp.getLongitude() != null) {
+                    double distance = haversineDistance(latitude, longitude, rp.getLatitude(), rp.getLongitude());
+                    if (distance <= ROUTE_POINT_RADIUS_METERS) {
+                        rp.setReached(true);
+                        rp.setActualArrivalTime(LocalDateTime.now());
+                        log.info("Задача id={}: точка '{}' автоматически отмечена (расстояние: {}м)",
+                                taskId, rp.getAddress(), Math.round(distance));
+                    }
+                }
+            }
+
             deliveryTaskRepository.save(task);
 
             return true;
@@ -767,6 +784,14 @@ public class DeliveryTaskService {
 
             if (task.getStatus() != DeliveryTaskStatus.IN_TRANSIT) {
                 log.error("Задача id={} не в статусе IN_TRANSIT (текущий: {})", taskId, task.getStatus());
+                return false;
+            }
+
+            // Проверка: все маршрутные точки должны быть пройдены
+            boolean allReached = task.getRoutePoints().stream().allMatch(RoutePoint::isReached);
+            if (!allReached) {
+                long unreachedCount = task.getRoutePoints().stream().filter(rp -> !rp.isReached()).count();
+                log.error("Задача id={}: невозможно завершить доставку, {} точек не пройдено", taskId, unreachedCount);
                 return false;
             }
 
@@ -889,5 +914,21 @@ public class DeliveryTaskService {
             number = "АПП-" + datePart + "-" + num;
         } while (acceptanceActRepository.existsByActNumber(number));
         return number;
+    }
+
+    /**
+     * Вычисляет расстояние между двумя GPS-координатами по формуле Хаверсина.
+     *
+     * @return расстояние в метрах
+     */
+    private double haversineDistance(double lat1, double lon1, double lat2, double lon2) {
+        final double R = 6371000; // радиус Земли в метрах
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
     }
 }

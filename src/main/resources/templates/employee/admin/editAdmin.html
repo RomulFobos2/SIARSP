@@ -75,9 +75,16 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const usernameInput = document.getElementById('inputUsername');
-        const originalUsername = usernameInput.value;
+        const lastNameInput = document.getElementById('inputLastName');
+        const firstNameInput = document.getElementById('inputFirstName');
+        const patronymicInput = document.getElementById('inputPatronymicName');
         const submitButton = document.querySelector('button[type="submit"]');
         const form = document.querySelector('form');
+
+        const originalUsername = usernameInput.value;
+        const originalLastName = lastNameInput.value;
+        const originalFirstName = firstNameInput.value;
+        const originalPatronymic = patronymicInput.value;
 
         // Создаем элемент для сообщений об ошибках
         const errorDiv = document.createElement('div');
@@ -85,8 +92,17 @@
         errorDiv.style.display = 'none';
         usernameInput.parentNode.appendChild(errorDiv);
 
+        function hasChanges() {
+            return usernameInput.value !== originalUsername
+                || lastNameInput.value !== originalLastName
+                || firstNameInput.value !== originalFirstName
+                || patronymicInput.value !== originalPatronymic;
+        }
+
         function checkFormValidity() {
-            const isValid = errorDiv.style.display === 'none' && usernameInput.value.length > 0;
+            const isValid = errorDiv.style.display === 'none'
+                && usernameInput.value.length > 0
+                && hasChanges();
             submitButton.disabled = !isValid;
         }
 
@@ -124,6 +140,11 @@
                 errorDiv.style.display = 'none';
                 checkFormValidity();
             }
+        });
+
+        // Слушатели на полях имени
+        [lastNameInput, firstNameInput, patronymicInput].forEach(function(input) {
+            input.addEventListener('input', checkFormValidity);
         });
 
         checkFormValidity();

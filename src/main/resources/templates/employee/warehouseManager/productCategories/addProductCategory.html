@@ -48,9 +48,12 @@
                 </div>
             </div>
 
-            <div class="mb-4" th:if="${!allProductAttributes.isEmpty()}">
+            <div class="mb-4">
                 <h6 class="form-section-title">Атрибуты</h6>
-                <div class="row g-2">
+                <div class="alert alert-info mb-3">
+                    Обязательные атрибуты (Длина, Ширина, Высота упаковки, Срок годности) добавляются автоматически.
+                </div>
+                <div class="row g-2" th:if="${!allProductAttributes.isEmpty()}">
                     <div class="col-md-6" th:each="attr : ${allProductAttributes}">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox"

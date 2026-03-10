@@ -278,7 +278,7 @@ public class ProductAttributeService {
                 log.info("Атрибут '{}' добавлен в категорию '{}'.", attribute.getName(), newCategory.getName());
             }
 
-            // 3. Создаём значения для товаров в новых категориях
+            // 3. Создаём или обновляем значения для товаров (новые категории или смена типа данных)
             if (productValues != null && !productValues.isEmpty()) {
                 for (Map.Entry<Long, String> entry : productValues.entrySet()) {
                     Product product = productRepository.findById(entry.getKey()).orElse(null);
@@ -293,10 +293,21 @@ public class ProductAttributeService {
                         TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                         return false;
                     }
-                    ProductAttributeValue pav = new ProductAttributeValue(product, attribute, value.trim());
-                    productAttributeValueRepository.save(pav);
-                    log.info("Создано значение атрибута '{}' = '{}' для товара '{}'.",
-                            attribute.getName(), value.trim(), product.getName());
+                    // Обновляем существующее значение или создаём новое
+                    Optional<ProductAttributeValue> existingOpt =
+                            productAttributeValueRepository.findByProductAndAttribute(product, attribute);
+                    if (existingOpt.isPresent()) {
+                        ProductAttributeValue existing = existingOpt.get();
+                        existing.setValue(value.trim());
+                        productAttributeValueRepository.save(existing);
+                        log.info("Обновлено значение атрибута '{}' = '{}' для товара '{}'.",
+                                attribute.getName(), value.trim(), product.getName());
+                    } else {
+                        ProductAttributeValue pav = new ProductAttributeValue(product, attribute, value.trim());
+                        productAttributeValueRepository.save(pav);
+                        log.info("Создано значение атрибута '{}' = '{}' для товара '{}'.",
+                                attribute.getName(), value.trim(), product.getName());
+                    }
                 }
             }
         } catch (Exception e) {
