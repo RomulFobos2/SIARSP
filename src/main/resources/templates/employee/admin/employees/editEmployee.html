@@ -15,7 +15,7 @@
     <div class="row justify-content-center">
         <div class="col-12 col-lg-10">
             <div class="profile-card p-4">
-        <form th:action="'/employee/admin/employees/editEmployee/' + ${employeeDTO.getId()}"
+        <form id="editEmployeeForm" th:action="'/employee/admin/employees/editEmployee/' + ${employeeDTO.getId()}"
               method="post" class="auth-form">
 
             <h1 class="page-title">Редактирование пользователя</h1>
@@ -93,7 +93,8 @@
     document.addEventListener('DOMContentLoaded', function() {
         const usernameInput = document.getElementById('inputUsername');
         const originalUsername = usernameInput.value;
-        const submitButton = document.querySelector('button[type="submit"]');
+        const form = document.getElementById('editEmployeeForm');
+        const submitButton = form.querySelector('button[type="submit"]');
 
         // Создаем элемент для ошибки username
         const usernameErrorDiv = document.createElement('div');

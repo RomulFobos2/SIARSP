@@ -15,7 +15,10 @@
     <div class="row justify-content-center">
         <div class="col-12 col-lg-10">
             <div class="profile-card p-4">
-        <form th:action="'/employee/admin/employees/editAdmin/' + ${employeeDTO.getId()}" method="post" class="auth-form">
+                <form id="editEmployeeForm"
+                      th:action="'/employee/admin/employees/editAdmin/' + ${employeeDTO.getId()}"
+                      method="post"
+                      class="auth-form">
 
             <h1 class="page-title">Редактирование пользователя</h1>
             <p class="page-subtitle">Обновите данные сотрудника</p>
@@ -78,8 +81,8 @@
         const lastNameInput = document.getElementById('inputLastName');
         const firstNameInput = document.getElementById('inputFirstName');
         const patronymicInput = document.getElementById('inputPatronymicName');
-        const submitButton = document.querySelector('button[type="submit"]');
-        const form = document.querySelector('form');
+        const form = document.getElementById('editEmployeeForm');
+        const submitButton = form.querySelector('button[type="submit"]');
 
         const originalUsername = usernameInput.value;
         const originalLastName = lastNameInput.value;
