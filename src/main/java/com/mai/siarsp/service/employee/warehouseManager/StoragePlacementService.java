@@ -69,7 +69,7 @@ public class StoragePlacementService {
                         if (boxL != null && boxW != null && boxH != null) {
                             double itemVolume = (boxL * boxW * boxH) / 1_000_000.0;
                             double newVolume = itemVolume * quantity;
-                            double usedVolume = zone.getZoneProducts().stream()
+                            double usedVolume = zone.getProducts().stream()
                                     .mapToDouble(ZoneProduct::getTotalVolume).sum();
                             if (usedVolume + newVolume > zone.getCapacityVolume()) continue;
                         }
@@ -108,7 +108,7 @@ public class StoragePlacementService {
         if (boxL != null && boxW != null && boxH != null) {
             double itemVolume = (boxL * boxW * boxH) / 1_000_000.0; // см³ → м³
             double newVolume = itemVolume * quantity;
-            double usedVolume = zone.getZoneProducts().stream()
+            double usedVolume = zone.getProducts().stream()
                     .mapToDouble(ZoneProduct::getTotalVolume)
                     .sum();
             double capacity = zone.getCapacityVolume();
