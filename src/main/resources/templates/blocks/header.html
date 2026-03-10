@@ -40,10 +40,14 @@
                 <ul class="navbar-nav ms-auto align-items-lg-center">
 
                     <!-- ========== ADMIN ========== -->
-                    <li class="nav-item" sec:authorize="hasRole('ROLE_EMPLOYEE_ADMIN')">
-                        <a class="nav-link px-3" href="/employee/admin/employees/allEmployees">
-                            Пользователи
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_ADMIN')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Администрирование
                         </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/admin/employees/allEmployees">Пользователи</a></li>
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/warehouse-management/find-product">Поиск товара</a></li>
+                        </ul>
                     </li>
 
                     <!-- ========== MANAGER ========== -->
@@ -67,6 +71,7 @@
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="/employee/manager/warehouses/allWarehouses">Просмотр складов</a></li>
                             <li><a class="dropdown-item" href="/employee/manager/equipments/allEquipment">Оборудование</a></li>
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/warehouse-management/find-product">Поиск товара</a></li>
                         </ul>
                     </li>
                     <!-- Dropdown: Закупки -->
@@ -131,6 +136,7 @@
                             <li><a class="dropdown-item" href="/employee/warehouseManager/warehouses/allWarehouses">Склады</a></li>
                             <li><a class="dropdown-item" href="/employee/warehouseManager/equipments/allEquipment">Оборудование</a></li>
                             <li><a class="dropdown-item" href="/employee/warehouseManager/equipmentTypes/allEquipmentTypes">Типы оборудования</a></li>
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/warehouse-management/find-product">Поиск товара</a></li>
                         </ul>
                     </li>
                     <!-- Dropdown: Закупки -->
@@ -192,6 +198,7 @@
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="/employee/warehouseWorker/clientOrders/allClientOrders">Задачи на сборку</a></li>
                             <li><a class="dropdown-item" href="/employee/warehouseWorker/deliveryTasks/allDeliveryTasks">Задачи на погрузку</a></li>
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/warehouse-management/find-product">Поиск товара</a></li>
                         </ul>
                     </li>
                     <!-- Dropdown: Справочники -->
@@ -214,6 +221,7 @@
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="/employee/accounter/requestsForDelivery/allRequestsForDelivery">Заявки на поставку</a></li>
                             <li><a class="dropdown-item" href="/employee/accounter/products/allProducts">Товары</a></li>
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/warehouse-management/find-product">Поиск товара</a></li>
                         </ul>
                     </li>
 
@@ -263,6 +271,7 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="/employee/courier/deliveryTasks/myDeliveryTasks">Мои доставки</a></li>
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/warehouse-management/find-product">Поиск товара</a></li>
                         </ul>
                     </li>
                     <!-- Dropdown: Справочники -->

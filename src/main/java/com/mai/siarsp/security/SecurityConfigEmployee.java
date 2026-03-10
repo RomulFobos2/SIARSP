@@ -35,6 +35,8 @@ public class SecurityConfigEmployee {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/static/**", "/images/**", "/css/**", "/js/**", "/", "/image/**").permitAll()
                         .requestMatchers("/api/mobile/**").hasAnyRole("EMPLOYEE_ADMIN", "EMPLOYEE_MANAGER", "EMPLOYEE_WAREHOUSE_MANAGER", "EMPLOYEE_WAREHOUSE_WORKER", "EMPLOYEE_COURIER", "EMPLOYEE_ACCOUNTER")
+                        .requestMatchers("/employee/warehouseManager/warehouse-management/find-product")
+                        .hasAnyRole("EMPLOYEE_ADMIN", "EMPLOYEE_MANAGER", "EMPLOYEE_WAREHOUSE_MANAGER", "EMPLOYEE_WAREHOUSE_WORKER", "EMPLOYEE_COURIER", "EMPLOYEE_ACCOUNTER")
                         .requestMatchers("/employee/admin/**").hasRole("EMPLOYEE_ADMIN")
                         .requestMatchers("/employee/manager/**").hasRole("EMPLOYEE_MANAGER")
                         .requestMatchers("/employee/warehouseManager/**").hasRole("EMPLOYEE_WAREHOUSE_MANAGER")
