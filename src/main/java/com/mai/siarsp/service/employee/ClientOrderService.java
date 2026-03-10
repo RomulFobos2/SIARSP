@@ -409,9 +409,10 @@ public class ClientOrderService {
             order.setStatus(ClientOrderStatus.READY);
             clientOrderRepository.save(order);
 
-            notificationService.notifyByRole("ROLE_EMPLOYEE_MANAGER",
-                    "Заказ №" + order.getOrderNumber() + " готов к отгрузке. Клиент: "
-                            + order.getClient().getOrganizationName());
+            String assemblyNotification = "Заказ №" + order.getOrderNumber()
+                    + " готов к отгрузке. Клиент: " + order.getClient().getOrganizationName();
+            notificationService.notifyByRole("ROLE_EMPLOYEE_MANAGER", assemblyNotification);
+            notificationService.notifyByRole("ROLE_EMPLOYEE_WAREHOUSE_MANAGER", assemblyNotification);
 
             log.info("Заказ №{}: сборка завершена, готов к отгрузке", order.getOrderNumber());
             return true;

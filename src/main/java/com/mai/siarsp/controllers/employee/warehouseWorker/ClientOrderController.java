@@ -31,7 +31,8 @@ public class ClientOrderController {
 
     private static final List<ClientOrderStatus> WORKER_STATUSES = Arrays.asList(
             ClientOrderStatus.RESERVED,
-            ClientOrderStatus.IN_PROGRESS
+            ClientOrderStatus.IN_PROGRESS,
+            ClientOrderStatus.READY
     );
 
     private final ClientOrderService clientOrderService;
@@ -51,6 +52,7 @@ public class ClientOrderController {
         switch (status) {
             case "reserved" -> orders = clientOrderService.getOrdersByStatus(ClientOrderStatus.RESERVED);
             case "in_progress" -> orders = clientOrderService.getOrdersByStatus(ClientOrderStatus.IN_PROGRESS);
+            case "ready" -> orders = clientOrderService.getOrdersByStatus(ClientOrderStatus.READY);
             default -> {
                 orders = clientOrderService.getOrdersByStatuses(WORKER_STATUSES);
                 status = "all";

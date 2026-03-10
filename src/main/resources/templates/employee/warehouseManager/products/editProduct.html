@@ -225,6 +225,12 @@
                             lockIcon.title = 'Заблокировано';
                             lockIcon.innerHTML = '<i class="bi bi-lock-fill"></i>';
                             label.appendChild(lockIcon);
+                            // Hidden input чтобы значение disabled-поля отправлялось в форме
+                            var hidden = document.createElement('input');
+                            hidden.type = 'hidden';
+                            hidden.name = input.name;
+                            hidden.value = attr.value || '';
+                            col.appendChild(hidden);
                         }
                         col.appendChild(input);
                         container.appendChild(col);

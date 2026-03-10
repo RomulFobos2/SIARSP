@@ -95,8 +95,16 @@
                 </tbody>
                 <tfoot>
                 <tr class="fw-bold">
-                    <td colspan="8" class="text-end">Итого:</td>
+                    <td colspan="8" class="text-end">Итого за товар:</td>
                     <td th:text="${delivery.getTotalCost()} + ' руб.'"></td>
+                </tr>
+                <tr th:if="${deliveryCost != null}">
+                    <td colspan="8" class="text-end">Стоимость доставки:</td>
+                    <td th:text="${deliveryCost} + ' руб.'"></td>
+                </tr>
+                <tr th:if="${deliveryCost != null}" class="fw-bold table-success">
+                    <td colspan="8" class="text-end">Итого с доставкой:</td>
+                    <td th:text="${grandTotal} + ' руб.'"></td>
                 </tr>
                 </tfoot>
             </table>

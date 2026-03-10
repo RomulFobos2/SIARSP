@@ -62,6 +62,18 @@ public class StoragePlacementService {
 
                 for (var shelf : wh.getShelves()) {
                     for (StorageZone zone : shelf.getStorageZones()) {
+                        // Проверка свободного объёма
+                        Double boxL = product.getPackageLength();
+                        Double boxW = product.getPackageWidth();
+                        Double boxH = product.getPackageHeight();
+                        if (boxL != null && boxW != null && boxH != null) {
+                            double itemVolume = (boxL * boxW * boxH) / 1_000_000.0;
+                            double newVolume = itemVolume * quantity;
+                            double usedVolume = zone.getZoneProducts().stream()
+                                    .mapToDouble(ZoneProduct::getTotalVolume).sum();
+                            if (usedVolume + newVolume > zone.getCapacityVolume()) continue;
+                        }
+
                         BoxOrientation orientation = helper.findBestOrientation(product, zone, quantity);
                         if (orientation != null && zone.getOccupancyPercentage() < bestOccupancy) {
                             bestOccupancy = zone.getOccupancyPercentage();
@@ -89,6 +101,24 @@ public class StoragePlacementService {
      */
     @Transactional
     public PlacementInfo placeInZone(Product product, StorageZone zone, int quantity) {
+        // Проверка: хватает ли свободного объёма в зоне
+        Double boxL = product.getPackageLength();
+        Double boxW = product.getPackageWidth();
+        Double boxH = product.getPackageHeight();
+        if (boxL != null && boxW != null && boxH != null) {
+            double itemVolume = (boxL * boxW * boxH) / 1_000_000.0; // см³ → м³
+            double newVolume = itemVolume * quantity;
+            double usedVolume = zone.getZoneProducts().stream()
+                    .mapToDouble(ZoneProduct::getTotalVolume)
+                    .sum();
+            double capacity = zone.getCapacityVolume();
+            if (usedVolume + newVolume > capacity) {
+                return PlacementInfo.failure("Недостаточно свободного объёма в зоне (свободно: "
+                        + String.format("%.4f", capacity - usedVolume) + " м³, требуется: "
+                        + String.format("%.4f", newVolume) + " м³)");
+            }
+        }
+
         ZoneProduct helper = new ZoneProduct();
         BoxOrientation orientation = helper.findBestOrientation(product, zone, quantity);
         if (orientation == null) {

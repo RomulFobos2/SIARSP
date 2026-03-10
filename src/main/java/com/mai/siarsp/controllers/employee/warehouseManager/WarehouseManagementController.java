@@ -3,8 +3,10 @@ package com.mai.siarsp.controllers.employee.warehouseManager;
 import com.mai.siarsp.dto.*;
 import com.mai.siarsp.models.Product;
 import com.mai.siarsp.models.Warehouse;
+import com.mai.siarsp.models.ZoneProduct;
 import com.mai.siarsp.repo.ProductRepository;
 import com.mai.siarsp.repo.WarehouseRepository;
+import com.mai.siarsp.repo.ZoneProductRepository;
 import com.mai.siarsp.service.employee.warehouseManager.WarehouseManagementService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -33,14 +35,17 @@ public class WarehouseManagementController {
     private final WarehouseManagementService managementService;
     private final WarehouseRepository warehouseRepository;
     private final ProductRepository productRepository;
+    private final ZoneProductRepository zoneProductRepository;
 
     public WarehouseManagementController(
             @Qualifier("warehouseManagementService") WarehouseManagementService managementService,
             WarehouseRepository warehouseRepository,
-            ProductRepository productRepository) {
+            ProductRepository productRepository,
+            ZoneProductRepository zoneProductRepository) {
         this.managementService = managementService;
         this.warehouseRepository = warehouseRepository;
         this.productRepository = productRepository;
+        this.zoneProductRepository = zoneProductRepository;
     }
 
     // ========== РАЗМЕЩЕНИЕ ТОВАРА ==========
@@ -173,6 +178,49 @@ public class WarehouseManagementController {
         return "employee/warehouseManager/warehouses/analytics";
     }
 
+    // ========== ПЕРЕМЕЩЕНИЕ ТОВАРА ==========
+
+    @Transactional(readOnly = true)
+    @GetMapping("/employee/warehouseManager/warehouse-management/move-product")
+    public String moveProductPage(Model model) {
+        List<Warehouse> warehouses = warehouseRepository.findAll();
+        // Товары, размещённые на складе
+        List<Product> productsOnWarehouse = zoneProductRepository.findAll().stream()
+                .map(ZoneProduct::getProduct)
+                .distinct()
+                .toList();
+
+        model.addAttribute("warehouses", warehouses);
+        model.addAttribute("products", productsOnWarehouse);
+        return "employee/warehouseManager/warehouses/moveProduct";
+    }
+
+    @PostMapping("/employee/warehouseManager/warehouse-management/move-product")
+    public String doMoveProduct(
+            @RequestParam Long productId,
+            @RequestParam Long fromZoneId,
+            @RequestParam Long toZoneId,
+            @RequestParam int quantity,
+            RedirectAttributes redirectAttributes) {
+
+        if (fromZoneId.equals(toZoneId)) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Зона-источник и зона-назначение совпадают");
+            return "redirect:/employee/warehouseManager/warehouse-management/move-product";
+        }
+
+        MoveInfo result = managementService.moveProduct(productId, fromZoneId, toZoneId, quantity);
+
+        if (result.success()) {
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Товар успешно перемещён (" + result.quantity() + " ед.)");
+        } else {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Не удалось переместить товар: " + result.reason());
+        }
+        return "redirect:/employee/warehouseManager/warehouse-management/move-product";
+    }
+
     // ========== AJAX-ЭНДПОИНТЫ ==========
 
     @GetMapping("/employee/warehouseManager/warehouse-management/check-placement")
@@ -193,5 +241,27 @@ public class WarehouseManagementController {
     @ResponseBody
     public List<ZoneSelectDto> getWarehouseZones(@PathVariable Long warehouseId) {
         return managementService.getZonesByWarehouse(warehouseId);
+    }
+
+    /**
+     * AJAX: возвращает зоны, в которых размещён конкретный товар (для переноса).
+     */
+    @Transactional(readOnly = true)
+    @GetMapping("/employee/warehouseManager/warehouse-management/product-zones/{productId}")
+    @ResponseBody
+    public List<Map<String, Object>> getProductZones(@PathVariable Long productId) {
+        Optional<Product> opt = productRepository.findById(productId);
+        if (opt.isEmpty()) return List.of();
+        return zoneProductRepository.findByProduct(opt.get()).stream()
+                .map(zp -> {
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("zoneId", zp.getZone().getId());
+                    m.put("zoneLabel", zp.getZone().getLabel());
+                    m.put("shelfCode", zp.getZone().getShelf().getCode());
+                    m.put("warehouseName", zp.getZone().getShelf().getWarehouse().getName());
+                    m.put("quantity", zp.getQuantity());
+                    return m;
+                })
+                .toList();
     }
 }

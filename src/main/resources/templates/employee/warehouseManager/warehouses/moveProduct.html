@@ -1,0 +1,200 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Перемещение товара | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/javascript.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+
+            <h2 class="h3 fw-bold mb-4">
+                <i class="bi bi-arrow-left-right me-2"></i>Перемещение товара между зонами
+            </h2>
+
+            <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+            <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+            <div th:if="${products.isEmpty()}" class="alert alert-info">
+                На складе нет размещённых товаров для перемещения.
+            </div>
+
+            <div th:unless="${products.isEmpty()}" class="profile-card p-4">
+                <form method="post"
+                      action="/employee/warehouseManager/warehouse-management/move-product">
+
+                    <!-- Выбор товара -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Товар</label>
+                        <select id="productSelect" name="productId" class="form-select" required>
+                            <option value="">-- Выберите товар --</option>
+                            <option th:each="p : ${products}"
+                                    th:value="${p.getId()}"
+                                    th:text="${p.getName() + ' (' + p.getArticle() + ')'}"></option>
+                        </select>
+                    </div>
+
+                    <!-- Зона-источник -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Зона-источник</label>
+                        <select id="fromZoneSelect" name="fromZoneId" class="form-select" required disabled>
+                            <option value="">-- Сначала выберите товар --</option>
+                        </select>
+                        <small id="fromZoneInfo" class="text-muted"></small>
+                    </div>
+
+                    <!-- Количество -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Количество</label>
+                        <input type="number" id="quantityInput" name="quantity"
+                               class="form-control" min="1" required disabled>
+                        <small id="quantityHint" class="text-muted"></small>
+                    </div>
+
+                    <!-- Склад-назначение -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Склад-назначение</label>
+                        <select id="toWarehouseSelect" class="form-select" required>
+                            <option value="">-- Выберите склад --</option>
+                            <option th:each="wh : ${warehouses}"
+                                    th:value="${wh.getId()}"
+                                    th:text="${wh.getName()}"></option>
+                        </select>
+                    </div>
+
+                    <!-- Зона-назначение -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Зона-назначение</label>
+                        <select id="toZoneSelect" name="toZoneId" class="form-select" required disabled>
+                            <option value="">-- Сначала выберите склад --</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                        <i class="bi bi-arrow-left-right me-1"></i>Переместить
+                    </button>
+                </form>
+            </div>
+
+            <div class="link-section mt-4">
+                <a href="/employee/warehouseManager/warehouse-management/place-product">
+                    &larr; К размещению товара
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var productSelect = document.getElementById('productSelect');
+        var fromZoneSelect = document.getElementById('fromZoneSelect');
+        var fromZoneInfo = document.getElementById('fromZoneInfo');
+        var quantityInput = document.getElementById('quantityInput');
+        var quantityHint = document.getElementById('quantityHint');
+        var toWarehouseSelect = document.getElementById('toWarehouseSelect');
+        var toZoneSelect = document.getElementById('toZoneSelect');
+        var submitBtn = document.getElementById('submitBtn');
+
+        var productZones = [];
+
+        // При выборе товара — загрузить зоны, в которых он размещён
+        productSelect.addEventListener('change', function () {
+            var productId = this.value;
+            fromZoneSelect.innerHTML = '<option value="">-- Загрузка... --</option>';
+            fromZoneSelect.disabled = true;
+            quantityInput.disabled = true;
+            quantityInput.value = '';
+            quantityHint.textContent = '';
+            fromZoneInfo.textContent = '';
+            submitBtn.disabled = true;
+
+            if (!productId) {
+                fromZoneSelect.innerHTML = '<option value="">-- Сначала выберите товар --</option>';
+                return;
+            }
+
+            fetch('/employee/warehouseManager/warehouse-management/product-zones/' + productId)
+                .then(function (r) { return r.json(); })
+                .then(function (zones) {
+                    productZones = zones;
+                    fromZoneSelect.innerHTML = '<option value="">-- Выберите зону --</option>';
+                    zones.forEach(function (z) {
+                        var opt = document.createElement('option');
+                        opt.value = z.zoneId;
+                        opt.textContent = z.warehouseName + ' → ' + z.shelfCode + ' → '
+                            + z.zoneLabel + ' (' + z.quantity + ' шт.)';
+                        opt.dataset.quantity = z.quantity;
+                        fromZoneSelect.appendChild(opt);
+                    });
+                    fromZoneSelect.disabled = false;
+                });
+        });
+
+        // При выборе зоны-источника — установить макс. количество
+        fromZoneSelect.addEventListener('change', function () {
+            var selected = this.options[this.selectedIndex];
+            if (!selected || !selected.value) {
+                quantityInput.disabled = true;
+                quantityInput.value = '';
+                quantityHint.textContent = '';
+                submitBtn.disabled = true;
+                return;
+            }
+            var maxQty = parseInt(selected.dataset.quantity);
+            quantityInput.disabled = false;
+            quantityInput.max = maxQty;
+            quantityInput.value = 1;
+            quantityHint.textContent = 'Доступно: ' + maxQty + ' шт.';
+            checkSubmit();
+        });
+
+        // При выборе склада-назначения — загрузить его зоны
+        toWarehouseSelect.addEventListener('change', function () {
+            var whId = this.value;
+            toZoneSelect.innerHTML = '<option value="">-- Загрузка... --</option>';
+            toZoneSelect.disabled = true;
+            submitBtn.disabled = true;
+
+            if (!whId) {
+                toZoneSelect.innerHTML = '<option value="">-- Сначала выберите склад --</option>';
+                return;
+            }
+
+            fetch('/employee/warehouseManager/warehouse-management/warehouse-zones/' + whId)
+                .then(function (r) { return r.json(); })
+                .then(function (zones) {
+                    toZoneSelect.innerHTML = '<option value="">-- Выберите зону --</option>';
+                    zones.forEach(function (z) {
+                        var opt = document.createElement('option');
+                        opt.value = z.id;
+                        opt.textContent = z.shelfCode + ' → ' + z.label
+                            + ' (заполн. ' + z.occupancyPercent.toFixed(1) + '%)';
+                        toZoneSelect.appendChild(opt);
+                    });
+                    toZoneSelect.disabled = false;
+                });
+        });
+
+        toZoneSelect.addEventListener('change', checkSubmit);
+        quantityInput.addEventListener('input', checkSubmit);
+
+        function checkSubmit() {
+            submitBtn.disabled = !(productSelect.value && fromZoneSelect.value
+                && toZoneSelect.value && quantityInput.value > 0);
+        }
+    });
+</script>
+</body>
+</html>
