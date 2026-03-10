@@ -99,8 +99,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
             </div>
             <div class="modal-body">
-                <p class="text-muted">В добавленных категориях уже есть товары.
-                    Укажите значение атрибута для каждого товара (обязательно):</p>
+                <p class="text-muted">Укажите значение атрибута для каждого товара (обязательно):</p>
                 <div id="productValuesContainer"></div>
                 <div id="modalValidationError" class="alert alert-danger mt-3" style="display: none;">
                     Заполните значения для всех товаров.
@@ -128,6 +127,9 @@
 
         // Ранее связанные категории (для определения вновь добавленных)
         const selectedCategoryIds = (/*[[${selectedCategoryIds}]]*/) || [];
+
+        // Оригинальный тип данных (для определения смены)
+        const originalDataType = dataTypeSelect.value;
 
         // Отметить ранее выбранные категории
         if (selectedCategoryIds) {
@@ -216,7 +218,65 @@
         // Инициализация: проверяем текущее состояние категорий
         validateCategories();
 
-        // Перехват submit формы — проверяем есть ли товары в НОВЫХ категориях
+        /**
+         * Создаёт input элемент нужного типа в зависимости от dataType
+         */
+        function createTypedInput(dataType, inputName, placeholder) {
+            var input = document.createElement('input');
+            input.className = 'form-control';
+            input.name = inputName;
+            input.required = true;
+            input.placeholder = placeholder;
+
+            if (dataType === 'NUMBER') {
+                input.type = 'number';
+                input.step = 'any';
+            } else if (dataType === 'DATE') {
+                input.type = 'date';
+            } else {
+                input.type = 'text';
+            }
+            return input;
+        }
+
+        /**
+         * Создаёт строку товара для модального окна
+         */
+        function createProductRow(product, dataType, inputName, placeholder) {
+            var row = document.createElement('div');
+            row.className = 'row g-2 mb-3 align-items-center';
+
+            var labelCol = document.createElement('div');
+            labelCol.className = 'col-md-5';
+            var label = document.createElement('label');
+            label.className = 'form-label mb-0 fw-semibold';
+            label.textContent = product.name;
+            var small = document.createElement('small');
+            small.className = 'text-muted d-block';
+            small.textContent = 'Артикул: ' + product.article + ' | ' + product.categoryName;
+            labelCol.appendChild(label);
+            labelCol.appendChild(small);
+
+            var inputCol = document.createElement('div');
+            inputCol.className = 'col-md-7';
+            var input = createTypedInput(dataType, inputName, placeholder);
+            inputCol.appendChild(input);
+
+            row.appendChild(labelCol);
+            row.appendChild(inputCol);
+            return row;
+        }
+
+        /**
+         * Показывает модальное окно с содержимым контейнера
+         */
+        function showModal() {
+            document.getElementById('modalValidationError').style.display = 'none';
+            var modal = new bootstrap.Modal(document.getElementById('productValuesModal'));
+            modal.show();
+        }
+
+        // Перехват submit формы — проверяем новые категории и смену типа данных
         form.addEventListener('submit', function(e) {
             e.preventDefault();
 
@@ -229,84 +289,129 @@
                 return;
             }
 
-            // Определяем ВНОВЬ ДОБАВЛЕННЫЕ категории (не были связаны ранее)
+            // Определяем ВНОВЬ ДОБАВЛЕННЫЕ категории
             var previousIds = selectedCategoryIds.map(function(id) { return String(id); });
             var newCategoryIds = allSelectedIds.filter(function(id) {
                 return previousIds.indexOf(id) === -1;
             });
 
-            // Если новых категорий нет — сабмитим форму напрямую
-            if (newCategoryIds.length === 0) {
+            var dataTypeChanged = dataTypeSelect.value !== originalDataType;
+            var newDataType = dataTypeSelect.value;
+            var attrName = nameInput.value.trim();
+            var container = document.getElementById('productValuesContainer');
+
+            // Если нет новых категорий и тип данных не менялся — сабмитим напрямую
+            if (newCategoryIds.length === 0 && !dataTypeChanged) {
                 form.submit();
                 return;
             }
 
-            // AJAX: проверяем есть ли товары в новых категориях
-            var url = '/employee/warehouseManager/productAttributes/products-by-categories?'
-                + newCategoryIds.map(function(id) { return 'categoryIds=' + id; }).join('&');
+            // Формируем массив AJAX-запросов
+            var fetchPromises = [];
 
-            fetch(url)
-                .then(function(response) { return response.json(); })
-                .then(function(products) {
-                    if (products.length === 0) {
-                        // Нет товаров — сабмитим форму напрямую
+            // Запрос 1: товары из новых категорий (если есть)
+            if (newCategoryIds.length > 0) {
+                var urlNewCats = '/employee/warehouseManager/productAttributes/products-by-categories?'
+                    + newCategoryIds.map(function(id) { return 'categoryIds=' + id; }).join('&');
+                fetchPromises.push(
+                    fetch(urlNewCats).then(function(r) { return r.json(); })
+                );
+            } else {
+                fetchPromises.push(Promise.resolve([]));
+            }
+
+            // Запрос 2: товары с существующими значениями (если тип данных сменился)
+            if (dataTypeChanged) {
+                var urlAttr = '/employee/warehouseManager/productAttributes/products-by-attribute?attributeId=' + currentId;
+                fetchPromises.push(
+                    fetch(urlAttr).then(function(r) { return r.json(); })
+                );
+            } else {
+                fetchPromises.push(Promise.resolve([]));
+            }
+
+            Promise.all(fetchPromises)
+                .then(function(results) {
+                    var newCatProducts = results[0];
+                    var dataTypeProducts = results[1];
+
+                    // Если обоих списков пусто — сабмитим напрямую
+                    if (newCatProducts.length === 0 && dataTypeProducts.length === 0) {
                         form.submit();
                         return;
                     }
 
-                    // Есть товары — строим модальное окно
-                    var container = document.getElementById('productValuesContainer');
                     container.innerHTML = '';
-                    var dataType = dataTypeSelect.value;
-                    var attrName = nameInput.value.trim();
 
-                    products.forEach(function(product) {
-                        var row = document.createElement('div');
-                        row.className = 'row g-2 mb-3 align-items-center';
+                    // Секция 1: товары из новых категорий
+                    if (newCatProducts.length > 0) {
+                        var header1 = document.createElement('h6');
+                        header1.className = 'mt-2 mb-3 fw-semibold';
+                        header1.textContent = 'Значения для товаров из новых категорий';
+                        container.appendChild(header1);
 
-                        var labelCol = document.createElement('div');
-                        labelCol.className = 'col-md-5';
-                        var label = document.createElement('label');
-                        label.className = 'form-label mb-0 fw-semibold';
-                        label.textContent = product.name;
-                        var small = document.createElement('small');
-                        small.className = 'text-muted d-block';
-                        small.textContent = 'Артикул: ' + product.article + ' | ' + product.categoryName;
-                        labelCol.appendChild(label);
-                        labelCol.appendChild(small);
+                        newCatProducts.forEach(function(product) {
+                            container.appendChild(
+                                createProductRow(product, newDataType,
+                                    'productValue_' + product.id, attrName)
+                            );
+                        });
+                    }
 
-                        var inputCol = document.createElement('div');
-                        inputCol.className = 'col-md-7';
+                    // Секция 2: обновление значений при смене типа данных
+                    if (dataTypeProducts.length > 0) {
+                        var header2 = document.createElement('h6');
+                        header2.className = 'mt-3 mb-2 fw-semibold';
+                        header2.textContent = 'Обновление значений при смене типа данных';
+                        container.appendChild(header2);
 
-                        var input = document.createElement('input');
-                        input.className = 'form-control';
-                        input.name = 'productValue_' + product.id;
-                        input.required = true;
-                        input.placeholder = attrName;
+                        var hint = document.createElement('p');
+                        hint.className = 'text-muted small mb-3';
+                        hint.textContent = 'Тип данных изменён. Укажите новые значения для товаров, у которых уже есть значения этого атрибута.';
+                        container.appendChild(hint);
 
-                        if (dataType === 'NUMBER') {
-                            input.type = 'number';
-                            input.step = 'any';
-                        } else if (dataType === 'DATE') {
-                            input.type = 'date';
-                        } else {
-                            input.type = 'text';
-                        }
+                        // Исключаем товары, которые уже в секции 1
+                        var newCatProductIds = newCatProducts.map(function(p) { return p.id; });
 
-                        inputCol.appendChild(input);
-                        row.appendChild(labelCol);
-                        row.appendChild(inputCol);
-                        container.appendChild(row);
-                    });
+                        dataTypeProducts.forEach(function(product) {
+                            if (newCatProductIds.indexOf(product.id) !== -1) {
+                                return; // уже есть в секции новых категорий
+                            }
 
-                    // Показываем модалку
-                    document.getElementById('modalValidationError').style.display = 'none';
-                    var modal = new bootstrap.Modal(document.getElementById('productValuesModal'));
-                    modal.show();
+                            var row = document.createElement('div');
+                            row.className = 'row g-2 mb-3 align-items-center';
+
+                            var labelCol = document.createElement('div');
+                            labelCol.className = 'col-md-5';
+                            var label = document.createElement('label');
+                            label.className = 'form-label mb-0 fw-semibold';
+                            label.textContent = product.name;
+                            var small = document.createElement('small');
+                            small.className = 'text-muted d-block';
+                            small.textContent = 'Артикул: ' + product.article + ' | ' + product.categoryName;
+                            var currentVal = document.createElement('small');
+                            currentVal.className = 'text-info d-block';
+                            currentVal.textContent = 'Текущее значение: ' + product.currentValue;
+                            labelCol.appendChild(label);
+                            labelCol.appendChild(small);
+                            labelCol.appendChild(currentVal);
+
+                            var inputCol = document.createElement('div');
+                            inputCol.className = 'col-md-7';
+                            var input = createTypedInput(newDataType,
+                                'productValue_' + product.id, attrName);
+                            inputCol.appendChild(input);
+
+                            row.appendChild(labelCol);
+                            row.appendChild(inputCol);
+                            container.appendChild(row);
+                        });
+                    }
+
+                    showModal();
                 })
                 .catch(function(error) {
                     console.error('Ошибка при проверке товаров:', error);
-                    // При ошибке — сабмитим форму напрямую
                     form.submit();
                 });
         });

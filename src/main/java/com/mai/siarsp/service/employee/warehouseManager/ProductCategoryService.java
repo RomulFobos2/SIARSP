@@ -16,8 +16,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
+import com.mai.siarsp.models.Product;
+import com.mai.siarsp.models.ProductAttributeValue;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -34,6 +38,11 @@ import java.util.Optional;
 @Getter
 @Slf4j
 public class ProductCategoryService {
+
+    /** Названия обязательных атрибутов, автоматически добавляемых к каждой категории */
+    public static final List<String> MANDATORY_ATTRIBUTE_NAMES = List.of(
+            "Длина упаковки", "Ширина упаковки", "Высота упаковки", "Срок годности"
+    );
 
     private final ProductCategoryRepository productCategoryRepository;
     private final GlobalProductCategoryRepository globalProductCategoryRepository;
@@ -81,7 +90,17 @@ public class ProductCategoryService {
     }
 
     /**
+     * Возвращает список обязательных атрибутов из базы данных.
+     */
+    public List<ProductAttribute> getMandatoryAttributes() {
+        return productAttributeRepository.findAll().stream()
+                .filter(attr -> MANDATORY_ATTRIBUTE_NAMES.contains(attr.getName()))
+                .toList();
+    }
+
+    /**
      * Сохранение новой категории товара.
+     * Автоматически добавляет обязательные атрибуты (габариты, срок годности).
      *
      * @param category сущность категории для сохранения
      * @return true при успешном сохранении
@@ -94,6 +113,14 @@ public class ProductCategoryService {
             log.error("Категория с названием = {} уже существует в глобальной категории {}.",
                     category.getName(), category.getGlobalProductCategory().getName());
             return false;
+        }
+
+        // Авто-добавление обязательных атрибутов
+        List<ProductAttribute> mandatory = getMandatoryAttributes();
+        for (ProductAttribute ma : mandatory) {
+            if (!category.getAttributes().contains(ma)) {
+                category.getAttributes().add(ma);
+            }
         }
 
         try {
@@ -109,16 +136,28 @@ public class ProductCategoryService {
     }
 
     /**
+     * Редактирование существующей категории товара (без значений атрибутов для товаров).
+     */
+    @Transactional
+    public boolean editProductCategory(Long id, String inputName, Long globalProductCategoryId, List<Long> attributeIds) {
+        return editProductCategory(id, inputName, globalProductCategoryId, attributeIds, null);
+    }
+
+    /**
      * Редактирование существующей категории товара.
+     * При добавлении новых атрибутов к категории с существующими товарами —
+     * создаёт ProductAttributeValue для каждого товара/атрибута.
      *
      * @param id                      ID редактируемой категории
      * @param inputName               новое название
      * @param globalProductCategoryId ID глобальной категории
      * @param attributeIds            список ID выбранных атрибутов (может быть null)
+     * @param productAttributeValues  карта: productId → (attributeId → значение), может быть null
      * @return true при успешном сохранении изменений
      */
     @Transactional
-    public boolean editProductCategory(Long id, String inputName, Long globalProductCategoryId, List<Long> attributeIds) {
+    public boolean editProductCategory(Long id, String inputName, Long globalProductCategoryId,
+                                        List<Long> attributeIds, Map<Long, Map<Long, String>> productAttributeValues) {
         Optional<ProductCategory> categoryOptional = productCategoryRepository.findById(id);
 
         if (categoryOptional.isEmpty()) {
@@ -146,8 +185,16 @@ public class ProductCategoryService {
         // Определяем какие атрибуты удаляются
         List<ProductAttribute> oldAttributes = new ArrayList<>(category.getAttributes());
         List<ProductAttribute> newAttributes = (attributeIds != null && !attributeIds.isEmpty())
-                ? productAttributeRepository.findAllById(attributeIds)
+                ? new ArrayList<>(productAttributeRepository.findAllById(attributeIds))
                 : new ArrayList<>();
+
+        // Гарантируем присутствие обязательных атрибутов
+        List<ProductAttribute> mandatory = getMandatoryAttributes();
+        for (ProductAttribute ma : mandatory) {
+            if (!newAttributes.contains(ma)) {
+                newAttributes.add(ma);
+            }
+        }
 
         // Находим удалённые атрибуты (были в старом списке, но нет в новом)
         List<ProductAttribute> removedAttributes = new ArrayList<>(oldAttributes);
@@ -164,6 +211,30 @@ public class ProductCategoryService {
 
         try {
             productCategoryRepository.save(category);
+
+            // Создаём значения атрибутов для существующих товаров (при добавлении новых атрибутов)
+            if (productAttributeValues != null && !productAttributeValues.isEmpty()) {
+                for (Map.Entry<Long, Map<Long, String>> productEntry : productAttributeValues.entrySet()) {
+                    Product product = productRepository.findById(productEntry.getKey()).orElse(null);
+                    if (product == null) {
+                        log.error("Товар с id = {} не найден при создании значений атрибута.", productEntry.getKey());
+                        TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                        return false;
+                    }
+                    for (Map.Entry<Long, String> attrEntry : productEntry.getValue().entrySet()) {
+                        ProductAttribute attr = productAttributeRepository.findById(attrEntry.getKey()).orElse(null);
+                        if (attr == null) continue;
+                        String value = attrEntry.getValue();
+                        if (value == null || value.isBlank()) continue;
+                        if (!productAttributeValueRepository.existsByProductAndAttribute(product, attr)) {
+                            ProductAttributeValue pav = new ProductAttributeValue(product, attr, value.trim());
+                            productAttributeValueRepository.save(pav);
+                            log.info("Создано значение атрибута '{}' = '{}' для товара '{}'.",
+                                    attr.getName(), value.trim(), product.getName());
+                        }
+                    }
+                }
+            }
         } catch (Exception e) {
             log.error("Ошибка при сохранении изменений категории товара: {}", e.getMessage(), e);
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();

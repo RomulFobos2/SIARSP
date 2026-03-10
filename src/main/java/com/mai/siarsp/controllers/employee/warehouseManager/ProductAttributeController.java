@@ -6,6 +6,7 @@ import com.mai.siarsp.enumeration.AttributeType;
 import com.mai.siarsp.mapper.ProductAttributeMapper;
 import com.mai.siarsp.models.Product;
 import com.mai.siarsp.models.ProductAttribute;
+import com.mai.siarsp.models.ProductAttributeValue;
 import com.mai.siarsp.service.employee.warehouseManager.ProductAttributeService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -72,6 +73,33 @@ public class ProductAttributeController {
             item.put("name", p.getName());
             item.put("article", p.getArticle());
             item.put("categoryName", p.getCategory().getName());
+            result.add(item);
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * AJAX-эндпоинт: возвращает список товаров с существующими значениями указанного атрибута.
+     * Используется для модального окна при смене типа данных атрибута.
+     */
+    @GetMapping("/employee/warehouseManager/productAttributes/products-by-attribute")
+    @ResponseBody
+    public ResponseEntity<List<Map<String, Object>>> getProductsByAttribute(
+            @RequestParam Long attributeId) {
+        Optional<ProductAttribute> optAttr = productAttributeService.getProductAttributeRepository().findById(attributeId);
+        if (optAttr.isEmpty()) {
+            return ResponseEntity.ok(new ArrayList<>());
+        }
+        List<ProductAttributeValue> values = productAttributeService.getProductAttributeValueRepository()
+                .findByAttribute(optAttr.get());
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (ProductAttributeValue pav : values) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("id", pav.getProduct().getId());
+            item.put("name", pav.getProduct().getName());
+            item.put("article", pav.getProduct().getArticle());
+            item.put("categoryName", pav.getProduct().getCategory().getName());
+            item.put("currentValue", pav.getValue());
             result.add(item);
         }
         return ResponseEntity.ok(result);

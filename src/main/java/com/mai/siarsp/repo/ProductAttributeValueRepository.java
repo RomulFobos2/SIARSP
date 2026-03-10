@@ -9,9 +9,12 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface ProductAttributeValueRepository extends JpaRepository<ProductAttributeValue, Long> {
+
+    List<ProductAttributeValue> findByAttribute(ProductAttribute attribute);
 
     boolean existsByProductAndAttribute(Product product, ProductAttribute attribute);
 
