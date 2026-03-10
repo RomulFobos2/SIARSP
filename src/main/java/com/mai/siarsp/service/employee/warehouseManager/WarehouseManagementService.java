@@ -213,6 +213,11 @@ public class WarehouseManagementService {
         Optional<StorageZone> optTo = storageZoneRepository.findById(toZoneId);
         if (optTo.isEmpty()) return MoveInfo.failure("Зона-назначение не найдена");
 
+        // Проверка совместимости типа склада-назначения с товаром
+        if (!optTo.get().canStoreProduct(optP.get())) {
+            return MoveInfo.failure("Тип склада-назначения не совместим с типом хранения товара");
+        }
+
         return placementService.moveProduct(optP.get(), optFrom.get(), optTo.get(), quantity);
     }
 

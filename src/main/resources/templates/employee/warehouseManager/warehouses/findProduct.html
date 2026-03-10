@@ -120,6 +120,7 @@
                         <th class="text-center">Кол-во</th>
                         <th>Ориентация</th>
                         <th class="text-end">Объём (м³)</th>
+                        <th>Действия</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -132,6 +133,12 @@
                         </td>
                         <td class="small text-muted" th:text="${loc.orientationLabel()}"></td>
                         <td class="text-end small" th:text="${#numbers.formatDecimal(loc.totalVolume(), 1, 5)}"></td>
+                        <td>
+                            <a th:href="@{/employee/warehouseManager/warehouse-management/move-product(productId=${selectedProduct.getId()}, fromZoneId=${loc.zoneId()})}"
+                               class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-arrow-left-right"></i> Переместить
+                            </a>
+                        </td>
                     </tr>
                     </tbody>
                     <tfoot class="table-light fw-bold">
@@ -142,6 +149,7 @@
                         </td>
                         <td></td>
                         <td class="text-end small" th:text="${#numbers.formatDecimal(totalVolume, 1, 5)}"></td>
+                        <td></td>
                     </tr>
                     </tfoot>
                 </table>

@@ -21,6 +21,7 @@ public class DeliveryTaskDTO {
     private String ttnNumber;
     private Long clientOrderId;
     private String clientOrderNumber;
+    private String clientOrganizationName;
     private Long driverId;
     private String driverFullName;
     private Long vehicleId;

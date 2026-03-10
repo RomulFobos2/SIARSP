@@ -95,6 +95,11 @@ public class ProductService {
 
         product.setCategory(categoryOptional.get());
 
+        // Автосинхронизация: stockQuantity не может быть меньше quantityForStock
+        if (product.getQuantityForStock() > product.getStockQuantity()) {
+            product.setStockQuantity(product.getQuantityForStock());
+        }
+
         try {
             product.setImage(ImageService.uploadImage(inputFileField));
             productRepository.save(product);
@@ -153,6 +158,10 @@ public class ProductService {
         product.setArticle(inputArticle);
         product.setStockQuantity(inputStockQuantity);
         product.setQuantityForStock(inputQuantityForStock);
+        // Автосинхронизация: stockQuantity не может быть меньше quantityForStock
+        if (product.getQuantityForStock() > product.getStockQuantity()) {
+            product.setStockQuantity(product.getQuantityForStock());
+        }
         product.setWarehouseType(inputWarehouseType);
         product.setCategory(categoryOptional.get());
 

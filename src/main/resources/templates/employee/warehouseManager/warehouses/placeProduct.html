@@ -21,6 +21,15 @@
         </ol>
     </nav>
 
+    <div class="d-flex gap-2 mb-3">
+        <a href="/employee/warehouseManager/warehouse-management/find-product" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-search"></i> Поиск товара
+        </a>
+        <a href="/employee/warehouseManager/warehouse-management/move-product" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left-right"></i> Перемещение товара
+        </a>
+    </div>
+
     <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
         <span th:text="${successMessage}"></span>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
