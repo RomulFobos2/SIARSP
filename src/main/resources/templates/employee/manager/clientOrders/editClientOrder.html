@@ -127,7 +127,7 @@
             '<div class="col-md-2">' +
                 '<label class="form-label">Кол-во *</label>' +
                 '<input type="number" name="quantity" class="form-control quantity-input" min="1" required oninput="calculateRowTotal(this)" value="' + toJsNumber(data.quantity) + '">' +
-                '<small class="text-muted available-hint"></small>' +
+                '<small class="text-muted available-hint d-block mt-1" style="min-height: 1.25rem;"></small>' +
             '</div>' +
             '<div class="col-md-2">' +
                 '<label class="form-label">Цена *</label>' +
@@ -165,7 +165,7 @@
             '<div class="col-md-2">' +
                 '<label class="form-label">Кол-во *</label>' +
                 '<input type="number" name="quantity" class="form-control quantity-input" min="1" required oninput="calculateRowTotal(this)">' +
-                '<small class="text-muted available-hint"></small>' +
+                '<small class="text-muted available-hint d-block mt-1" style="min-height: 1.25rem;"></small>' +
             '</div>' +
             '<div class="col-md-2">' +
                 '<label class="form-label">Цена *</label>' +
@@ -235,10 +235,11 @@
 
         // обычная логика
         var row = select.closest('.product-row');
-        if (!selectedOption || !qtyInput || !hint) {
+        if (!row) {
             updateSelectOptions();
             return;
         }
+        var qtyInput = row.querySelector('.quantity-input');
         var selectedOption = select.options[select.selectedIndex];
         var hint = row.querySelector('.available-hint');
         if (!selectedOption || !qtyInput || !hint) {
