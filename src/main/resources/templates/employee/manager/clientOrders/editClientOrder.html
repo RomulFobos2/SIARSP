@@ -6,6 +6,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="/css/bootstrap.min.css" rel="stylesheet">
     <link href="/css/style.css" rel="stylesheet">
+    <style>
+        #productsContainer .product-row {
+            margin-bottom: 2.25rem !important;
+        }
+
+        #productsContainer .product-row .quantity-col {
+            position: relative;
+        }
+
+        #productsContainer .product-row .available-hint {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 0.25rem;
+            white-space: nowrap;
+        }
+    </style>
     <script src="/js/bootstrap.bundle.min.js"></script>
     <script src="/js/javascript.js"></script>
 </head>
@@ -124,7 +141,7 @@
                     buildProductOptions(data.productId) +
                 '</select>' +
             '</div>' +
-            '<div class="col-md-2">' +
+            '<div class="col-md-2 quantity-col">' +
                 '<label class="form-label">Кол-во *</label>' +
                 '<input type="number" name="quantity" class="form-control quantity-input" min="1" required oninput="calculateRowTotal(this)" value="' + toJsNumber(data.quantity) + '">' +
                 '<small class="text-muted available-hint"></small>' +
@@ -162,7 +179,7 @@
                     buildProductOptions(null) +
                 '</select>' +
             '</div>' +
-            '<div class="col-md-2">' +
+            '<div class="col-md-2 quantity-col">' +
                 '<label class="form-label">Кол-во *</label>' +
                 '<input type="number" name="quantity" class="form-control quantity-input" min="1" required oninput="calculateRowTotal(this)">' +
                 '<small class="text-muted available-hint"></small>' +
@@ -235,10 +252,11 @@
 
         // обычная логика
         var row = select.closest('.product-row');
-        if (!selectedOption || !qtyInput || !hint) {
+        if (!row) {
             updateSelectOptions();
             return;
         }
+        var qtyInput = row.querySelector('.quantity-input');
         var selectedOption = select.options[select.selectedIndex];
         var hint = row.querySelector('.available-hint');
         if (!selectedOption || !qtyInput || !hint) {
