@@ -39,7 +39,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-lg-center">
 
-                    <!-- ========== ADMIN ========== -->
+                    <!-- ========== ADMIN: Администрирование ========== -->
                     <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_ADMIN')">
                         <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             Администрирование
@@ -50,72 +50,15 @@
                         </ul>
                     </li>
 
-                    <!-- ========== MANAGER ========== -->
-                    <!-- Dropdown: Справочники -->
+                    <!-- ========== Dropdown: Товары (MANAGER, WAREHOUSE_MANAGER) ========== -->
                     <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
                         <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Справочники
+                            Товары
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/employee/manager/clients/allClients">Клиенты</a></li>
-                            <li><a class="dropdown-item" href="/employee/manager/suppliers/allSuppliers">Поставщики</a></li>
-                            <li><a class="dropdown-item" href="/employee/manager/vehicles/allVehicles">Транспорт</a></li>
                             <li><a class="dropdown-item" href="/employee/manager/products/allProducts">Товары</a></li>
                         </ul>
                     </li>
-                    <!-- Dropdown: Склад -->
-                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
-                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Склад
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/employee/manager/warehouses/allWarehouses">Просмотр складов</a></li>
-                            <li><a class="dropdown-item" href="/employee/manager/equipments/allEquipment">Оборудование</a></li>
-                            <li><a class="dropdown-item" href="/employee/warehouseManager/warehouse-management/find-product">Поиск товара</a></li>
-                        </ul>
-                    </li>
-                    <!-- Dropdown: Закупки -->
-                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
-                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Закупки
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/employee/manager/requestsForDelivery/allRequestsForDelivery">Заявки на поставку</a></li>
-                        </ul>
-                    </li>
-
-                    <!-- Dropdown: Заказы -->
-                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
-                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Заказы
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/employee/manager/clientOrders/allClientOrders">Все заказы</a></li>
-                            <li><a class="dropdown-item" href="/employee/manager/clientOrders/createClientOrder">Создать заказ</a></li>
-                            <li><a class="dropdown-item" href="/employee/manager/deliveryTasks/allDeliveryTasks">Задачи на доставку</a></li>
-                        </ul>
-                    </li>
-                    <!-- Dropdown: Документация -->
-                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
-                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Документация
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/employee/manager/writeOffActs/allWriteOffActs">Акты списания</a></li>
-                        </ul>
-                    </li>
-                    <!-- Dropdown: Отчеты -->
-                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
-                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Отчеты
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/employee/manager/reports">Формирование отчётов</a></li>
-                        </ul>
-                    </li>
-
-                    <!-- ========== WAREHOUSE_MANAGER ========== -->
-                    <!-- Dropdown: Товары -->
                     <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
                         <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             Товары
@@ -127,70 +70,116 @@
                             <li><a class="dropdown-item" href="/employee/warehouseManager/products/allProducts">Товары</a></li>
                         </ul>
                     </li>
-                    <!-- Dropdown: Склад -->
+
+                    <!-- ========== Dropdown: Склад (MANAGER, WAREHOUSE_MANAGER, WAREHOUSE_WORKER, COURIER) ========== -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Склад
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/manager/warehouses/allWarehouses">Просмотр складов</a></li>
+                            <li><a class="dropdown-item" href="/employee/manager/equipments/allEquipment">Оборудование</a></li>
+                            <li><a class="dropdown-item" href="/employee/manager/vehicles/allVehicles">Транспорт</a></li>
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/warehouse-management/find-product">Поиск товара</a></li>
+                        </ul>
+                    </li>
                     <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
                         <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             Склад
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/employee/warehouseManager/warehouses/allWarehouses">Склады</a></li>
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/warehouses/allWarehouses">Просмотр складов</a></li>
                             <li><a class="dropdown-item" href="/employee/warehouseManager/equipments/allEquipment">Оборудование</a></li>
                             <li><a class="dropdown-item" href="/employee/warehouseManager/equipmentTypes/allEquipmentTypes">Типы оборудования</a></li>
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/reference/allVehicles">Транспорт</a></li>
                             <li><a class="dropdown-item" href="/employee/warehouseManager/warehouse-management/find-product">Поиск товара</a></li>
                         </ul>
                     </li>
-                    <!-- Dropdown: Закупки -->
-                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_WORKER')">
                         <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Закупки
+                            Склад
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/employee/warehouseManager/requestsForDelivery/allRequestsForDelivery">Заявки на поставку</a></li>
-                            <li><a class="dropdown-item" href="/employee/warehouseManager/deliveries/allDeliveries">Приёмка поставок</a></li>
+                            <li><a class="dropdown-item" href="/employee/warehouseWorker/reference/allWarehouses">Просмотр складов</a></li>
+                            <li><a class="dropdown-item" href="/employee/warehouseWorker/reference/allVehicles">Транспорт</a></li>
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/warehouse-management/find-product">Поиск товара</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_COURIER')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Склад
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/courier/reference/allWarehouses">Просмотр складов</a></li>
+                            <li><a class="dropdown-item" href="/employee/courier/reference/allVehicles">Транспорт</a></li>
                         </ul>
                     </li>
 
-                    <!-- Dropdown: Заказы -->
+                    <!-- ========== Dropdown: Поставки (MANAGER, WAREHOUSE_MANAGER, ACCOUNTER) ========== -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Поставки
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/manager/requestsForDelivery/allRequestsForDelivery">Заявки на поставку</a></li>
+                            <li><a class="dropdown-item" href="/employee/manager/suppliers/allSuppliers">Поставщики</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Поставки
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/requestsForDelivery/allRequestsForDelivery">Заявки на поставку</a></li>
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/reference/allSuppliers">Поставщики</a></li>
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/deliveries/allDeliveries">Приёмка поставок</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_ACCOUNTER')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Поставки
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/accounter/requestsForDelivery/allRequestsForDelivery">Заявки на поставку</a></li>
+                            <li><a class="dropdown-item" href="/employee/accounter/reference/allSuppliers">Поставщики</a></li>
+                            <li><a class="dropdown-item" href="/employee/accounter/products/allProducts">Товары</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- ========== Dropdown: Заказы (MANAGER, WAREHOUSE_MANAGER, ACCOUNTER) ========== -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Заказы
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/manager/clientOrders/allClientOrders">Все заказы</a></li>
+                            <li><a class="dropdown-item" href="/employee/manager/clientOrders/createClientOrder">Создать заказ</a></li>
+                            <li><a class="dropdown-item" href="/employee/manager/deliveryTasks/allDeliveryTasks">Задачи на доставку</a></li>
+                            <li><a class="dropdown-item" href="/employee/manager/clients/allClients">Клиенты</a></li>
+                        </ul>
+                    </li>
                     <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
                         <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             Заказы
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/employee/warehouseManager/clientOrders/allClientOrders">Заказы клиентов</a></li>
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/clientOrders/allClientOrders">Все заказы</a></li>
                             <li><a class="dropdown-item" href="/employee/warehouseManager/deliveryTasks/allDeliveryTasks">Задачи на доставку</a></li>
-                        </ul>
-                    </li>
-                    <!-- Dropdown: Документация -->
-                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
-                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Документация
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/employee/warehouseManager/writeOffActs/allWriteOffActs">Акты списания</a></li>
-                        </ul>
-                    </li>
-                    <!-- Dropdown: Отчеты -->
-                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
-                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Отчеты
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/employee/warehouseManager/reports">Формирование отчётов</a></li>
-                        </ul>
-                    </li>
-                    <!-- Dropdown: Справочники -->
-                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
-                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Справочники
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/employee/warehouseManager/reference/allVehicles">Транспорт</a></li>
-                            <li><a class="dropdown-item" href="/employee/warehouseManager/reference/allSuppliers">Поставщики</a></li>
                             <li><a class="dropdown-item" href="/employee/warehouseManager/reference/allClients">Клиенты</a></li>
                         </ul>
                     </li>
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_ACCOUNTER')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Заказы
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/accounter/clientOrders/allClientOrders">Все заказы</a></li>
+                            <li><a class="dropdown-item" href="/employee/accounter/deliveryTasks/allDeliveryTasks">Задачи на доставку</a></li>
+                            <li><a class="dropdown-item" href="/employee/accounter/reference/allClients">Клиенты</a></li>
+                        </ul>
+                    </li>
 
-                    <!-- ========== WAREHOUSE_WORKER ========== -->
+                    <!-- ========== Dropdown: Задачи (WAREHOUSE_WORKER, COURIER) ========== -->
                     <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_WORKER')">
                         <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             Задачи
@@ -198,90 +187,43 @@
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="/employee/warehouseWorker/clientOrders/allClientOrders">Задачи на сборку</a></li>
                             <li><a class="dropdown-item" href="/employee/warehouseWorker/deliveryTasks/allDeliveryTasks">Задачи на погрузку</a></li>
-                            <li><a class="dropdown-item" href="/employee/warehouseManager/warehouse-management/find-product">Поиск товара</a></li>
                         </ul>
                     </li>
-                    <!-- Dropdown: Справочники -->
-                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_WORKER')">
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_COURIER')">
                         <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Справочники
+                            Задачи
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/employee/warehouseWorker/reference/allVehicles">Транспорт</a></li>
-                            <li><a class="dropdown-item" href="/employee/warehouseWorker/reference/allWarehouses">Склады</a></li>
+                            <li><a class="dropdown-item" href="/employee/courier/deliveryTasks/myDeliveryTasks">Задачи на доставку</a></li>
                         </ul>
                     </li>
 
-                    <!-- ========== ACCOUNTER ========== -->
-                    <!-- Dropdown: Закупки -->
-                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_ACCOUNTER')">
+                    <!-- ========== Dropdown: Документация (MANAGER, WAREHOUSE_MANAGER, ACCOUNTER) ========== -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
                         <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Закупки
+                            Документация
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/employee/accounter/requestsForDelivery/allRequestsForDelivery">Заявки на поставку</a></li>
-                            <li><a class="dropdown-item" href="/employee/accounter/products/allProducts">Товары</a></li>
-                            <li><a class="dropdown-item" href="/employee/warehouseManager/warehouse-management/find-product">Поиск товара</a></li>
+                            <li><a class="dropdown-item" href="/employee/manager/writeOffActs/allWriteOffActs">Акты списания</a></li>
+                            <li><a class="dropdown-item" href="/employee/manager/reports">Формирование отчётов</a></li>
                         </ul>
                     </li>
-
-                    <!-- Dropdown: Заказы -->
-                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_ACCOUNTER')">
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
                         <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Заказы
+                            Документация
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/employee/accounter/clientOrders/allClientOrders">Заказы клиентов</a></li>
-                            <li><a class="dropdown-item" href="/employee/accounter/deliveryTasks/allDeliveryTasks">Задачи на доставку</a></li>
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/writeOffActs/allWriteOffActs">Акты списания</a></li>
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/reports">Формирование отчётов</a></li>
                         </ul>
                     </li>
-                    <!-- Dropdown: Документация -->
                     <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_ACCOUNTER')">
                         <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             Документация
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="/employee/accounter/writeOffActs/allWriteOffActs">Акты списания</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_ACCOUNTER')">
-                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Отчеты
-                        </a>
-                        <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="/employee/accounter/reports">Формирование отчётов</a></li>
-                        </ul>
-                    </li>
-                    <!-- Dropdown: Справочники -->
-                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_ACCOUNTER')">
-                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Справочники
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/employee/accounter/reference/allVehicles">Транспорт</a></li>
-                            <li><a class="dropdown-item" href="/employee/accounter/reference/allSuppliers">Поставщики</a></li>
-                            <li><a class="dropdown-item" href="/employee/accounter/reference/allClients">Клиенты</a></li>
-                        </ul>
-                    </li>
-
-                    <!-- ========== COURIER ========== -->
-                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_COURIER')">
-                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Доставки
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/employee/courier/deliveryTasks/myDeliveryTasks">Мои доставки</a></li>
-                            <li><a class="dropdown-item" href="/employee/warehouseManager/warehouse-management/find-product">Поиск товара</a></li>
-                        </ul>
-                    </li>
-                    <!-- Dropdown: Справочники -->
-                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_COURIER')">
-                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Справочники
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/employee/courier/reference/allVehicles">Транспорт</a></li>
-                            <li><a class="dropdown-item" href="/employee/courier/reference/allWarehouses">Склады</a></li>
                         </ul>
                     </li>
 
