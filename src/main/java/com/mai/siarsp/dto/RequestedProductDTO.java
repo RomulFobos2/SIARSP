@@ -12,6 +12,7 @@ public class RequestedProductDTO {
     private Long productId;
     private String productName;
     private String productArticle;
+    private String unit;
     private BigDecimal purchasePrice;  // цена за единицу
     private BigDecimal totalPrice;     // вычисляемое (price × quantity)
 }

@@ -7,8 +7,15 @@ import com.mai.siarsp.service.employee.manager.SupplierService;
 import com.mai.siarsp.service.employee.warehouseManager.ProductService;
 import com.mai.siarsp.service.employee.warehouseManager.RequestForDeliveryService;
 import com.mai.siarsp.service.employee.warehouseManager.WarehouseService;
+import com.mai.siarsp.enumeration.RequestStatus;
+import com.mai.siarsp.service.general.ReportDocumentService;
+import com.mai.siarsp.service.general.RequestForDeliveryDocumentService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
@@ -18,6 +25,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -68,8 +76,9 @@ public class RequestForDeliveryController {
                                          @RequestParam List<Long> productIds,
                                          @RequestParam List<Integer> quantities,
                                          @RequestParam List<BigDecimal> purchasePrices,
+                                         @RequestParam(required = false) List<String> units,
                                          RedirectAttributes redirectAttributes) {
-        if (!requestForDeliveryService.createRequest(supplierId, warehouseId, deliveryCost, productIds, quantities, purchasePrices)) {
+        if (!requestForDeliveryService.createRequest(supplierId, warehouseId, deliveryCost, productIds, quantities, purchasePrices, units)) {
             redirectAttributes.addFlashAttribute("requestError", "Ошибка при создании заявки.");
             return "redirect:/employee/warehouseManager/requestsForDelivery/addRequestForDelivery";
         }
@@ -121,8 +130,9 @@ public class RequestForDeliveryController {
                                           @RequestParam List<Long> productIds,
                                           @RequestParam List<Integer> quantities,
                                           @RequestParam List<BigDecimal> purchasePrices,
+                                          @RequestParam(required = false) List<String> units,
                                           RedirectAttributes redirectAttributes) {
-        if (!requestForDeliveryService.updateRequest(id, supplierId, warehouseId, deliveryCost, productIds, quantities, purchasePrices)) {
+        if (!requestForDeliveryService.updateRequest(id, supplierId, warehouseId, deliveryCost, productIds, quantities, purchasePrices, units)) {
             redirectAttributes.addFlashAttribute("requestError", "Ошибка при сохранении изменений заявки.");
             return "redirect:/employee/warehouseManager/requestsForDelivery/editRequestForDelivery/" + id;
         }
@@ -168,5 +178,19 @@ public class RequestForDeliveryController {
         }
         redirectAttributes.addFlashAttribute("requestSuccess", "Заявка успешно отменена.");
         return "redirect:/employee/warehouseManager/requestsForDelivery/detailsRequestForDelivery/" + id;
+    }
+
+    @Transactional
+    @GetMapping("/employee/warehouseManager/requestsForDelivery/downloadContract/{id}")
+    public ResponseEntity<byte[]> downloadContract(@PathVariable(value = "id") long id) throws IOException {
+        RequestForDelivery request = requestForDeliveryService.getRequestEntity(id);
+        if (request == null || request.getStatus() != RequestStatus.APPROVED) {
+            return ResponseEntity.notFound().build();
+        }
+        ReportDocumentService.ReportFile file = RequestForDeliveryDocumentService.generateContract(request);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
+        headers.setContentDisposition(ContentDisposition.attachment().filename(file.fileName()).build());
+        return ResponseEntity.ok().headers(headers).body(file.content());
     }
 }

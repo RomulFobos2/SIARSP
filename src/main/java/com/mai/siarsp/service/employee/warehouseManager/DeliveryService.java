@@ -190,6 +190,7 @@ public class DeliveryService {
 
                 // Создать Supply
                 Supply supply = new Supply(product, input.getPurchasePrice(), input.getQuantity());
+                supply.setUnit(requestedProduct.getUnit());
                 supply.setDeficitQuantity(deficit);
                 supply.setDeficitReason(deficit > 0 ? input.getDeficitReason() : null);
                 delivery.addSupply(supply);

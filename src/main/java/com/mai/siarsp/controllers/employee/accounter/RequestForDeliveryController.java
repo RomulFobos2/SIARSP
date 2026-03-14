@@ -4,8 +4,14 @@ import com.mai.siarsp.dto.RequestForDeliveryDTO;
 import com.mai.siarsp.enumeration.RequestStatus;
 import com.mai.siarsp.models.RequestForDelivery;
 import com.mai.siarsp.service.employee.accounter.RequestForDeliveryService;
+import com.mai.siarsp.service.general.ReportDocumentService;
+import com.mai.siarsp.service.general.RequestForDeliveryDocumentService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
@@ -15,6 +21,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.io.IOException;
 import java.util.List;
 
 @Controller("accounterRequestForDeliveryController")
@@ -85,5 +92,19 @@ public class RequestForDeliveryController {
         }
         redirectAttributes.addFlashAttribute("requestSuccess", "Заявка отклонена.");
         return "redirect:/employee/accounter/requestsForDelivery/detailsRequestForDelivery/" + id;
+    }
+
+    @Transactional
+    @GetMapping("/employee/accounter/requestsForDelivery/downloadContract/{id}")
+    public ResponseEntity<byte[]> downloadContract(@PathVariable(value = "id") long id) throws IOException {
+        RequestForDelivery request = requestForDeliveryService.getRequestEntity(id);
+        if (request == null || request.getStatus() != RequestStatus.APPROVED) {
+            return ResponseEntity.notFound().build();
+        }
+        ReportDocumentService.ReportFile file = RequestForDeliveryDocumentService.generateContract(request);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
+        headers.setContentDisposition(ContentDisposition.attachment().filename(file.fileName()).build());
+        return ResponseEntity.ok().headers(headers).body(file.content());
     }
 }

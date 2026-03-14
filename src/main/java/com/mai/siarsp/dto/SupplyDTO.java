@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 public class SupplyDTO {
     private Long id;
     private BigDecimal purchasePrice;
+    private String unit;
     private int quantity;
     private BigDecimal totalPrice;
     private Long deliveryId;

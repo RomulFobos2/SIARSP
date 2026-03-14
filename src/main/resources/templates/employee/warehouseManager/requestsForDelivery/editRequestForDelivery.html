@@ -65,7 +65,7 @@
 
             <template id="productTemplate">
                 <div class="row g-2 mb-2 product-row">
-                    <div class="col-md-5">
+                    <div class="col-md-4">
                         <select name="productIds" class="form-select product-select" required>
                             <option value="">Поиск товара...</option>
                             <option th:each="product : ${allProducts}"
@@ -75,9 +75,12 @@
                         </select>
                     </div>
                     <div class="col-md-2">
+                        <input type="text" name="units" class="form-control" placeholder="Ед. изм." maxlength="100">
+                    </div>
+                    <div class="col-md-2">
                         <input type="number" name="quantities" class="form-control" placeholder="Кол-во" min="1" value="1" required>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <input type="number" name="purchasePrices" class="form-control" placeholder="Цена за ед." step="0.01" min="0" value="0" required>
                     </div>
                     <div class="col-md-2">
@@ -111,7 +114,7 @@
         });
     }
 
-    function addProductRow(productId, quantity, price) {
+    function addProductRow(productId, quantity, price, unit) {
         var template = document.getElementById('productTemplate');
         var clone = template.content.cloneNode(true);
         if (quantity) {
@@ -121,6 +124,10 @@
         if (price) {
             var priceInput = clone.querySelector('input[name="purchasePrices"]');
             priceInput.value = price;
+        }
+        if (unit) {
+            var unitInput = clone.querySelector('input[name="units"]');
+            unitInput.value = unit;
         }
         document.getElementById('productRows').appendChild(clone);
 
@@ -239,7 +246,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         if (existingProducts && existingProducts.length > 0) {
             existingProducts.forEach(function(item) {
-                addProductRow(item.productId, item.quantity, item.purchasePrice);
+                addProductRow(item.productId, item.quantity, item.purchasePrice, item.unit);
             });
         } else {
             addProductRow();

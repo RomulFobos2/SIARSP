@@ -64,6 +64,7 @@
                     <th>№</th>
                     <th>Артикул</th>
                     <th>Наименование</th>
+                    <th>Ед. изм.</th>
                     <th>Количество</th>
                     <th>Цена за ед.</th>
                     <th>Сумма</th>
@@ -77,20 +78,21 @@
                         <a th:href="'/employee/accounter/products/detailsProduct/' + ${item.getProductId()}"
                            th:text="${item.getProductName()}"></a>
                     </td>
+                    <td th:text="${item.getUnit() != null ? item.getUnit() : '—'}"></td>
                     <td th:text="${item.getQuantity()}"></td>
                     <td th:text="${#numbers.formatDecimal(item.getPurchasePrice(), 1, 2)} + ' руб.'"></td>
                     <td th:text="${#numbers.formatDecimal(item.getTotalPrice(), 1, 2)} + ' руб.'"></td>
                 </tr>
                 <tr class="table-secondary">
-                    <td colspan="5" class="text-end fw-semibold">Стоимость товаров:</td>
+                    <td colspan="6" class="text-end fw-semibold">Стоимость товаров:</td>
                     <td class="fw-semibold" th:text="${#numbers.formatDecimal(requestDTO.getTotalCost() - requestDTO.getDeliveryCost(), 1, 2)} + ' руб.'"></td>
                 </tr>
                 <tr class="table-secondary">
-                    <td colspan="5" class="text-end fw-semibold">Стоимость доставки:</td>
+                    <td colspan="6" class="text-end fw-semibold">Стоимость доставки:</td>
                     <td class="fw-semibold" th:text="${#numbers.formatDecimal(requestDTO.getDeliveryCost(), 1, 2)} + ' руб.'"></td>
                 </tr>
                 <tr class="table-primary">
-                    <td colspan="5" class="text-end fw-bold">ИТОГО:</td>
+                    <td colspan="6" class="text-end fw-bold">ИТОГО:</td>
                     <td class="fw-bold" th:text="${#numbers.formatDecimal(requestDTO.getTotalCost(), 1, 2)} + ' руб.'"></td>
                 </tr>
                 </tbody>
@@ -111,14 +113,19 @@
             </div>
         </div>
 
-        <!-- Кнопки действий — только для PENDING_ACCOUNTANT -->
-        <div th:if="${requestDTO.getStatus().name() == 'PENDING_ACCOUNTANT'}" class="mt-4 d-flex gap-2">
-            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveModal">
+        <!-- Кнопки действий -->
+        <div class="mt-4 d-flex gap-2">
+            <button th:if="${requestDTO.getStatus().name() == 'PENDING_ACCOUNTANT'}"
+                    type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveModal">
                 Согласовать
             </button>
-            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">
+            <button th:if="${requestDTO.getStatus().name() == 'PENDING_ACCOUNTANT'}"
+                    type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">
                 Отклонить
             </button>
+            <a th:if="${requestDTO.getStatus().name() == 'APPROVED'}"
+               th:href="'/employee/accounter/requestsForDelivery/downloadContract/' + ${requestDTO.getId()}"
+               class="btn btn-outline-primary">Скачать договор</a>
         </div>
     </div>
 </div>
