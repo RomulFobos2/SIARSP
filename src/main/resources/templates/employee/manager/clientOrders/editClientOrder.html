@@ -252,7 +252,6 @@
                     return;
                 }
 
-                qtyInput.removeAttribute('max');
                 qtyInput.value = '';
                 hint.textContent = '';
 
@@ -281,7 +280,6 @@
 
         if (selectedOption.value) {
             var available = parseInt(selectedOption.getAttribute('data-available'), 10);
-            qtyInput.setAttribute('max', available);
             hint.textContent = 'Доступно: ' + available + ' шт.';
             hint.className = 'text-muted available-hint';
             updateDeficitHint(row);
