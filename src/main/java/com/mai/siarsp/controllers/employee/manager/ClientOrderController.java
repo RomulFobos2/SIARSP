@@ -10,14 +10,19 @@ import com.mai.siarsp.repo.ProductRepository;
 import com.mai.siarsp.repo.RequestForDeliveryRepository;
 import com.mai.siarsp.service.employee.ClientOrderService;
 import com.mai.siarsp.service.employee.DeliveryTaskService;
+import com.mai.siarsp.service.general.ContractService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -89,6 +94,7 @@ public class ClientOrderController {
                                     @RequestParam("productId") List<Long> productIds,
                                     @RequestParam("quantity") List<Integer> quantities,
                                     @RequestParam("price") List<BigDecimal> prices,
+                                    @RequestParam("contractFile") MultipartFile contractFile,
                                     @AuthenticationPrincipal Employee currentEmployee,
                                     RedirectAttributes redirectAttributes) {
         List<ClientOrderService.OrderItemRequest> items = new ArrayList<>();
@@ -99,7 +105,7 @@ public class ClientOrderController {
 
         java.time.LocalDate date = java.time.LocalDate.parse(deliveryDate);
 
-        if (!clientOrderService.createOrder(clientId, date, comment, items, currentEmployee)) {
+        if (!clientOrderService.createOrder(clientId, date, comment, items, currentEmployee, contractFile)) {
             redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при создании заказа.");
             return "redirect:/employee/manager/clientOrders/createClientOrder";
         }
@@ -147,6 +153,7 @@ public class ClientOrderController {
                                   @RequestParam("productId") List<Long> productIds,
                                   @RequestParam("quantity") List<Integer> quantities,
                                   @RequestParam("price") List<BigDecimal> prices,
+                                  @RequestParam(value = "contractFile", required = false) MultipartFile contractFile,
                                   RedirectAttributes redirectAttributes) {
         List<ClientOrderService.OrderItemRequest> items = new ArrayList<>();
         for (int i = 0; i < productIds.size(); i++) {
@@ -156,7 +163,7 @@ public class ClientOrderController {
 
         java.time.LocalDate date = java.time.LocalDate.parse(deliveryDate);
 
-        if (!clientOrderService.updateOrder(id, date, comment, items)) {
+        if (!clientOrderService.updateOrder(id, date, comment, items, contractFile)) {
             redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при обновлении заказа.");
             return "redirect:/employee/manager/clientOrders/editClientOrder/" + id;
         }
@@ -183,6 +190,29 @@ public class ClientOrderController {
             redirectAttributes.addFlashAttribute("successMessage", "Заказ отменён.");
         }
         return "redirect:/employee/manager/clientOrders/detailsClientOrder/" + id;
+    }
+
+    // ========== СКАЧИВАНИЕ КОНТРАКТА ==========
+
+    @GetMapping("/downloadContract/{orderId}")
+    public ResponseEntity<Resource> downloadContract(@PathVariable Long orderId) {
+        Optional<ClientOrder> optOrder = clientOrderService.getOrderById(orderId);
+        if (optOrder.isEmpty() || optOrder.get().getContractFile() == null) {
+            return ResponseEntity.notFound().build();
+        }
+        try {
+            String contractFileName = optOrder.get().getContractFile();
+            Resource resource = ContractService.getContractData(contractFileName);
+            String downloadName = contractFileName.contains("_")
+                    ? contractFileName.substring(contractFileName.indexOf("_") + 1)
+                    : contractFileName;
+            return ResponseEntity.ok()
+                    .header("Content-Disposition", "attachment; filename=\"" + downloadName + "\"")
+                    .body(resource);
+        } catch (IOException e) {
+            log.error("Ошибка скачивания контракта: {}", e.getMessage());
+            return ResponseEntity.notFound().build();
+        }
     }
 
     // ========== ПРОСМОТР ДОКУМЕНТОВ (read-only) ==========
