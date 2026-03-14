@@ -93,7 +93,8 @@ public class RequestForDeliveryService {
 
     @Transactional
     public boolean createRequest(Long supplierId, Long warehouseId, BigDecimal deliveryCost,
-                                  List<Long> productIds, List<Integer> quantities, List<BigDecimal> purchasePrices) {
+                                  List<Long> productIds, List<Integer> quantities, List<BigDecimal> purchasePrices,
+                                  List<String> units) {
         log.info("Создание заявки на поставку для поставщика id={}...", supplierId);
 
         Optional<Supplier> supplierOpt = supplierRepository.findById(supplierId);
@@ -125,7 +126,10 @@ public class RequestForDeliveryService {
             }
             int qty = (quantities != null && i < quantities.size()) ? quantities.get(i) : 1;
             BigDecimal price = (purchasePrices != null && i < purchasePrices.size()) ? purchasePrices.get(i) : BigDecimal.ZERO;
-            request.addRequestedProduct(new RequestedProduct(productOpt.get(), qty, price));
+            String unit = (units != null && i < units.size()) ? units.get(i) : null;
+            RequestedProduct rp = new RequestedProduct(productOpt.get(), qty, price);
+            rp.setUnit(unit);
+            request.addRequestedProduct(rp);
         }
 
         // Валидация: тип склада должен соответствовать типу хранения всех товаров
@@ -153,7 +157,8 @@ public class RequestForDeliveryService {
 
     @Transactional
     public boolean updateRequest(Long id, Long supplierId, Long warehouseId, BigDecimal deliveryCost,
-                                  List<Long> productIds, List<Integer> quantities, List<BigDecimal> purchasePrices) {
+                                  List<Long> productIds, List<Integer> quantities, List<BigDecimal> purchasePrices,
+                                  List<String> units) {
         Optional<RequestForDelivery> requestOpt = requestForDeliveryRepository.findById(id);
         if (requestOpt.isEmpty()) {
             log.error("Заявка с id={} не найдена.", id);
@@ -198,7 +203,9 @@ public class RequestForDeliveryService {
             BigDecimal price = (purchasePrices != null && i < purchasePrices.size() && purchasePrices.get(i) != null)
                     ? purchasePrices.get(i) : BigDecimal.ZERO;
 
-            incoming.put(pid, new ProductData(qty, price));
+            String unit = (units != null && i < units.size()) ? units.get(i) : null;
+
+            incoming.put(pid, new ProductData(qty, price, unit));
         }
 
         // 2) Индексируем текущие позиции заявки по productId
@@ -215,14 +222,17 @@ public class RequestForDeliveryService {
             RequestedProduct rp = existing.get(pid);
             if (rp != null) {
                 rp.setQuantity(data.quantity);
-                rp.setPurchasePrice(data.price); // UPDATE
+                rp.setPurchasePrice(data.price);
+                rp.setUnit(data.unit); // UPDATE
             } else {
                 Product product = productRepository.findById(pid).orElse(null);
                 if (product == null) {
                     log.error("Товар с id={} не найден.", pid);
                     return false;
                 }
-                request.addRequestedProduct(new RequestedProduct(product, data.quantity, data.price)); // INSERT
+                RequestedProduct newRp = new RequestedProduct(product, data.quantity, data.price);
+                newRp.setUnit(data.unit);
+                request.addRequestedProduct(newRp); // INSERT
             }
         }
 
@@ -253,7 +263,7 @@ public class RequestForDeliveryService {
     }
 
     // Вспомогательный класс для хранения данных о товаре
-    private record ProductData(int quantity, BigDecimal price) {}
+    private record ProductData(int quantity, BigDecimal price, String unit) {}
 
 
     @Transactional

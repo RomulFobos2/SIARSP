@@ -59,6 +59,7 @@
                     <th>№</th>
                     <th>Артикул</th>
                     <th>Товар</th>
+                    <th>Ед. изм.</th>
                     <th>Заказано</th>
                     <th>Принято</th>
                     <th>Недостача</th>
@@ -76,6 +77,7 @@
                         <a th:href="'/employee/warehouseManager/products/detailsProduct/' + ${supply.getProductId()}"
                            th:text="${supply.getProductName()}" class="text-decoration-none"></a>
                     </td>
+                    <td th:text="${supply.getUnit() != null ? supply.getUnit() : '—'}"></td>
                     <td th:text="${supply.getOrderedQuantity()}"></td>
                     <td th:text="${supply.getQuantity()}"></td>
                     <td>
@@ -95,15 +97,15 @@
                 </tbody>
                 <tfoot>
                 <tr class="fw-bold">
-                    <td colspan="8" class="text-end">Итого за товар:</td>
+                    <td colspan="9" class="text-end">Итого за товар:</td>
                     <td th:text="${delivery.getTotalCost()} + ' руб.'"></td>
                 </tr>
                 <tr th:if="${deliveryCost != null}">
-                    <td colspan="8" class="text-end">Стоимость доставки:</td>
+                    <td colspan="9" class="text-end">Стоимость доставки:</td>
                     <td th:text="${deliveryCost} + ' руб.'"></td>
                 </tr>
                 <tr th:if="${deliveryCost != null}" class="fw-bold table-success">
-                    <td colspan="8" class="text-end">Итого с доставкой:</td>
+                    <td colspan="9" class="text-end">Итого с доставкой:</td>
                     <td th:text="${grandTotal} + ' руб.'"></td>
                 </tr>
                 </tfoot>
