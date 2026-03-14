@@ -98,7 +98,10 @@ public class RequestForDeliveryController {
     @GetMapping("/employee/accounter/requestsForDelivery/downloadContract/{id}")
     public ResponseEntity<byte[]> downloadContract(@PathVariable(value = "id") long id) throws IOException {
         RequestForDelivery request = requestForDeliveryService.getRequestEntity(id);
-        if (request == null || request.getStatus() != RequestStatus.APPROVED) {
+        if (request == null ||
+                (request.getStatus() != RequestStatus.APPROVED &&
+                        request.getStatus() != RequestStatus.PARTIALLY_RECEIVED &&
+                        request.getStatus() != RequestStatus.RECEIVED)) {
             return ResponseEntity.notFound().build();
         }
         ReportDocumentService.ReportFile file = RequestForDeliveryDocumentService.generateContract(request);

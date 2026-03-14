@@ -123,7 +123,9 @@
                     type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">
                 Отклонить
             </button>
-            <a th:if="${requestDTO.getStatus().name() == 'APPROVED'}"
+            <a th:if="${requestDTO.status.name() == 'APPROVED'
+           || requestDTO.status.name() == 'PARTIALLY_RECEIVED'
+           || requestDTO.status.name() == 'RECEIVED'}"
                th:href="'/employee/accounter/requestsForDelivery/downloadContract/' + ${requestDTO.getId()}"
                class="btn btn-outline-primary">Скачать договор</a>
         </div>

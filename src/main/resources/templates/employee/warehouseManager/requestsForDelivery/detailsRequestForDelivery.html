@@ -139,7 +139,9 @@
             </button>
 
             <!-- APPROVED: скачать договор, отменить -->
-            <a th:if="${requestDTO.getStatus().name() == 'APPROVED'}"
+            <a th:if="${requestDTO.status.name() == 'APPROVED'
+           || requestDTO.status.name() == 'PARTIALLY_RECEIVED'
+           || requestDTO.status.name() == 'RECEIVED'}"
                th:href="'/employee/warehouseManager/requestsForDelivery/downloadContract/' + ${requestDTO.getId()}"
                class="btn btn-outline-primary">Скачать договор</a>
             <button th:if="${requestDTO.getStatus().name() == 'APPROVED'}"
