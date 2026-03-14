@@ -119,7 +119,10 @@
                             <span th:if="${task.ttn != null}" class="badge bg-success">Оформлена</span>
                             <span th:unless="${task.ttn != null}" class="badge bg-warning text-dark">Не оформлена</span>
                         </div>
-                        <div class="d-flex gap-2">
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a th:if="${task.clientOrder.contractFile != null}"
+                               th:href="'/employee/courier/deliveryTasks/downloadContract/' + ${task.id}"
+                               class="btn btn-outline-primary">Скачать контракт</a>
                             <a th:if="${task.ttn != null}"
                                th:href="'/employee/courier/deliveryTasks/detailsTTN/' + ${task.id}"
                                class="btn btn-outline-secondary">Просмотр ТТН</a>
@@ -199,6 +202,26 @@
                                 </div>
                             </div>
                         </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Документы (для всех статусов кроме LOADED, где блок уже есть) -->
+            <div th:if="${task.status.name() != 'LOADED'}" class="mb-4">
+                <div class="card border-0 bg-light">
+                    <div class="card-body">
+                        <h6 class="card-title fw-bold">Документы</h6>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a th:if="${task.clientOrder.contractFile != null}"
+                               th:href="'/employee/courier/deliveryTasks/downloadContract/' + ${task.id}"
+                               class="btn btn-outline-primary">Скачать контракт</a>
+                            <a th:if="${task.ttn != null}"
+                               th:href="'/employee/courier/deliveryTasks/detailsTTN/' + ${task.id}"
+                               class="btn btn-outline-secondary">Просмотр ТТН</a>
+                            <a th:if="${task.clientOrder != null and task.clientOrder.acceptanceAct != null}"
+                               th:href="'/employee/courier/deliveryTasks/detailsAcceptanceAct/' + ${task.id}"
+                               class="btn btn-outline-secondary">Просмотр акта</a>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -110,6 +110,22 @@
                 </div>
             </div>
 
+            <!-- Документы -->
+            <div class="mb-4">
+                <h5 class="fw-bold mb-3">Документы</h5>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a th:if="${task.clientOrder.contractFile != null}"
+                       th:href="'/employee/manager/deliveryTasks/downloadContract/' + ${task.id}"
+                       class="btn btn-outline-primary">Скачать контракт</a>
+                    <a th:if="${task.ttn != null}"
+                       th:href="'/employee/manager/deliveryTasks/detailsTTN/' + ${task.id}"
+                       class="btn btn-outline-secondary">Просмотр ТТН</a>
+                    <a th:if="${task.clientOrder.acceptanceAct != null}"
+                       th:href="'/employee/manager/deliveryTasks/detailsAcceptanceAct/' + ${task.id}"
+                       class="btn btn-outline-secondary">Просмотр акта</a>
+                </div>
+            </div>
+
             <div class="link-section">
                 <a href="/employee/manager/deliveryTasks/allDeliveryTasks">&larr; К списку задач</a>
             </div>

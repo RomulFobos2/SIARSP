@@ -7,7 +7,10 @@ import com.mai.siarsp.models.ClientOrder;
 import com.mai.siarsp.models.DeliveryTask;
 import com.mai.siarsp.models.Employee;
 import com.mai.siarsp.service.employee.DeliveryTaskService;
+import com.mai.siarsp.service.general.ContractService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +18,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -123,6 +127,30 @@ public class DeliveryTaskController {
             redirectAttributes.addFlashAttribute("successMessage", "Доставка завершена. Заказ доставлен.");
         }
         return "redirect:/employee/courier/deliveryTasks/detailsDeliveryTask/" + id;
+    }
+
+    // ========== СКАЧИВАНИЕ КОНТРАКТА ==========
+
+    @GetMapping("/downloadContract/{taskId}")
+    public ResponseEntity<Resource> downloadContract(@PathVariable Long taskId) {
+        Optional<DeliveryTask> optTask = deliveryTaskService.getTaskById(taskId);
+        if (optTask.isEmpty() || optTask.get().getClientOrder() == null
+                || optTask.get().getClientOrder().getContractFile() == null) {
+            return ResponseEntity.notFound().build();
+        }
+        try {
+            String contractFileName = optTask.get().getClientOrder().getContractFile();
+            Resource resource = ContractService.getContractData(contractFileName);
+            String downloadName = contractFileName.contains("_")
+                    ? contractFileName.substring(contractFileName.indexOf("_") + 1)
+                    : contractFileName;
+            return ResponseEntity.ok()
+                    .header("Content-Disposition", "attachment; filename=\"" + downloadName + "\"")
+                    .body(resource);
+        } catch (IOException e) {
+            log.error("Ошибка скачивания контракта: {}", e.getMessage());
+            return ResponseEntity.notFound().build();
+        }
     }
 
     // ========== ПРОСМОТР ДОКУМЕНТОВ (read-only) ==========

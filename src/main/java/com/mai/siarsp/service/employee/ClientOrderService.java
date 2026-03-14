@@ -16,6 +16,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
+import com.mai.siarsp.service.general.ContractService;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -119,7 +122,8 @@ public class ClientOrderService {
      */
     @Transactional
     public boolean createOrder(Long clientId, LocalDate deliveryDate, String comment,
-                               List<OrderItemRequest> items, Employee responsible) {
+                               List<OrderItemRequest> items, Employee responsible,
+                               MultipartFile contractFile) {
         try {
             if (items == null || items.isEmpty()) {
                 log.error("Список позиций заказа пуст");
@@ -135,6 +139,10 @@ public class ClientOrderService {
             String orderNumber = generateOrderNumber();
             ClientOrder order = new ClientOrder(orderNumber, optClient.get(), responsible, deliveryDate);
             order.setComment(comment);
+
+            // Загрузка файла контракта
+            String contractFileName = ContractService.uploadContract(contractFile);
+            order.setContractFile(contractFileName);
 
             for (OrderItemRequest item : items) {
                 Optional<Product> optProduct = productRepository.findById(item.productId());
@@ -177,7 +185,7 @@ public class ClientOrderService {
      */
     @Transactional
     public boolean updateOrder(Long orderId, LocalDate deliveryDate, String comment,
-                               List<OrderItemRequest> items) {
+                               List<OrderItemRequest> items, MultipartFile contractFile) {
         try {
             Optional<ClientOrder> optOrder = clientOrderRepository.findById(orderId);
             if (optOrder.isEmpty()) {
@@ -199,6 +207,15 @@ public class ClientOrderService {
 
             order.setDeliveryDate(deliveryDate);
             order.setComment(comment);
+
+            // Замена файла контракта (если загружен новый)
+            if (contractFile != null && !contractFile.isEmpty()) {
+                if (order.getContractFile() != null && !order.getContractFile().isBlank()) {
+                    ContractService.deleteContract(order.getContractFile());
+                }
+                String newContractFileName = ContractService.uploadContract(contractFile);
+                order.setContractFile(newContractFileName);
+            }
 
             // Smart merge: обновляем существующие, добавляем новые, удаляем лишние
             // (вместо clear() + re-add, чтобы избежать Duplicate Entry при flush)

@@ -38,7 +38,7 @@
 
                 <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
-                <form id="orderForm" method="post" action="/employee/manager/clientOrders/createClientOrder">
+                <form id="orderForm" method="post" action="/employee/manager/clientOrders/createClientOrder" enctype="multipart/form-data">
 
                     <!-- Клиент -->
                     <div class="mb-4">
@@ -65,6 +65,16 @@
                                 <textarea id="comment" name="comment" class="form-control"
                                           maxlength="500" rows="2" placeholder="Примечания к заказу"></textarea>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Контракт -->
+                    <div class="mb-4">
+                        <h6 class="form-section-title">Контракт</h6>
+                        <div class="col-md-6">
+                            <label for="contractFile" class="form-label">Файл контракта (PDF, DOC, DOCX) <span class="text-danger">*</span></label>
+                            <input type="file" id="contractFile" name="contractFile"
+                                   class="form-control" accept=".pdf,.doc,.docx" required>
                         </div>
                     </div>
 

@@ -41,7 +41,7 @@
 
                 <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
-                <form id="orderForm" method="post"
+                <form id="orderForm" method="post" enctype="multipart/form-data"
                       th:action="'/employee/manager/clientOrders/editClientOrder/' + ${order.id}">
 
                     <!-- Клиент (readonly) -->
@@ -67,6 +67,21 @@
                                           maxlength="500" rows="2"
                                           th:text="${order.comment}"></textarea>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Контракт -->
+                    <div class="mb-4">
+                        <h6 class="form-section-title">Контракт</h6>
+                        <div th:if="${order.contractFile != null}" class="mb-2">
+                            <span class="text-muted">Текущий файл:</span>
+                            <strong th:text="${order.contractFile.contains('_') ? order.contractFile.substring(order.contractFile.indexOf('_') + 1) : order.contractFile}"></strong>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="contractFile" class="form-label">Заменить файл контракта (PDF, DOC, DOCX)</label>
+                            <input type="file" id="contractFile" name="contractFile"
+                                   class="form-control" accept=".pdf,.doc,.docx">
+                            <small class="text-muted">Оставьте пустым, чтобы сохранить текущий файл</small>
                         </div>
                     </div>
 

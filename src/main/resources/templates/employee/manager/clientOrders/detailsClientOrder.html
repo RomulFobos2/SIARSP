@@ -141,10 +141,13 @@
             </div>
 
             <!-- Документы -->
-            <div th:if="${order.deliveryTask != null and (order.deliveryTask.ttn != null or order.acceptanceAct != null)}" class="mb-4">
+            <div th:if="${order.contractFile != null or (order.deliveryTask != null and (order.deliveryTask.ttn != null or order.acceptanceAct != null))}" class="mb-4">
                 <h5 class="fw-bold mb-3">Документы</h5>
-                <div class="d-flex gap-2">
-                    <a th:if="${order.deliveryTask.ttn != null}"
+                <div class="d-flex gap-2 flex-wrap">
+                    <a th:if="${order.contractFile != null}"
+                       th:href="'/employee/manager/clientOrders/downloadContract/' + ${order.id}"
+                       class="btn btn-outline-primary">Скачать контракт</a>
+                    <a th:if="${order.deliveryTask != null and order.deliveryTask.ttn != null}"
                        th:href="'/employee/manager/clientOrders/detailsTTN/' + ${order.id}"
                        class="btn btn-outline-secondary">Просмотр ТТН</a>
                     <a th:if="${order.acceptanceAct != null}"
