@@ -392,8 +392,30 @@ class SessionRepository {
         val request = Request.Builder().url("${BASE_URL}employee/login").post(body).build()
 
         okHttpClient.newCall(request).execute().use { resp ->
-            Log.e("SIARSP", "LOGIN resp.code=${resp.code}, isRedirect=${resp.isRedirect}, Location=${resp.header("Location")}")
-            cookieJar.loadForRequest(BASE_URL.toHttpUrl()).any { it.name.equals("JSESSIONID", ignoreCase = true) }
+            val redirectLocation = resp.header("Location").orEmpty()
+            val hasSessionCookie = cookieJar
+                .loadForRequest(BASE_URL.toHttpUrl())
+                .any { it.name.equals("JSESSIONID", ignoreCase = true) }
+
+            val isLoginErrorRedirect = redirectLocation.contains("/employee/login?error", ignoreCase = true)
+            val isLoginPageRedirect = redirectLocation == "/employee/login"
+            val isSuccessRedirect = redirectLocation.contains("/employee/main", ignoreCase = true) ||
+                    redirectLocation.contains("/employee/change-pass", ignoreCase = true)
+
+            Log.i(
+                "SIARSP",
+                "LOGIN resp.code=${resp.code}, isRedirect=${resp.isRedirect}, location=$redirectLocation, hasSessionCookie=$hasSessionCookie"
+            )
+
+            if (isLoginErrorRedirect || isLoginPageRedirect) {
+                return@use false
+            }
+
+            if (resp.isRedirect && isSuccessRedirect && hasSessionCookie) {
+                return@use true
+            }
+
+            !resp.isRedirect && resp.isSuccessful && hasSessionCookie
         }
     }
 
