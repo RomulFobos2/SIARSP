@@ -86,7 +86,8 @@ import retrofit2.http.Query
 
 // ========== КОНФИГУРАЦИЯ ==========
 
-private const val BASE_URL = "http://10.0.2.2:8080/"
+//private const val BASE_URL = "http://10.0.2.2:8080/"
+private const val BASE_URL = "http://94.19.110.44:18080/"
 
 object AppConfig {
     const val AUTO_LOCATION_SEND_INTERVAL_MS = 60_000L
