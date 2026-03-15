@@ -25,9 +25,9 @@ VALUES
  (SELECT id FROM t_warehouse WHERE name = 'Холодильный склад')),
 
 ('Весы МК-А21-1', 'SCL-5001', '2023-02-12', 7,
- (SELECT id FROM t_equipment_type WHERE name = 'Электронные весы'), 'IN_USE',
+ (SELECT id FROM t_equipment_type WHERE name = 'Весы'), 'IN_USE',
  (SELECT id FROM t_warehouse WHERE name = 'Основной склад')),
 
 ('Весы МК-А21-2', 'SCL-5002', '2023-04-18', 7,
- (SELECT id FROM t_equipment_type WHERE name = 'Электронные весы'), 'IN_USE',
+ (SELECT id FROM t_equipment_type WHERE name = 'Весы'), 'IN_USE',
  (SELECT id FROM t_warehouse WHERE name = 'Холодильный склад'));
