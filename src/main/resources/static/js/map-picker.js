@@ -2,8 +2,9 @@
  * Компонент выбора координат на Яндекс Карте через модальное окно.
  *
  * Использование:
- *   openMapPicker(latInput, lngInput)
+ *   openMapPicker(latInput, lngInput, nameInput)
  *   где latInput и lngInput — DOM-элементы <input>, в которые запишутся координаты.
+ *   nameInput (опционально) — DOM-элемент <input>, в который запишется название места (обратное геокодирование).
  *
  * Требует:
  *   - Яндекс Карты API v2.1 (подключается в blocks/map-picker.html)
@@ -17,6 +18,7 @@ var _mapPickerState = {
     selectedCoords: null,
     latInput: null,
     lngInput: null,
+    nameInput: null,
     initialized: false
 };
 
@@ -24,10 +26,12 @@ var _mapPickerState = {
  * Открыть модальное окно с картой для выбора координат.
  * @param {HTMLInputElement} latInput — поле широты
  * @param {HTMLInputElement} lngInput — поле долготы
+ * @param {HTMLInputElement} [nameInput] — поле для названия места (опционально)
  */
-function openMapPicker(latInput, lngInput) {
+function openMapPicker(latInput, lngInput, nameInput) {
     _mapPickerState.latInput = latInput;
     _mapPickerState.lngInput = lngInput;
+    _mapPickerState.nameInput = nameInput || null;
     _mapPickerState.selectedCoords = null;
 
     var confirmBtn = document.getElementById('mapPickerConfirmBtn');
@@ -167,6 +171,14 @@ document.addEventListener('DOMContentLoaded', function () {
             if (_mapPickerState.selectedCoords && _mapPickerState.latInput && _mapPickerState.lngInput) {
                 _mapPickerState.latInput.value = _mapPickerState.selectedCoords[0].toFixed(6);
                 _mapPickerState.lngInput.value = _mapPickerState.selectedCoords[1].toFixed(6);
+
+                // Записать название места в дополнительное поле (если передано)
+                if (_mapPickerState.nameInput) {
+                    var addressText = document.getElementById('mapPickerAddress').textContent || '';
+                    if (addressText && addressText !== 'Определение адреса...') {
+                        _mapPickerState.nameInput.value = addressText;
+                    }
+                }
             }
 
             // Закрыть модалку
