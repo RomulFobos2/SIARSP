@@ -372,7 +372,13 @@ class SessionRepository {
                 val req: Request = chain.request().newBuilder()
                     .header("Accept", "application/json")
                     .build()
-                return chain.proceed(req)
+
+                val response = chain.proceed(req)
+                Log.d(
+                    "SIARSP",
+                    "HTTP ${req.method} ${req.url.encodedPath} -> ${response.code}, location=${response.header("Location") ?: "-"}"
+                )
+                return response
             }
         })
         .build()
@@ -397,25 +403,19 @@ class SessionRepository {
                 .loadForRequest(BASE_URL.toHttpUrl())
                 .any { it.name.equals("JSESSIONID", ignoreCase = true) }
 
+            val isLoginRedirect = redirectLocation.contains("/employee/login", ignoreCase = true)
             val isLoginErrorRedirect = redirectLocation.contains("/employee/login?error", ignoreCase = true)
-            val isLoginPageRedirect = redirectLocation == "/employee/login"
-            val isSuccessRedirect = redirectLocation.contains("/employee/main", ignoreCase = true) ||
-                    redirectLocation.contains("/employee/change-pass", ignoreCase = true)
 
             Log.i(
                 "SIARSP",
-                "LOGIN resp.code=${resp.code}, isRedirect=${resp.isRedirect}, location=$redirectLocation, hasSessionCookie=$hasSessionCookie"
+                "LOGIN request: user=$username, code=${resp.code}, isRedirect=${resp.isRedirect}, location=$redirectLocation, hasSessionCookie=$hasSessionCookie"
             )
 
-            if (isLoginErrorRedirect || isLoginPageRedirect) {
-                return@use false
+            if (resp.isRedirect) {
+                return@use hasSessionCookie && !isLoginRedirect && !isLoginErrorRedirect
             }
 
-            if (resp.isRedirect && isSuccessRedirect && hasSessionCookie) {
-                return@use true
-            }
-
-            !resp.isRedirect && resp.isSuccessful && hasSessionCookie
+            resp.isSuccessful && hasSessionCookie
         }
     }
 
@@ -476,6 +476,7 @@ class MainViewModel : ViewModel() {
                 .onSuccess {
                     isLoggedIn = it
                     message = if (it) "Вход выполнен" else "Ошибка логина"
+                    Log.i("SIARSP", "Login result: success=$it")
                     if (it) {
                         loadProfile()
                     }
@@ -493,6 +494,7 @@ class MainViewModel : ViewModel() {
                 .onSuccess {
                     profile = it
                     userRole = it.roleName ?: ""
+                    Log.i("SIARSP", "Profile loaded: username=${it.username}, role=$userRole")
                     if (isCourier()) {
                         refreshTasks()
                     }

@@ -37,8 +37,17 @@ public class EmployeeService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return employeeRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Не найден сотрудник с username = " + username + "."));
+        log.debug("Попытка загрузки пользователя для авторизации: username={}", username);
+
+        Optional<Employee> employeeOptional = employeeRepository.findByUsername(username);
+        if (employeeOptional.isEmpty()) {
+            log.warn("Пользователь не найден при авторизации: username={}", username);
+            throw new UsernameNotFoundException("Не найден сотрудник с username = " + username + ".");
+        }
+
+        Employee employee = employeeOptional.get();
+        log.debug("Пользователь найден для авторизации: username={}, active={}", username, employee.isActive());
+        return employee;
     }
 
     @Transactional
