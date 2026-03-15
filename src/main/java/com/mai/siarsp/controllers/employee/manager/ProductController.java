@@ -144,7 +144,7 @@ public class ProductController {
     public String deleteProduct(@PathVariable(value = "id") long id, RedirectAttributes redirectAttributes) {
         if (!productService.deleteProduct(id)) {
             redirectAttributes.addFlashAttribute("deleteError",
-                    "Невозможно удалить товар. Убедитесь, что он не используется в документах.");
+                    "Невозможно удалить товар. Товар используется в заказах, поставках, складских зонах или документах.");
             return "redirect:/employee/manager/products/detailsProduct/" + id;
         }
 

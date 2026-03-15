@@ -7,13 +7,17 @@ import com.mai.siarsp.models.OrderedProduct;
 import com.mai.siarsp.models.ZoneProduct;
 import com.mai.siarsp.repo.ZoneProductRepository;
 import com.mai.siarsp.service.employee.ClientOrderService;
+import com.mai.siarsp.service.general.ContractService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -135,5 +139,28 @@ public class ClientOrderController {
             redirectAttributes.addFlashAttribute("successMessage", "Сборка завершена. Заказ готов к отгрузке.");
         }
         return "redirect:/employee/warehouseWorker/clientOrders/detailsClientOrder/" + id;
+    }
+
+    // ========== СКАЧИВАНИЕ КОНТРАКТА ==========
+
+    @GetMapping("/downloadContract/{orderId}")
+    public ResponseEntity<Resource> downloadContract(@PathVariable Long orderId) {
+        Optional<ClientOrder> optOrder = clientOrderService.getOrderById(orderId);
+        if (optOrder.isEmpty() || optOrder.get().getContractFile() == null) {
+            return ResponseEntity.notFound().build();
+        }
+        try {
+            String contractFileName = optOrder.get().getContractFile();
+            Resource resource = ContractService.getContractData(contractFileName);
+            String downloadName = contractFileName.contains("_")
+                    ? contractFileName.substring(contractFileName.indexOf("_") + 1)
+                    : contractFileName;
+            return ResponseEntity.ok()
+                    .header("Content-Disposition", "attachment; filename=\"" + downloadName + "\"")
+                    .body(resource);
+        } catch (IOException e) {
+            log.error("Ошибка скачивания контракта: {}", e.getMessage());
+            return ResponseEntity.notFound().build();
+        }
     }
 }

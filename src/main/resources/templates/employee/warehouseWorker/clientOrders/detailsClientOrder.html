@@ -26,9 +26,14 @@
                     </h1>
                     <span class="badge fs-6"
                           th:text="${order.status.displayName}"
-                          th:classappend="${order.status.name() == 'RESERVED' ? 'bg-primary' :
+                          th:classappend="${order.status.name() == 'NEW' ? 'bg-secondary' :
+                                           order.status.name() == 'CONFIRMED' ? 'bg-info text-dark' :
+                                           order.status.name() == 'RESERVED' ? 'bg-primary' :
                                            order.status.name() == 'IN_PROGRESS' ? 'bg-warning text-dark' :
-                                           order.status.name() == 'READY' ? 'bg-success' : 'bg-secondary'}"></span>
+                                           order.status.name() == 'READY' ? 'bg-success' :
+                                           order.status.name() == 'SHIPPED' ? 'bg-dark' :
+                                           order.status.name() == 'DELIVERED' ? 'bg-success' :
+                                           order.status.name() == 'CANCELLED' ? 'bg-danger' : 'bg-secondary'}"></span>
                 </div>
             </div>
 
@@ -43,8 +48,13 @@
                                 <span th:text="${#temporals.format(order.orderDate, 'dd.MM.yyyy HH:mm')}"></span></p>
                             <p class="mb-1"><strong>Дата доставки:</strong>
                                 <span th:text="${#temporals.format(order.deliveryDate, 'dd.MM.yyyy')}"></span></p>
-                            <p class="mb-0"><strong>Сумма:</strong>
+                            <p class="mb-1" th:if="${order.actualDeliveryDate != null}">
+                                <strong>Фактическая доставка:</strong>
+                                <span th:text="${#temporals.format(order.actualDeliveryDate, 'dd.MM.yyyy')}"></span></p>
+                            <p class="mb-1"><strong>Сумма:</strong>
                                 <span th:text="${#numbers.formatDecimal(order.totalAmount, 1, 2) + ' руб.'}"></span></p>
+                            <p class="mb-0"><strong>Ответственный:</strong>
+                                <span th:text="${order.responsibleEmployee.fullName}"></span></p>
                         </div>
                     </div>
                 </div>
@@ -56,8 +66,11 @@
                                 <span th:text="${order.client.organizationName}"></span></p>
                             <p class="mb-1"><strong>Тип:</strong>
                                 <span th:text="${order.client.organizationType}"></span></p>
-                            <p class="mb-0"><strong>Адрес доставки:</strong>
+                            <p class="mb-1"><strong>Адрес доставки:</strong>
                                 <span th:text="${order.client.deliveryAddress}"></span></p>
+                            <p class="mb-0" th:if="${order.client.contactPerson != null}">
+                                <strong>Контакт:</strong>
+                                <span th:text="${order.client.contactPerson}"></span></p>
                         </div>
                     </div>
                 </div>
@@ -135,6 +148,22 @@
                 <h5 class="fw-bold mb-3">Задача на доставку</h5>
                 <a th:href="'/employee/warehouseWorker/deliveryTasks/detailsDeliveryTask/' + ${order.deliveryTask.id}"
                    class="btn btn-outline-primary">Перейти к задаче на доставку</a>
+            </div>
+
+            <!-- Документы -->
+            <div th:if="${order.contractFile != null or (order.deliveryTask != null and (order.deliveryTask.ttn != null or order.acceptanceAct != null))}" class="mb-4">
+                <h5 class="fw-bold mb-3">Документы</h5>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a th:if="${order.contractFile != null}"
+                       th:href="'/employee/warehouseWorker/clientOrders/downloadContract/' + ${order.id}"
+                       class="btn btn-outline-primary">Скачать контракт</a>
+                    <a th:if="${order.deliveryTask != null and order.deliveryTask.ttn != null}"
+                       th:href="'/employee/warehouseWorker/clientOrders/detailsTTN/' + ${order.id}"
+                       class="btn btn-outline-secondary">Просмотр ТТН</a>
+                    <a th:if="${order.acceptanceAct != null}"
+                       th:href="'/employee/warehouseWorker/clientOrders/detailsAcceptanceAct/' + ${order.id}"
+                       class="btn btn-outline-secondary">Просмотр акта</a>
+                </div>
             </div>
 
             <div class="link-section">
