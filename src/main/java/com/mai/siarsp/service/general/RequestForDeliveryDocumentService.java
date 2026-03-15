@@ -176,6 +176,11 @@ public class RequestForDeliveryDocumentService {
             changed = true;
         }
 
+        if (fullText.contains("id")) {
+            fullText = fullText.replace("id", safeStr(String.valueOf(request.getId())));
+            changed = true;
+        }
+
         // Реквизиты поставщика
         if (fullText.contains("address")) {
             fullText = fullText.replace("address", safeStr(supplier.getAddress()));
