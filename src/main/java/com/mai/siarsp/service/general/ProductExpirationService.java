@@ -8,6 +8,10 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.Optional;
 
+/**
+ * Контроль сроков годности: поиск рисковых остатков и запуск предупредительных действий.
+ */
+
 @Service
 public class ProductExpirationService {
 

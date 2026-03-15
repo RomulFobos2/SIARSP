@@ -15,6 +15,10 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
+/**
+ * Работа с изображениями и медиа-файлами, которые прикладываются к сущностям сервиса.
+ */
+
 @Service
 @Slf4j
 public class ImageService {
@@ -30,13 +34,6 @@ public class ImageService {
         log.info("ImageService инициализирован: uploadPath = {}", uploadPath);
     }
 
-    /**
-     * Загружает изображение на сервер.
-     *
-     * @param file MultipartFile из формы
-     * @return имя сохранённого файла
-     * @throws IOException при ошибке сохранения
-     */
     public static String uploadImage(MultipartFile file) throws IOException {
         log.info("Начинаем загрузку изображения...");
         if (file != null && !file.isEmpty()) {
@@ -53,13 +50,6 @@ public class ImageService {
         throw new IllegalArgumentException("Файл пустой или null");
     }
 
-    /**
-     * Возвращает Resource для отдачи изображения.
-     *
-     * @param imageName имя файла изображения
-     * @return Resource
-     * @throws IOException если файл не найден/нечитаем
-     */
     public static Resource getImageData(String imageName) throws IOException {
         Path filePath = Paths.get(uploadPath).resolve(imageName);
         Resource resource = new UrlResource(filePath.toUri());

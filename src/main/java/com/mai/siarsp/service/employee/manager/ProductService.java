@@ -22,11 +22,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.*;
 
 /**
- * Сервис для управления товарами (Product) со стороны руководителя
- *
- * Предоставляет операции проверки уникальности артикула, создания,
- * редактирования, удаления и получения списка товаров.
+ * Сервис товаров в контуре роли: поддержка каталога, валидация данных и операции, нужные конкретному подразделению.
  */
+
 @Service("managerProductService")
 @Getter
 @Slf4j
@@ -47,13 +45,6 @@ public class ProductService {
         this.productAttributeValueRepository = productAttributeValueRepository;
     }
 
-    /**
-     * Проверяет занятость артикула товара.
-     *
-     * @param article артикул для проверки
-     * @param id ID текущего товара (null при создании)
-     * @return true если артикул уже используется
-     */
     public boolean checkArticle(String article, Long id) {
         if (article == null || article.isBlank()) {
             return false;
@@ -66,14 +57,6 @@ public class ProductService {
         return productRepository.existsByArticle(article);
     }
 
-    /**
-     * Сохраняет новый товар с привязкой к категории и загрузкой изображения.
-     *
-     * @param product объект товара для сохранения
-     * @param categoryId ID категории товара
-     * @param inputFileField файл изображения товара
-     * @return Optional с ID сохранённого товара или empty при ошибке
-     */
     @Transactional
     public Optional<Long> saveProduct(Product product, Long categoryId, MultipartFile inputFileField,
                                       Map<String, String> attributeValues) {
@@ -108,19 +91,6 @@ public class ProductService {
         return Optional.of(product.getId());
     }
 
-    /**
-     * Обновляет данные существующего товара и, при необходимости, изображение.
-     *
-     * @param id ID редактируемого товара
-     * @param inputName новое название
-     * @param inputArticle новый артикул
-     * @param inputStockQuantity новое количество на складе
-     * @param inputQuantityForStock новое количество к размещению
-     * @param inputWarehouseType новый тип склада
-     * @param inputCategoryId новая категория
-     * @param inputFileField новый файл изображения (необязательный)
-     * @return Optional с ID товара или empty при ошибке
-     */
     @Transactional
     public Optional<Long> editProduct(Long id,
                                       String inputName,
@@ -171,12 +141,6 @@ public class ProductService {
         return Optional.of(product.getId());
     }
 
-    /**
-     * Удаляет товар по идентификатору.
-     *
-     * @param id ID товара
-     * @return true при успешном удалении
-     */
     @Transactional
     public boolean deleteProduct(Long id) {
         Optional<Product> productOptional = productRepository.findById(id);
@@ -197,22 +161,11 @@ public class ProductService {
         return true;
     }
 
-    /**
-     * Возвращает список всех товаров в формате DTO.
-     *
-     * @return список ProductDTO
-     */
     @Transactional
     public List<ProductDTO> getAllProducts() {
         return ProductMapper.INSTANCE.toDTOList(productRepository.findAll());
     }
 
-    /**
-     * Сохраняет значения атрибутов для нового товара.
-     *
-     * @param product сохранённый товар
-     * @param attributeValues карта {attributeId → value}
-     */
     private void saveAttributeValues(Product product, Map<String, String> attributeValues) {
         if (attributeValues == null || attributeValues.isEmpty()) return;
 
@@ -229,14 +182,6 @@ public class ProductService {
         }
     }
 
-    /**
-     * Обновляет значения атрибутов для существующего товара.
-     * Использует хирургическое обновление (find-update-delete) вместо clear+reinsert,
-     * чтобы избежать нарушения unique constraint (product_id, attribute_id).
-     *
-     * @param product редактируемый товар
-     * @param attributeValues карта {attributeId → value}
-     */
     private void updateAttributeValues(Product product, Map<String, String> attributeValues) {
         // 1. Создаём карту новых значений: attrId → value
         Map<Long, String> newValues = new HashMap<>();

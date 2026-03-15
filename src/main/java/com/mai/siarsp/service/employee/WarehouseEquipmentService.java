@@ -21,15 +21,9 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Сервис управления оборудованием склада и типами оборудования.
- *
- * Операции с оборудованием:
- * - Заведующий складом создаёт новые записи об оборудовании
- * - Руководитель редактирует данные и меняет статус
- *
- * Операции с типами оборудования:
- * - Администратор управляет справочником типов (CRUD)
+ * Управление складским оборудованием: постановка на учет, изменения состояния и доступности.
  */
+
 @Service
 @Slf4j
 public class WarehouseEquipmentService {
@@ -48,44 +42,23 @@ public class WarehouseEquipmentService {
 
     // ========== ОБОРУДОВАНИЕ ==========
 
-    /**
-     * Возвращает список всего оборудования, отсортированного по наименованию.
-     */
     @Transactional(readOnly = true)
     public List<WarehouseEquipmentDTO> getAllEquipment() {
         return WarehouseEquipmentMapper.INSTANCE.toDTOList(
                 equipmentRepository.findAllByOrderByNameAsc());
     }
 
-    /**
-     * Возвращает данные об оборудовании по ID.
-     */
     @Transactional(readOnly = true)
     public Optional<WarehouseEquipmentDTO> getById(Long id) {
         return equipmentRepository.findById(id)
                 .map(WarehouseEquipmentMapper.INSTANCE::toDTO);
     }
 
-    /**
-     * Возвращает сущность оборудования по ID (для контроллеров).
-     */
     @Transactional(readOnly = true)
     public Optional<WarehouseEquipment> getEntityById(Long id) {
         return equipmentRepository.findById(id);
     }
 
-    /**
-     * Создаёт новую запись об оборудовании склада.
-     * Статус устанавливается в IN_USE по умолчанию.
-     *
-     * @param name            наименование оборудования
-     * @param serialNumber    серийный номер (может быть null)
-     * @param productionDate  дата производства (может быть null)
-     * @param usefulLifeYears срок полезного использования в годах (может быть null)
-     * @param equipmentTypeId ID типа оборудования
-     * @param warehouseId     ID склада
-     * @return true при успехе, false при ошибке
-     */
     @Transactional
     public boolean createEquipment(String name,
                                    String serialNumber,
@@ -123,20 +96,6 @@ public class WarehouseEquipmentService {
         }
     }
 
-    /**
-     * Обновляет данные оборудования.
-     * Доступно руководителю (ROLE_EMPLOYEE_MANAGER).
-     *
-     * @param id              ID оборудования
-     * @param name            новое наименование
-     * @param serialNumber    серийный номер
-     * @param productionDate  дата производства
-     * @param usefulLifeYears срок полезного использования
-     * @param equipmentTypeId ID типа оборудования
-     * @param warehouseId     ID склада
-     * @param status          новый статус
-     * @return true при успехе, false при ошибке
-     */
     @Transactional
     public boolean updateEquipment(Long id,
                                    String name,
@@ -184,12 +143,6 @@ public class WarehouseEquipmentService {
         }
     }
 
-    /**
-     * Удаляет оборудование по ID.
-     *
-     * @param id ID оборудования
-     * @return true при успехе, false при ошибке
-     */
     @Transactional
     public boolean deleteEquipment(Long id) {
         try {
@@ -209,38 +162,23 @@ public class WarehouseEquipmentService {
 
     // ========== ТИПЫ ОБОРУДОВАНИЯ ==========
 
-    /**
-     * Возвращает список всех типов оборудования, отсортированных по наименованию.
-     */
     @Transactional(readOnly = true)
     public List<EquipmentTypeDTO> getAllTypes() {
         return EquipmentTypeMapper.INSTANCE.toDTOList(
                 equipmentTypeRepository.findAllByOrderByNameAsc());
     }
 
-    /**
-     * Возвращает список сущностей всех типов оборудования (для форм).
-     */
     @Transactional(readOnly = true)
     public List<EquipmentType> getAllTypeEntities() {
         return equipmentTypeRepository.findAllByOrderByNameAsc();
     }
 
-    /**
-     * Возвращает тип оборудования по ID.
-     */
     @Transactional(readOnly = true)
     public Optional<EquipmentTypeDTO> getTypeById(Long id) {
         return equipmentTypeRepository.findById(id)
                 .map(EquipmentTypeMapper.INSTANCE::toDTO);
     }
 
-    /**
-     * Создаёт новый тип оборудования.
-     *
-     * @param name наименование типа
-     * @return true при успехе, false при ошибке
-     */
     @Transactional
     public boolean createEquipmentType(String name) {
         try {
@@ -258,13 +196,6 @@ public class WarehouseEquipmentService {
         }
     }
 
-    /**
-     * Обновляет наименование типа оборудования.
-     *
-     * @param id   ID типа
-     * @param name новое наименование
-     * @return true при успехе, false при ошибке
-     */
     @Transactional
     public boolean updateEquipmentType(Long id, String name) {
         try {
@@ -288,13 +219,6 @@ public class WarehouseEquipmentService {
         }
     }
 
-    /**
-     * Удаляет тип оборудования.
-     * Нельзя удалить, если есть оборудование данного типа.
-     *
-     * @param id ID типа
-     * @return true при успехе, false при ошибке
-     */
     @Transactional
     public boolean deleteEquipmentType(Long id) {
         try {

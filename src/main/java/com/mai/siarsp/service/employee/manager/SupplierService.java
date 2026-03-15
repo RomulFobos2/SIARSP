@@ -13,6 +13,10 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Сервис по поставщикам: ведение справочника, проверка связей с поставками и поддержка закупочного процесса.
+ */
+
 @Service
 @Getter
 @Slf4j
@@ -138,12 +142,6 @@ public class SupplierService {
         return SupplierMapper.INSTANCE.toDTOList(suppliers);
     }
 
-    /**
-     * Возвращает поставщика по ID в виде DTO
-     *
-     * @param id ID поставщика
-     * @return SupplierDTO или null если не найден
-     */
     @Transactional(readOnly = true)
     public SupplierDTO getSupplierById(Long id) {
         return supplierRepository.findById(id)

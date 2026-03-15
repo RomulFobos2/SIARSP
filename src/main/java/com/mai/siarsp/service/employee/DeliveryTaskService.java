@@ -18,14 +18,9 @@ import java.util.Optional;
 import java.util.Random;
 
 /**
- * Сервис управления задачами на доставку
- *
- * Бизнес-процесс доставки:
- * 1. Заведующий складом создаёт задачу → PENDING, назначает водителя и автомобиль
- * 2. Складской работник выполняет погрузку → LOADING, завершает → LOADED, ClientOrder SHIPPED, stock↓, ZoneProduct↓
- * 3. Бухгалтер оформляет ТТН
- * 4. Водитель-экспедитор начинает доставку → IN_TRANSIT, завершает → DELIVERED, ClientOrder DELIVERED
+ * Логика работы с задачами доставки: назначение исполнителя, контроль маршрута и фиксация результата.
  */
+
 @Service
 @Slf4j
 public class DeliveryTaskService {
@@ -33,13 +28,11 @@ public class DeliveryTaskService {
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyyMMdd");
     private static final Random RANDOM = new Random();
 
-    /** Статусы задач, при которых водитель считается занятым */
     private static final List<DeliveryTaskStatus> ACTIVE_STATUSES = List.of(
             DeliveryTaskStatus.PENDING, DeliveryTaskStatus.LOADING,
             DeliveryTaskStatus.LOADED, DeliveryTaskStatus.IN_TRANSIT
     );
 
-    /** Радиус автоматической отметки маршрутной точки (в метрах) */
     private static final double ROUTE_POINT_RADIUS_METERS = 500.0;
 
     private final DeliveryTaskRepository deliveryTaskRepository;
@@ -74,9 +67,6 @@ public class DeliveryTaskService {
 
     // ========== ЗАПРОСЫ ==========
 
-    /**
-     * Запрос на маршрутную точку при создании задачи
-     */
     public record RoutePointRequest(RoutePointType pointType, String address,
                                     Double latitude, Double longitude, String comment) {}
 
@@ -117,11 +107,6 @@ public class DeliveryTaskService {
         return optTask;
     }
 
-    /**
-     * Возвращает доступных водителей:
-     * 1) Активные (isActive = true)
-     * 2) Без активной задачи на доставку (PENDING/LOADING/LOADED/IN_TRANSIT)
-     */
     @Transactional(readOnly = true)
     public List<Employee> getAvailableDrivers() {
         return employeeRepository.findAllByRoleName("ROLE_EMPLOYEE_COURIER").stream()
@@ -135,11 +120,6 @@ public class DeliveryTaskService {
         return vehicleRepository.findByStatus(VehicleStatus.AVAILABLE);
     }
 
-    /**
-     * Возвращает доступные автомобили с учётом необходимости рефрижератора.
-     * Если заказ содержит товары, требующие холодильного хранения,
-     * возвращаются только автомобили типа REFRIGERATED.
-     */
     @Transactional(readOnly = true)
     public List<Vehicle> getAvailableVehicles(boolean needsRefrigeration) {
         if (needsRefrigeration) {
@@ -148,9 +128,6 @@ public class DeliveryTaskService {
         return vehicleRepository.findByStatus(VehicleStatus.AVAILABLE);
     }
 
-    /**
-     * Проверяет, содержит ли заказ товары, требующие холодильного хранения (WarehouseType.REFRIGERATOR)
-     */
     public boolean orderNeedsRefrigeration(ClientOrder order) {
         return order.getOrderedProducts().stream()
                 .anyMatch(op -> op.getProduct().getWarehouseType() == WarehouseType.REFRIGERATOR);
@@ -158,9 +135,6 @@ public class DeliveryTaskService {
 
     // ========== СОЗДАНИЕ ЗАДАЧИ (WAREHOUSE_MANAGER) ==========
 
-    /**
-     * Создаёт задачу на доставку для заказа
-     */
     @Transactional
     public boolean createTask(Long orderId, Long driverId, Long vehicleId,
                               LocalDateTime plannedStartTime, LocalDateTime plannedEndTime,
@@ -268,9 +242,6 @@ public class DeliveryTaskService {
 
     // ========== ПОГРУЗКА (WAREHOUSE_WORKER) ==========
 
-    /**
-     * Начинает погрузку (PENDING → LOADING)
-     */
     @Transactional
     public boolean startLoading(Long taskId) {
         try {
@@ -300,9 +271,6 @@ public class DeliveryTaskService {
         }
     }
 
-    /**
-     * Завершает погрузку: ClientOrder READY → SHIPPED, stockQuantity↓, reservedQuantity↓
-     */
     @Transactional
     public boolean completeLoading(Long taskId) {
         try {
@@ -373,9 +341,6 @@ public class DeliveryTaskService {
 
     // ========== ОФОРМЛЕНИЕ ТТН (ACCOUNTER) ==========
 
-    /**
-     * Создаёт ТТН для задачи на доставку
-     */
     @Transactional
     public boolean createTTN(Long taskId, String cargoDescription,
                              Double totalWeight, Double totalVolume, String comment) {
@@ -418,9 +383,6 @@ public class DeliveryTaskService {
 
     // ========== ПОДГОТОВКА ДОКУМЕНТОВ (COURIER) ==========
 
-    /**
-     * Создаёт или обновляет ТТН для задачи на доставку
-     */
     @Transactional
     public boolean createOrUpdateTTN(Long taskId, String cargoDescription,
                                      Double totalWeight, Double totalVolume, String comment) {
@@ -457,9 +419,6 @@ public class DeliveryTaskService {
         }
     }
 
-    /**
-     * Создаёт или обновляет акт приёма-передачи для задачи
-     */
     @Transactional
     public boolean createOrUpdateAcceptanceAct(Long taskId, String actComment) {
         try {
@@ -493,9 +452,6 @@ public class DeliveryTaskService {
         }
     }
 
-    /**
-     * Получить акт приёма-передачи для задачи (если создан)
-     */
     @Transactional(readOnly = true)
     public Optional<AcceptanceAct> getAcceptanceActByTask(Long taskId) {
         Optional<DeliveryTask> optTask = deliveryTaskRepository.findById(taskId);
@@ -505,9 +461,6 @@ public class DeliveryTaskService {
 
     // ========== ДОКУМЕНТЫ ДЛЯ WAREHOUSE_MANAGER ==========
 
-    /**
-     * Получить ТТН для задачи (если создана)
-     */
     @Transactional(readOnly = true)
     public Optional<TTN> getTTNByTask(Long taskId) {
         Optional<DeliveryTask> optTask = deliveryTaskRepository.findById(taskId);
@@ -515,9 +468,6 @@ public class DeliveryTaskService {
         return Optional.ofNullable(optTask.get().getTtn());
     }
 
-    /**
-     * Получить акт приёма-передачи по заказу
-     */
     @Transactional(readOnly = true)
     public Optional<AcceptanceAct> getAcceptanceActByOrder(Long orderId) {
         Optional<ClientOrder> optOrder = clientOrderRepository.findById(orderId);
@@ -525,10 +475,6 @@ public class DeliveryTaskService {
         return acceptanceActRepository.findByClientOrder(optOrder.get());
     }
 
-    /**
-     * Создаёт ТТН и AcceptanceAct для заказа (вызывается warehouseManager при подготовке документов)
-     * Заказ должен иметь связанную DeliveryTask
-     */
     @Transactional
     public boolean createDocumentsForOrder(Long orderId) {
         try {
@@ -573,9 +519,6 @@ public class DeliveryTaskService {
         }
     }
 
-    /**
-     * Обновляет ТТН по ID
-     */
     @Transactional
     public boolean updateTTN(Long ttnId, String cargoDescription,
                              Double totalWeight, Double totalVolume, String comment) {
@@ -601,9 +544,6 @@ public class DeliveryTaskService {
         }
     }
 
-    /**
-     * Обновляет акт приёма-передачи по ID
-     */
     @Transactional
     public boolean updateAcceptanceAct(Long actId, String clientRepresentative, boolean signed, String comment) {
         try {
@@ -636,9 +576,6 @@ public class DeliveryTaskService {
 
     // ========== ДОСТАВКА (COURIER) ==========
 
-    /**
-     * Начинает доставку (LOADED → IN_TRANSIT)
-     */
     @Transactional
     public boolean startDelivery(Long taskId, Integer startMileage) {
         try {
@@ -678,9 +615,6 @@ public class DeliveryTaskService {
         }
     }
 
-    /**
-     * Обновляет GPS-координаты водителя
-     */
     @Transactional
     public boolean updateLocation(Long taskId, Double latitude, Double longitude) {
         try {
@@ -722,9 +656,6 @@ public class DeliveryTaskService {
         }
     }
 
-    /**
-     * Отмечает маршрутную точку как пройденную
-     */
     @Transactional
     public boolean markRoutePointReached(Long taskId, Long routePointId) {
         try {
@@ -768,9 +699,6 @@ public class DeliveryTaskService {
         }
     }
 
-    /**
-     * Завершает доставку: IN_TRANSIT → DELIVERED, ClientOrder → DELIVERED, AcceptanceAct
-     */
     @Transactional
     public boolean completeDelivery(Long taskId, Integer endMileage,
                                     String clientRepresentative, String actComment) {
@@ -852,9 +780,6 @@ public class DeliveryTaskService {
 
     // ========== ОТМЕНА ==========
 
-    /**
-     * Отменяет задачу (только PENDING или LOADING)
-     */
     @Transactional
     public boolean cancelTask(Long taskId) {
         try {
@@ -916,11 +841,6 @@ public class DeliveryTaskService {
         return number;
     }
 
-    /**
-     * Вычисляет расстояние между двумя GPS-координатами по формуле Хаверсина.
-     *
-     * @return расстояние в метрах
-     */
     private double haversineDistance(double lat1, double lon1, double lat2, double lon2) {
         final double R = 6371000; // радиус Земли в метрах
         double dLat = Math.toRadians(lat2 - lat1);

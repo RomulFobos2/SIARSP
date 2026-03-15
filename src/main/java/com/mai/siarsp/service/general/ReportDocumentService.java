@@ -22,6 +22,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * Формирование отчетных документов для операционной и управленческой отчетности.
+ */
+
 @Service
 public class ReportDocumentService {
 

@@ -20,29 +20,14 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import java.util.*;
 
 /**
- * Сервис для управления атрибутами (характеристиками) товаров
- *
- * Предоставляет CRUD-операции для работы с атрибутами товаров (EAV-паттерн):
- * - Проверка уникальности названия атрибута
- * - Создание нового атрибута с привязкой к категориям товаров
- * - Редактирование атрибута с пересинхронизацией связей ManyToMany
- * - Удаление атрибута (с защитой при наличии значений ProductAttributeValue)
- * - Получение списка всех атрибутов
- *
- * Важно: ProductAttribute — inverse side связи ManyToMany с ProductCategory.
- * Owning side — ProductCategory (имеет @JoinTable). Поэтому для обновления связи
- * нужно менять category.getAttributes(), а не attribute.getCategories().
+ * Сервис атрибутов товара: управление схемой характеристик и их применением к категориям.
  */
+
 @Service
 @Getter
 @Slf4j
 public class ProductAttributeService {
 
-    /**
-     * Набор защищённых габаритных атрибутов (формат "название:единица измерения").
-     * Эти атрибуты создаются автоматически при старте приложения (RoleRunner)
-     * и не подлежат редактированию и удалению.
-     */
     private static final Set<String> PROTECTED_GABARITES = Set.of(
             "Длина упаковки:см", "Ширина упаковки:см", "Высота упаковки:см"
     );
@@ -62,24 +47,11 @@ public class ProductAttributeService {
         this.productRepository = productRepository;
     }
 
-    /**
-     * Проверяет, является ли атрибут защищённым габаритным атрибутом
-     *
-     * @param attribute атрибут для проверки
-     * @return true если атрибут защищён от редактирования/удаления
-     */
     public boolean isProtectedGabarite(ProductAttribute attribute) {
         String key = attribute.getName().trim() + ":" + attribute.getUnit().trim();
         return PROTECTED_GABARITES.contains(key);
     }
 
-    /**
-     * Проверяет, существует ли атрибут с указанным названием
-     *
-     * @param name название для проверки
-     * @param id ID текущего атрибута (null при создании, не null при редактировании)
-     * @return true если такое название уже занято
-     */
     public boolean checkName(String name, Long id) {
         if (name == null || name.isBlank()) {
             return false;
@@ -91,16 +63,6 @@ public class ProductAttributeService {
         }
     }
 
-    /**
-     * Сохраняет новый атрибут товара и привязывает к выбранным категориям
-     *
-     * Поскольку ProductAttribute — inverse side ManyToMany, привязка к категориям
-     * выполняется через owning side: category.getAttributes().add(attribute)
-     *
-     * @param attribute объект атрибута для сохранения
-     * @param categoryIds список ID категорий для привязки (может быть null)
-     * @return true при успешном сохранении
-     */
     @Transactional
     public boolean saveProductAttribute(ProductAttribute attribute, List<Long> categoryIds) {
         log.info("Начинаем сохранение атрибута с названием = {}...", attribute.getName());
@@ -135,18 +97,6 @@ public class ProductAttributeService {
         return true;
     }
 
-    /**
-     * Сохраняет новый атрибут товара, привязывает к категориям и создаёт значения
-     * для всех существующих товаров в этих категориях.
-     *
-     * Используется когда в выбранных категориях уже есть товары и пользователь
-     * заполнил значения нового атрибута для каждого из них.
-     *
-     * @param attribute     объект атрибута для сохранения
-     * @param categoryIds   список ID категорий для привязки
-     * @param productValues карта: productId → значение атрибута
-     * @return true при успешном сохранении
-     */
     @Transactional
     public boolean saveProductAttributeWithValues(ProductAttribute attribute,
                                                    List<Long> categoryIds,
@@ -185,28 +135,12 @@ public class ProductAttributeService {
         return true;
     }
 
-    /**
-     * Редактирует существующий атрибут товара и пересинхронизирует связи с категориями.
-     * Обратная совместимость — вызывает основной метод без значений для товаров.
-     */
     @Transactional
     public boolean editProductAttribute(Long id, String inputName, String inputUnit,
                                          AttributeType inputDataType, List<Long> categoryIds) {
         return editProductAttribute(id, inputName, inputUnit, inputDataType, categoryIds, null);
     }
 
-    /**
-     * Редактирует существующий атрибут товара, пересинхронизирует связи с категориями
-     * и создаёт значения атрибута для товаров в новых категориях.
-     *
-     * @param id ID редактируемого атрибута
-     * @param inputName новое название
-     * @param inputUnit новая единица измерения (может быть null)
-     * @param inputDataType новый тип данных
-     * @param categoryIds список ID новых категорий (может быть null)
-     * @param productValues карта: productId → значение атрибута (для товаров в новых категориях)
-     * @return true при успешном сохранении
-     */
     @Transactional
     public boolean editProductAttribute(Long id, String inputName, String inputUnit,
                                          AttributeType inputDataType, List<Long> categoryIds,
@@ -320,14 +254,6 @@ public class ProductAttributeService {
         return true;
     }
 
-    /**
-     * Удаляет атрибут товара
-     * Удаление невозможно, если для атрибута существуют значения (ProductAttributeValue)
-     * Перед удалением атрибут убирается из всех связанных категорий
-     *
-     * @param id ID удаляемого атрибута
-     * @return true при успешном удалении
-     */
     @Transactional
     public boolean deleteProductAttribute(Long id) {
         Optional<ProductAttribute> attributeOptional = productAttributeRepository.findById(id);
@@ -373,12 +299,6 @@ public class ProductAttributeService {
         return true;
     }
 
-    /**
-     * Возвращает список всех атрибутов в виде DTO
-     * @Transactional необходим для доступа к lazy-коллекции categories при маппинге
-     *
-     * @return список ProductAttributeDTO
-     */
     @Transactional
     public List<ProductAttributeDTO> getAllProductAttributes() {
         List<ProductAttribute> attributes = productAttributeRepository.findAll();

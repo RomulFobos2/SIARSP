@@ -41,3 +41,5 @@ build/
 mobile-android/.gradle/
 mobile-android/**/build/
 mobile-android/local.properties
+# generated documentation artifact
+docs/SIARSP_service_description.docx

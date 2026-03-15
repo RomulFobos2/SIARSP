@@ -25,21 +25,14 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Сервис для управления категориями товаров.
- *
- * Обеспечивает CRUD-операции для подкатегорий товаров
- * (например: "Молоко", "Кефир" в глобальной категории "Молочная продукция").
- *
- * Составная уникальность: (globalProductCategory + name).
- * Защита удаления: категория не может быть удалена,
- * если к ней привязаны товары (Product).
+ * Сервис категорий товара в контуре склада: структура каталога и правила классификации.
  */
+
 @Service
 @Getter
 @Slf4j
 public class ProductCategoryService {
 
-    /** Названия обязательных атрибутов, автоматически добавляемых к каждой категории */
     public static final List<String> MANDATORY_ATTRIBUTE_NAMES = List.of(
             "Длина упаковки", "Ширина упаковки", "Высота упаковки", "Срок годности"
     );
@@ -62,14 +55,6 @@ public class ProductCategoryService {
         this.productAttributeValueRepository = productAttributeValueRepository;
     }
 
-    /**
-     * Проверка составной уникальности (globalProductCategory + name).
-     *
-     * @param name                    название категории
-     * @param globalProductCategoryId ID глобальной категории
-     * @param id                      ID текущей категории (для исключения при редактировании), может быть null
-     * @return true если категория с таким названием уже существует в данной глобальной категории
-     */
     public boolean checkName(String name, Long globalProductCategoryId, Long id) {
         if (name == null || name.isBlank() || globalProductCategoryId == null) {
             return false;
@@ -89,22 +74,12 @@ public class ProductCategoryService {
         }
     }
 
-    /**
-     * Возвращает список обязательных атрибутов из базы данных.
-     */
     public List<ProductAttribute> getMandatoryAttributes() {
         return productAttributeRepository.findAll().stream()
                 .filter(attr -> MANDATORY_ATTRIBUTE_NAMES.contains(attr.getName()))
                 .toList();
     }
 
-    /**
-     * Сохранение новой категории товара.
-     * Автоматически добавляет обязательные атрибуты (габариты, срок годности).
-     *
-     * @param category сущность категории для сохранения
-     * @return true при успешном сохранении
-     */
     @Transactional
     public boolean saveProductCategory(ProductCategory category) {
         log.info("Начинаем сохранение категории товара с названием = {}...", category.getName());
@@ -135,26 +110,11 @@ public class ProductCategoryService {
         return true;
     }
 
-    /**
-     * Редактирование существующей категории товара (без значений атрибутов для товаров).
-     */
     @Transactional
     public boolean editProductCategory(Long id, String inputName, Long globalProductCategoryId, List<Long> attributeIds) {
         return editProductCategory(id, inputName, globalProductCategoryId, attributeIds, null);
     }
 
-    /**
-     * Редактирование существующей категории товара.
-     * При добавлении новых атрибутов к категории с существующими товарами —
-     * создаёт ProductAttributeValue для каждого товара/атрибута.
-     *
-     * @param id                      ID редактируемой категории
-     * @param inputName               новое название
-     * @param globalProductCategoryId ID глобальной категории
-     * @param attributeIds            список ID выбранных атрибутов (может быть null)
-     * @param productAttributeValues  карта: productId → (attributeId → значение), может быть null
-     * @return true при успешном сохранении изменений
-     */
     @Transactional
     public boolean editProductCategory(Long id, String inputName, Long globalProductCategoryId,
                                         List<Long> attributeIds, Map<Long, Map<Long, String>> productAttributeValues) {
@@ -245,13 +205,6 @@ public class ProductCategoryService {
         return true;
     }
 
-    /**
-     * Удаление категории товара.
-     * Запрещено при наличии связанных товаров (Product).
-     *
-     * @param id ID удаляемой категории
-     * @return true при успешном удалении
-     */
     @Transactional
     public boolean deleteProductCategory(Long id) {
         Optional<ProductCategory> categoryOptional = productCategoryRepository.findById(id);
@@ -283,12 +236,6 @@ public class ProductCategoryService {
         return true;
     }
 
-    /**
-     * Получение списка всех категорий товаров в формате DTO.
-     * Требует @Transactional из-за LAZY-загрузки @ManyToMany attributes.
-     *
-     * @return список ProductCategoryDTO
-     */
     @Transactional
     public List<ProductCategoryDTO> getAllProductCategories() {
         List<ProductCategory> categories = productCategoryRepository.findAll();
