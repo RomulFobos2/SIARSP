@@ -12,4 +12,6 @@ public interface SupplyRepository extends JpaRepository<Supply, Long> {
     boolean existsByDeliveryAndProduct(Delivery delivery, Product product);
 
     Optional<Supply> findByDeliveryAndProduct(Delivery delivery, Product product);
+
+    long countByProductId(Long productId);
 }

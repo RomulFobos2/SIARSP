@@ -12,4 +12,6 @@ public interface OrderedProductRepository extends JpaRepository<OrderedProduct, 
     boolean existsByClientOrderAndProduct(ClientOrder clientOrder, Product product);
 
     Optional<OrderedProduct> findByClientOrderAndProduct(ClientOrder clientOrder, Product product);
+
+    long countByProductId(Long productId);
 }

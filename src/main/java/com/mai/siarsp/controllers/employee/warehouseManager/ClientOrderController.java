@@ -10,8 +10,10 @@ import com.mai.siarsp.service.employee.ClientOrderService;
 import com.mai.siarsp.service.employee.DeliveryTaskService;
 import com.mai.siarsp.service.general.AcceptanceActDocumentService;
 import com.mai.siarsp.service.general.ReportDocumentService;
+import com.mai.siarsp.service.general.ContractService;
 import com.mai.siarsp.service.general.TTNDocumentService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -189,6 +191,29 @@ public class ClientOrderController {
             redirectAttributes.addFlashAttribute("successMessage", "Акт сохранён.");
         }
         return "redirect:/employee/warehouseManager/clientOrders/detailsAcceptanceAct/" + orderId;
+    }
+
+    // ========== СКАЧИВАНИЕ КОНТРАКТА ==========
+
+    @GetMapping("/downloadContract/{orderId}")
+    public ResponseEntity<Resource> downloadContract(@PathVariable Long orderId) {
+        Optional<ClientOrder> optOrder = clientOrderService.getOrderById(orderId);
+        if (optOrder.isEmpty() || optOrder.get().getContractFile() == null) {
+            return ResponseEntity.notFound().build();
+        }
+        try {
+            String contractFileName = optOrder.get().getContractFile();
+            Resource resource = ContractService.getContractData(contractFileName);
+            String downloadName = contractFileName.contains("_")
+                    ? contractFileName.substring(contractFileName.indexOf("_") + 1)
+                    : contractFileName;
+            return ResponseEntity.ok()
+                    .header("Content-Disposition", "attachment; filename=\"" + downloadName + "\"")
+                    .body(resource);
+        } catch (IOException e) {
+            log.error("Ошибка скачивания контракта: {}", e.getMessage());
+            return ResponseEntity.notFound().build();
+        }
     }
 
     // ========== СКАЧИВАНИЕ ДОКУМЕНТОВ ==========
