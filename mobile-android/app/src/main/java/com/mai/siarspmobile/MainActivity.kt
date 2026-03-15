@@ -56,8 +56,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -393,7 +396,8 @@ class SessionRepository {
     val mobileApi: MobileApi = retrofit.create(MobileApi::class.java)
 
     suspend fun login(username: String, password: String): Boolean = withContext(Dispatchers.IO) {
-        val body = FormBody.Builder().add("username", username).add("password", password).build()
+        val normalizedUsername = username.trim()
+        val body = FormBody.Builder().add("username", normalizedUsername).add("password", password).build()
 
         val request = Request.Builder().url("${BASE_URL}employee/login").post(body).build()
 
@@ -408,7 +412,7 @@ class SessionRepository {
 
             Log.i(
                 "SIARSP",
-                "LOGIN request: user=$username, code=${resp.code}, isRedirect=${resp.isRedirect}, location=$redirectLocation, hasSessionCookie=$hasSessionCookie"
+                "LOGIN request: user='$normalizedUsername', passwordLength=${password.length}, code=${resp.code}, isRedirect=${resp.isRedirect}, location=$redirectLocation, hasSessionCookie=$hasSessionCookie"
             )
 
             if (resp.isRedirect) {
@@ -472,11 +476,12 @@ class MainViewModel : ViewModel() {
 
     fun doLogin() {
         viewModelScope.launch {
-            runCatching { repo.login(login, password) }
+            val usernameForLogin = login.trim()
+            runCatching { repo.login(usernameForLogin, password) }
                 .onSuccess {
                     isLoggedIn = it
                     message = if (it) "Вход выполнен" else "Ошибка логина"
-                    Log.i("SIARSP", "Login result: success=$it")
+                    Log.i("SIARSP", "Login result: success=$it, user='$usernameForLogin'")
                     if (it) {
                         loadProfile()
                     }
@@ -694,13 +699,28 @@ private fun LoginScreen(vm: MainViewModel) {
             Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("SIARSP Mobile", style = MaterialTheme.typography.headlineSmall)
                 Text("Вход в мобильное приложение")
-                OutlinedTextField(vm.login, { vm.login = it }, label = { Text("Логин") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    vm.login,
+                    { vm.login = it },
+                    label = { Text("Логин") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.None,
+                        autoCorrectEnabled = false,
+                        keyboardType = KeyboardType.Ascii
+                    )
+                )
                 OutlinedTextField(
                     vm.password,
                     { vm.password = it },
                     label = { Text("Пароль") },
                     visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.None,
+                        autoCorrectEnabled = false,
+                        keyboardType = KeyboardType.Password
+                    )
                 )
                 Button(onClick = { vm.doLogin() }, modifier = Modifier.fillMaxWidth()) { Text("Войти") }
                 Text(vm.message)
