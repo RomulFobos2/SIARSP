@@ -73,9 +73,10 @@
                         <td th:text="${wh.getType().name() == 'REFRIGERATOR'} ? 'Холодильный' : 'Обычный'"></td>
                         <td th:text="${wh.getAddress() != null ? wh.getAddress() : '—'}"></td>
                         <td>
-                            <span th:if="${wh.getLatitude() != null and wh.getLongitude() != null}"
+                            <span th:if="${wh.getLocationName() != null}" th:text="${wh.getLocationName()}"></span>
+                            <span th:if="${wh.getLocationName() == null and wh.getLatitude() != null and wh.getLongitude() != null}"
                                   th:text="${wh.getLatitude() + ', ' + wh.getLongitude()}"></span>
-                            <span th:if="${wh.getLatitude() == null or wh.getLongitude() == null}">—</span>
+                            <span th:if="${wh.getLocationName() == null and (wh.getLatitude() == null or wh.getLongitude() == null)}">—</span>
                         </td>
                     </tr>
                     </tbody>

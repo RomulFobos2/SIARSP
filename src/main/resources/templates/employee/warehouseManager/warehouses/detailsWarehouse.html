@@ -35,7 +35,8 @@
                 </p>
                 <p th:if="${warehouse.getLatitude() != null and warehouse.getLongitude() != null}" class="text-muted mb-0">
                     <i class="bi bi-pin-map"></i>
-                    Координаты: <span th:text="${warehouse.getLatitude()}"></span>, <span th:text="${warehouse.getLongitude()}"></span>
+                    <span th:if="${warehouse.getLocationName() != null}" th:text="${warehouse.getLocationName()}"></span>
+                    <span th:unless="${warehouse.getLocationName() != null}">Координаты: <span th:text="${warehouse.getLatitude()}"></span>, <span th:text="${warehouse.getLongitude()}"></span></span>
                 </p>
             </div>
             <span class="badge fs-6"

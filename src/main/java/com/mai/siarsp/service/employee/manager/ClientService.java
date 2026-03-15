@@ -61,6 +61,7 @@ public class ClientService {
                               String inputInn, String inputKpp, String inputOgrn,
                               String inputLegalAddress, String inputDeliveryAddress,
                               Double inputDeliveryLatitude, Double inputDeliveryLongitude,
+                              String inputDeliveryLocationName,
                               String inputContactPerson, String inputPhoneNumber, String inputEmail) {
         Optional<Client> clientOptional = clientRepository.findById(id);
 
@@ -86,6 +87,7 @@ public class ClientService {
         client.setDeliveryAddress(inputDeliveryAddress);
         client.setDeliveryLatitude(inputDeliveryLatitude);
         client.setDeliveryLongitude(inputDeliveryLongitude);
+        client.setDeliveryLocationName(inputDeliveryLocationName);
         client.setContactPerson(inputContactPerson);
         client.setPhoneNumber(inputPhoneNumber);
         client.setEmail(inputEmail);

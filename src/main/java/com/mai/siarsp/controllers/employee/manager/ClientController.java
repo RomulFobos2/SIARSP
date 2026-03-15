@@ -60,6 +60,7 @@ public class ClientController {
                             @RequestParam String inputDeliveryAddress,
                             @RequestParam(required = false) Double inputDeliveryLatitude,
                             @RequestParam(required = false) Double inputDeliveryLongitude,
+                            @RequestParam(required = false) String inputDeliveryLocationName,
                             @RequestParam(required = false) String inputContactPerson,
                             @RequestParam(required = false) String inputPhoneNumber,
                             @RequestParam(required = false) String inputEmail,
@@ -72,6 +73,7 @@ public class ClientController {
         client.setLegalAddress(inputLegalAddress);
         client.setDeliveryLatitude(inputDeliveryLatitude);
         client.setDeliveryLongitude(inputDeliveryLongitude);
+        client.setDeliveryLocationName(inputDeliveryLocationName);
         client.setPhoneNumber(inputPhoneNumber);
         client.setEmail(inputEmail);
 
@@ -120,13 +122,14 @@ public class ClientController {
                              @RequestParam String inputDeliveryAddress,
                              @RequestParam(required = false) Double inputDeliveryLatitude,
                              @RequestParam(required = false) Double inputDeliveryLongitude,
+                             @RequestParam(required = false) String inputDeliveryLocationName,
                              @RequestParam(required = false) String inputContactPerson,
                              @RequestParam(required = false) String inputPhoneNumber,
                              @RequestParam(required = false) String inputEmail,
                              RedirectAttributes redirectAttributes) {
         if (!clientService.editClient(id, inputOrganizationType, inputOrganizationName,
                 inputInn, inputKpp, inputOgrn, inputLegalAddress, inputDeliveryAddress,
-                inputDeliveryLatitude, inputDeliveryLongitude,
+                inputDeliveryLatitude, inputDeliveryLongitude, inputDeliveryLocationName,
                 inputContactPerson, inputPhoneNumber, inputEmail)) {
             redirectAttributes.addFlashAttribute("clientError", "Ошибка при сохранении изменений.");
             return "redirect:/employee/manager/clients/editClient/" + id;

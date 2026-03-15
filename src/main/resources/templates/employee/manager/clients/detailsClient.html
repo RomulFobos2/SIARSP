@@ -81,6 +81,11 @@
                            placeholder="Долгота доставки"
                            th:value="${clientDTO.getDeliveryLongitude()}" disabled>
                 </div>
+                <div class="col-12" th:if="${clientDTO.getDeliveryLocationName() != null}">
+                    <input type="text" class="form-control info-display"
+                           placeholder="Название места доставки"
+                           th:value="${clientDTO.getDeliveryLocationName()}" disabled>
+                </div>
             </div>
         </div>
 
