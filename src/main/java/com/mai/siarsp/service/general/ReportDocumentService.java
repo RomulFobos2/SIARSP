@@ -1,8 +1,11 @@
 package com.mai.siarsp.service.general;
 
 import com.mai.siarsp.models.ClientOrder;
+import com.mai.siarsp.models.Delivery;
 import com.mai.siarsp.models.Product;
+import com.mai.siarsp.models.Supply;
 import com.mai.siarsp.repo.ClientOrderRepository;
+import com.mai.siarsp.repo.DeliveryRepository;
 import com.mai.siarsp.repo.ProductRepository;
 import org.apache.poi.xwpf.usermodel.ParagraphAlignment;
 import org.apache.poi.xwpf.usermodel.TableRowAlign;
@@ -19,6 +22,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -29,13 +33,16 @@ public class ReportDocumentService {
 
     private final ClientOrderRepository clientOrderRepository;
     private final ProductRepository productRepository;
+    private final DeliveryRepository deliveryRepository;
     private final ProductExpirationService productExpirationService;
 
     public ReportDocumentService(ClientOrderRepository clientOrderRepository,
                                  ProductRepository productRepository,
+                                 DeliveryRepository deliveryRepository,
                                  ProductExpirationService productExpirationService) {
         this.clientOrderRepository = clientOrderRepository;
         this.productRepository = productRepository;
+        this.deliveryRepository = deliveryRepository;
         this.productExpirationService = productExpirationService;
     }
 
@@ -189,6 +196,67 @@ public class ReportDocumentService {
         } catch (IOException exception) {
             throw new IllegalStateException("Не удалось сформировать отчёт по срокам годности", exception);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public ReportFile generateSuppliesReport(LocalDate startDate, LocalDate endDate) {
+        List<Delivery> deliveries = deliveryRepository.findAllByOrderByDeliveryDateDesc().stream()
+                .filter(delivery -> !delivery.getDeliveryDate().isBefore(startDate)
+                        && !delivery.getDeliveryDate().isAfter(endDate))
+                .toList();
+
+        // Собираем строки: одна строка = одна позиция Supply внутри Delivery
+        List<SupplyRow> rows = new ArrayList<>();
+        for (Delivery delivery : deliveries) {
+            for (Supply supply : delivery.getSupplies()) {
+                rows.add(new SupplyRow(delivery, supply));
+            }
+        }
+
+        BigDecimal totalAmount = rows.stream()
+                .map(row -> row.supply().getTotalPrice())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        try (XWPFDocument document = new XWPFDocument()) {
+            addTitle(document, "Отчёт о поставках");
+            addPeriod(document, startDate, endDate);
+
+            XWPFTable table = document.createTable(Math.max(rows.size() + 2, 2), 11);
+            formatTable(table);
+            setHeader(table, 0,
+                    "№ поставки", "Дата", "Поставщик", "ИНН", "Товар",
+                    "Артикул", "Ед. изм.", "Кол-во", "Цена, руб.", "Сумма, руб.", "Дефицит");
+
+            for (int i = 0; i < rows.size(); i++) {
+                SupplyRow row = rows.get(i);
+                Delivery d = row.delivery();
+                Supply s = row.supply();
+                table.getRow(i + 1).getCell(0).setText(String.valueOf(d.getId()));
+                table.getRow(i + 1).getCell(1).setText(d.getDeliveryDate().format(DATE_FORMATTER));
+                table.getRow(i + 1).getCell(2).setText(d.getSupplier() != null ? d.getSupplier().getName() : "—");
+                table.getRow(i + 1).getCell(3).setText(d.getSupplier() != null ? d.getSupplier().getInn() : "—");
+                table.getRow(i + 1).getCell(4).setText(s.getProduct() != null ? s.getProduct().getName() : "—");
+                table.getRow(i + 1).getCell(5).setText(s.getProduct() != null ? s.getProduct().getArticle() : "—");
+                table.getRow(i + 1).getCell(6).setText(s.getUnit() != null ? s.getUnit() : "—");
+                table.getRow(i + 1).getCell(7).setText(String.valueOf(s.getQuantity()));
+                table.getRow(i + 1).getCell(8).setText(s.getPurchasePrice() != null ? s.getPurchasePrice().toString() : "0");
+                table.getRow(i + 1).getCell(9).setText(s.getTotalPrice().toString());
+                table.getRow(i + 1).getCell(10).setText(s.getDeficitQuantity() > 0
+                        ? s.getDeficitQuantity() + (s.getDeficitReason() != null ? " (" + s.getDeficitReason() + ")" : "")
+                        : "—");
+            }
+
+            int totalRowIndex = rows.size() + 1;
+            table.getRow(totalRowIndex).getCell(0).setText("ИТОГО");
+            table.getRow(totalRowIndex).getCell(9).setText(totalAmount.toString());
+
+            return new ReportFile(buildFileName("supplies", startDate, endDate), toBytes(document));
+        } catch (IOException exception) {
+            throw new IllegalStateException("Не удалось сформировать отчёт о поставках", exception);
+        }
+    }
+
+    private record SupplyRow(Delivery delivery, Supply supply) {
     }
 
     private void addTitle(XWPFDocument document, String title) {
