@@ -4,6 +4,7 @@
 -- В MySQL/InnoDB TRUNCATE может падать на таблицах, участвующих в FK,
 -- даже если дочерние таблицы уже очищены.
 -- Поэтому используем DELETE + сброс AUTO_INCREMENT.
+-- Таблица t_role НЕ очищается: роли создаются RoleRunner-ом.
 
 SET FOREIGN_KEY_CHECKS = 0;
 
@@ -23,7 +24,6 @@ DELETE FROM t_warehouse;
 DELETE FROM t_equipment_type;
 DELETE FROM t_vehicle;
 DELETE FROM t_employee;
-DELETE FROM t_role;
 DELETE FROM t_client;
 DELETE FROM t_supplier;
 
@@ -54,7 +54,6 @@ ALTER TABLE t_warehouse AUTO_INCREMENT = 1;
 ALTER TABLE t_equipment_type AUTO_INCREMENT = 1;
 ALTER TABLE t_vehicle AUTO_INCREMENT = 1;
 ALTER TABLE t_employee AUTO_INCREMENT = 1;
-ALTER TABLE t_role AUTO_INCREMENT = 1;
 ALTER TABLE t_client AUTO_INCREMENT = 1;
 ALTER TABLE t_supplier AUTO_INCREMENT = 1;
 
