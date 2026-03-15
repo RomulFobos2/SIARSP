@@ -72,6 +72,7 @@ public class WarehouseManagerController {
             @RequestParam String address,
             @RequestParam(required = false) Double latitude,
             @RequestParam(required = false) Double longitude,
+            @RequestParam(required = false) String locationName,
             @RequestParam int shelfCount,
             @RequestParam int zonesPerShelf,
             @RequestParam double zoneLength,
@@ -92,6 +93,7 @@ public class WarehouseManagerController {
             Warehouse wh = created.get();
             wh.setLatitude(latitude);
             wh.setLongitude(longitude);
+            wh.setLocationName(locationName);
             warehouseRepository.save(wh);
             log.info("Склад '{}' создан с ID={}", name, wh.getId());
             return "redirect:/employee/warehouseManager/warehouses/detailsWarehouse/" + wh.getId();
@@ -178,6 +180,7 @@ public class WarehouseManagerController {
                                         @RequestParam String address,
                                         @RequestParam(required = false) Double latitude,
                                         @RequestParam(required = false) Double longitude,
+                                        @RequestParam(required = false) String locationName,
                                         RedirectAttributes redirectAttributes) {
         if (!creationService.updateWarehouseAddress(id, address)) {
             redirectAttributes.addFlashAttribute("warehouseError", "Ошибка при обновлении склада.");
@@ -188,6 +191,7 @@ public class WarehouseManagerController {
             Warehouse wh = opt.get();
             wh.setLatitude(latitude);
             wh.setLongitude(longitude);
+            wh.setLocationName(locationName);
             warehouseRepository.save(wh);
         }
         redirectAttributes.addFlashAttribute("successMessage", "Склад успешно обновлён.");

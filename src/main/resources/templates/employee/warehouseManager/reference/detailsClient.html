@@ -66,7 +66,7 @@
                         <div class="col-md-6" th:if="${clientDTO.getDeliveryLatitude() != null and clientDTO.getDeliveryLongitude() != null}">
                             <input type="text" class="form-control info-display"
                                    placeholder="Координаты доставки"
-                                   th:value="${clientDTO.getDeliveryLatitude() + ', ' + clientDTO.getDeliveryLongitude()}" disabled>
+                                   th:value="${clientDTO.getDeliveryLocationName() != null ? clientDTO.getDeliveryLocationName() : clientDTO.getDeliveryLatitude() + ', ' + clientDTO.getDeliveryLongitude()}" disabled>
                         </div>
                     </div>
                 </div>
