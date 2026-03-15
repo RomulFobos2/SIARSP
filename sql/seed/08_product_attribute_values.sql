@@ -1,3 +1,6 @@
+-- Удаляем старые значения атрибутов перед вставкой
+DELETE FROM t_product_attribute_value;
+
 INSERT INTO t_product_attribute_value (value, product_id, attribute_id)
 SELECT x.val, p.id, a.id
 FROM (
