@@ -23,4 +23,6 @@ public interface WriteOffActRepository extends JpaRepository<WriteOffAct, Long> 
     boolean existsByProductIdAndReasonAndStatus(Long productId, WriteOffReason reason, WriteOffActStatus status);
 
     long countByProductId(Long productId);
+
+    List<WriteOffAct> findByProductIdOrderByActDateDesc(Long productId);
 }
