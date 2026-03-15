@@ -10,9 +10,15 @@ import com.mai.siarsp.repo.ProductRepository;
 import com.mai.siarsp.repo.RequestForDeliveryRepository;
 import com.mai.siarsp.service.employee.ClientOrderService;
 import com.mai.siarsp.service.employee.DeliveryTaskService;
+import com.mai.siarsp.service.general.AcceptanceActDocumentService;
 import com.mai.siarsp.service.general.ContractService;
+import com.mai.siarsp.service.general.ReportDocumentService;
+import com.mai.siarsp.service.general.TTNDocumentService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -229,6 +235,7 @@ public class ClientOrderController {
         model.addAttribute("ttn", optOrder.get().getDeliveryTask().getTtn());
         model.addAttribute("canEdit", false);
         model.addAttribute("backUrl", "/employee/manager/clientOrders/detailsClientOrder/" + orderId);
+        model.addAttribute("downloadUrl", "/employee/manager/clientOrders/downloadTTN/" + orderId);
         return "employee/warehouseManager/documents/detailsTTN";
     }
 
@@ -247,7 +254,46 @@ public class ClientOrderController {
         model.addAttribute("act", optAct.get());
         model.addAttribute("canEdit", false);
         model.addAttribute("backUrl", "/employee/manager/clientOrders/detailsClientOrder/" + orderId);
+        model.addAttribute("downloadUrl", "/employee/manager/clientOrders/downloadAcceptanceAct/" + orderId);
         return "employee/warehouseManager/documents/detailsAcceptanceAct";
+    }
+
+    // ========== СКАЧИВАНИЕ ДОКУМЕНТОВ ==========
+
+    @Transactional(readOnly = true)
+    @GetMapping("/downloadTTN/{orderId}")
+    public ResponseEntity<byte[]> downloadTTN(@PathVariable Long orderId) throws IOException {
+        Optional<ClientOrder> optOrder = clientOrderService.getOrderById(orderId);
+        if (optOrder.isEmpty() || optOrder.get().getDeliveryTask() == null
+                || optOrder.get().getDeliveryTask().getTtn() == null) {
+            return ResponseEntity.notFound().build();
+        }
+        ReportDocumentService.ReportFile file = TTNDocumentService.generateDocument(
+                optOrder.get().getDeliveryTask().getTtn());
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
+        headers.setContentDisposition(ContentDisposition.attachment().filename(file.fileName()).build());
+        return ResponseEntity.ok().headers(headers).body(file.content());
+    }
+
+    @Transactional(readOnly = true)
+    @GetMapping("/downloadAcceptanceAct/{orderId}")
+    public ResponseEntity<byte[]> downloadAcceptanceAct(@PathVariable Long orderId) throws IOException {
+        Optional<ClientOrder> optOrder = clientOrderService.getOrderById(orderId);
+        if (optOrder.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        Optional<AcceptanceAct> optAct = deliveryTaskService.getAcceptanceActByOrder(orderId);
+        if (optAct.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        ReportDocumentService.ReportFile file = AcceptanceActDocumentService.generateDocument(optAct.get());
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
+        headers.setContentDisposition(ContentDisposition.attachment().filename(file.fileName()).build());
+        return ResponseEntity.ok().headers(headers).body(file.content());
     }
 
     /**
