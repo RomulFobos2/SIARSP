@@ -59,10 +59,11 @@
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
                     <button type="button" class="btn btn-outline-primary w-100"
-                            onclick="openMapPicker(document.getElementById('latitude'), document.getElementById('longitude'))">
+                            onclick="openMapPicker(document.getElementById('latitude'), document.getElementById('longitude'), document.getElementById('locationName'))">
                         <i class="bi bi-geo-alt"></i> Карта
                     </button>
                 </div>
+                <input type="hidden" id="locationName" name="locationName">
             </div>
 
             <hr class="my-4">

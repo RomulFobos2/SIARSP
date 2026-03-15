@@ -16,6 +16,7 @@ public class ClientDTO {
     private String deliveryAddress;
     private Double deliveryLatitude;
     private Double deliveryLongitude;
+    private String deliveryLocationName;
     private String contactPerson;
     private String phoneNumber;
     private String email;
