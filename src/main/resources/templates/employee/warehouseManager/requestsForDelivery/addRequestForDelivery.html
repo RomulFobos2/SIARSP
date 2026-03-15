@@ -125,6 +125,8 @@
                 </div>
             </template>
 
+            <div id="capacityAlert" class="mt-3" style="display:none;"></div>
+
             <div class="mt-4">
                 <button type="submit" class="btn btn-primary">Создать заявку</button>
             </div>
@@ -136,6 +138,8 @@
 
 <script th:inline="javascript">
     var deficitData = /*[[${deficitData}]]*/ [];
+    var warehouseCapacityData = /*[[${warehouseCapacityData}]]*/ {};
+    var productVolumeData = /*[[${productVolumeData}]]*/ {};
 </script>
 <script>
     function initSelect2(selectElement) {
@@ -224,6 +228,7 @@
 
         // Обновить доступные склады на основе типов хранения выбранных товаров
         updateWarehouseOptions();
+        checkWarehouseCapacity();
     }
 
     /**
@@ -304,8 +309,65 @@
         }
     }
 
+    function checkWarehouseCapacity() {
+        var alertDiv = document.getElementById('capacityAlert');
+        alertDiv.style.display = 'none';
+        alertDiv.innerHTML = '';
+
+        var warehouseId = document.getElementById('warehouseId').value;
+        if (!warehouseId || !warehouseCapacityData[warehouseId]) return;
+
+        var capacityInfo = warehouseCapacityData[warehouseId];
+        var totalVolume = capacityInfo[0];
+        var usedVolume = capacityInfo[1];
+
+        if (totalVolume <= 0) return;
+
+        var rows = document.querySelectorAll('.product-row');
+        var newVolume = 0;
+        rows.forEach(function(row) {
+            var select = row.querySelector('select.product-select');
+            var productId = $(select).val();
+            var qtyInput = row.querySelector('input[name="quantities"]');
+            var qty = parseInt(qtyInput ? qtyInput.value : 0) || 0;
+            if (productId && productVolumeData[productId]) {
+                newVolume += productVolumeData[productId] * qty;
+            }
+        });
+
+        if (newVolume === 0) return;
+
+        var totalAfter = usedVolume + newVolume;
+        var percentAfter = (totalAfter / totalVolume) * 100;
+
+        if (totalAfter > totalVolume) {
+            alertDiv.innerHTML = '<div class="alert alert-danger mb-0">' +
+                '<i class="bi bi-exclamation-triangle-fill me-2"></i>' +
+                '<strong>Внимание!</strong> На складе не хватит места для товаров из этой заявки. ' +
+                'Заполнение после поставки: ' + percentAfter.toFixed(1) + '% ' +
+                '(занято ' + usedVolume.toFixed(4) + ' м³, новый товар ' + newVolume.toFixed(4) + ' м³, ' +
+                'ёмкость ' + totalVolume.toFixed(4) + ' м³).</div>';
+            alertDiv.style.display = 'block';
+        } else if (percentAfter > 80) {
+            alertDiv.innerHTML = '<div class="alert alert-warning mb-0">' +
+                '<i class="bi bi-exclamation-circle-fill me-2"></i>' +
+                '<strong>Предупреждение:</strong> После поставки склад будет заполнен на ' + percentAfter.toFixed(1) + '%. ' +
+                '(занято ' + usedVolume.toFixed(4) + ' м³, новый товар ' + newVolume.toFixed(4) + ' м³, ' +
+                'ёмкость ' + totalVolume.toFixed(4) + ' м³).</div>';
+            alertDiv.style.display = 'block';
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         addProductRow();
+
+        document.getElementById('warehouseId').addEventListener('change', checkWarehouseCapacity);
+
+        document.getElementById('productRows').addEventListener('input', function(e) {
+            if (e.target && e.target.name === 'quantities') {
+                checkWarehouseCapacity();
+            }
+        });
     });
 </script>
 </body>

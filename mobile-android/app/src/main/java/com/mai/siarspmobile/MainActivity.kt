@@ -60,6 +60,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
@@ -983,17 +984,30 @@ private fun TaskScreen(vm: MainViewModel, paddingValues: PaddingValues) {
                         if (task.status == "IN_TRANSIT" && task.routePoints.isNotEmpty()) {
                             Text("Маршрутные точки:", fontWeight = FontWeight.Medium)
                             task.routePoints.sortedBy { it.orderIndex }.forEach { point ->
-                                Row(
+                                Card(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (point.reached) Color(0xFFE8F5E9)
+                                        else MaterialTheme.colorScheme.surfaceVariant
+                                    )
                                 ) {
-                                    Text("${point.orderIndex + 1}. ${point.address ?: "—"}")
-                                    if (point.reached) {
-                                        Text("Пройдена", color = Color(0xFF2E7D32))
-                                    } else {
-                                        Button(onClick = { vm.markRoutePoint(task.id, point.id) }) {
-                                            Text("Отметить")
+                                    Column(modifier = Modifier.padding(8.dp)) {
+                                        Text(
+                                            "${point.orderIndex + 1}. ${point.address ?: "—"}",
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                        if (point.reached) {
+                                            Text(
+                                                "Пройдена" + if (point.actualArrivalTime != null)
+                                                    " (${formatDateTime(point.actualArrivalTime)})" else "",
+                                                color = Color(0xFF2E7D32),
+                                                fontSize = 13.sp
+                                            )
+                                        } else {
+                                            Button(
+                                                onClick = { vm.markRoutePoint(task.id, point.id) },
+                                                modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+                                            ) { Text("Отметить прохождение") }
                                         }
                                     }
                                 }

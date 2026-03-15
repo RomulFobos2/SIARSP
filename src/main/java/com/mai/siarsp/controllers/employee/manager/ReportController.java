@@ -60,6 +60,13 @@ public class ReportController {
                 resolveEndDate(startDate, endDate)));
     }
 
+    @GetMapping("/download/supplies")
+    public ResponseEntity<byte[]> downloadSuppliesReport(@RequestParam(required = false) LocalDate startDate,
+                                                          @RequestParam(required = false) LocalDate endDate) {
+        return buildResponse(reportDocumentService.generateSuppliesReport(resolveStartDate(startDate, endDate),
+                resolveEndDate(startDate, endDate)));
+    }
+
     private ResponseEntity<byte[]> buildResponse(ReportDocumentService.ReportFile reportFile) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
