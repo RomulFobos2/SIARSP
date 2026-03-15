@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Пользователи | СИАРСП</title>
+    <title>Роли | СИАРСП</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="/css/bootstrap.min.css" rel="stylesheet">
@@ -20,9 +20,9 @@
                class="btn btn-secondary btn-profile">
                 ← Главная
             </a>
-            <a th:href="'/employee/admin/employees/addEmployee'"
+            <a th:href="'/employee/admin/roles/addRole'"
                class="btn btn-success btn-profile">
-                + Добавить пользователя
+                + Добавить роль
             </a>
         </div>
     </div>
@@ -30,37 +30,32 @@
     <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
     <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
-    <!-- Users Table -->
+    <!-- Roles Table -->
     <div class="table-container">
-        <h2 class="h3 mb-4 fw-bold">Список пользователей</h2>
+        <h2 class="h3 mb-4 fw-bold">Список ролей</h2>
 
         <div class="table-responsive">
-            <table class="table table-modern" id="userTable">
+            <table class="table table-modern">
                 <thead>
                 <tr>
                     <th>№</th>
-                    <th>ФИО</th>
-                    <th>Роль</th>
-                    <th>Специализация</th>
-                    <th>Логин</th>
-                    <th>Дата регистрации</th>
-                    <th>Статус</th>
+                    <th>Техническое имя</th>
+                    <th>Описание</th>
+                    <th>Действия</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="employee, index : ${allEmployees}">
+                <tr th:each="role, index : ${allRoles}">
                     <td th:text="${index.index+1}"></td>
+                    <td th:text="${role.getName()}"></td>
+                    <td th:text="${role.getDescription()}"></td>
                     <td>
-                        <a th:text="${employee.getFullName()}"
-                           th:href="'/employee/admin/employees/detailsEmployee/' + ${employee.getId()}"></a>
-                    </td>
-                    <td th:text="${employee.getRoleDescription()}"></td>
-                    <td th:text="${employee.getSpecialization()}"></td>
-                    <td th:text="${employee.getUsername()}"></td>
-                    <td th:text="${#temporals.format(employee.getDateOfRegistration(), 'dd.MM.yyyy')}"></td>
-                    <td>
-                        <span th:if="${employee.isActive()}" class="badge bg-success">Активен</span>
-                        <span th:unless="${employee.isActive()}" class="badge bg-danger">Деактивирован</span>
+                        <a th:href="'/employee/admin/roles/editRole/' + ${role.getId()}"
+                           class="btn btn-sm btn-outline-primary me-1">Редактировать</a>
+                        <a th:href="'/employee/admin/roles/deleteRole/' + ${role.getId()}"
+                           class="btn btn-sm btn-outline-danger"
+                           th:data-rolename="${role.getName()}"
+                           onclick="return confirm('Вы точно хотите удалить роль ' + this.getAttribute('data-rolename') + '?')">Удалить</a>
                     </td>
                 </tr>
                 </tbody>

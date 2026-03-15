@@ -94,13 +94,13 @@
 
             <div class="row g-3">
                 <div th:if="${employeeDTO.getHiringOrderFile() != null and !employeeDTO.getHiringOrderFile().isEmpty()}" class="col-md-6">
-                    <a th:href="'/employee/admin/employees/downloadHiringOrder/' + ${employeeDTO.getId()}"
+                    <a th:href="'/employee/manager/employees/downloadHiringOrder/' + ${employeeDTO.getId()}"
                        class="btn btn-outline-primary w-100">
                         <i class="bi bi-file-earmark-pdf"></i> Приказ о приёме на работу
                     </a>
                 </div>
                 <div th:if="${employeeDTO.getDismissalOrderFile() != null and !employeeDTO.getDismissalOrderFile().isEmpty()}" class="col-md-6">
-                    <a th:href="'/employee/admin/employees/downloadDismissalOrder/' + ${employeeDTO.getId()}"
+                    <a th:href="'/employee/manager/employees/downloadDismissalOrder/' + ${employeeDTO.getId()}"
                        class="btn btn-outline-danger w-100">
                         <i class="bi bi-file-earmark-pdf"></i> Приказ об увольнении
                     </a>
@@ -110,7 +110,7 @@
 
         <!-- Action Buttons -->
         <div class="action-buttons mb-4">
-            <button th:onclick="'window.location.href=\'/employee/admin/employees/editEmployee/' + ${employeeDTO.getId()} + '\';'"
+            <button th:onclick="'window.location.href=\'/employee/manager/employees/editEmployee/' + ${employeeDTO.getId()} + '\';'"
                     class="btn btn-primary btn-profile">
                 Редактировать
             </button>
@@ -143,7 +143,7 @@
         </div>
 
         <div class="link-section">
-            <a th:href="'/employee/admin/employees/allEmployees'">← К списку пользователей</a>
+            <a th:href="'/employee/manager/employees/allEmployees'">← К списку пользователей</a>
         </div>
 
             </div>
@@ -189,7 +189,7 @@
     </div>
 </div>
 
-<!-- Модальное окно для деактивации с загрузкой приказа об увольнении -->
+<!-- Модальное окно для деактивации -->
 <div class="modal fade" id="deactivateModal" tabindex="-1"
      aria-labelledby="deactivateModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -203,7 +203,7 @@
                     <strong th:text="${employeeDTO.getUsername()}"></strong>.
                     При необходимости прикрепите приказ об увольнении.</p>
                 <form id="deactivateForm"
-                      th:action="'/employee/admin/employees/deactivateEmployee/' + ${employeeDTO.getId()}"
+                      th:action="'/employee/manager/employees/deactivateEmployee/' + ${employeeDTO.getId()}"
                       method="post" enctype="multipart/form-data">
                     <div class="mb-3">
                         <label for="dismissalOrderFile" class="form-label fw-semibold">Приказ об увольнении (PDF)</label>
@@ -256,7 +256,7 @@
 
             const userId = (/*[[${employeeDTO.getId()}]]*/);
 
-            fetch(`/employee/admin/employees/resetEmployeePassword/${userId}`, {
+            fetch(`/employee/manager/employees/resetEmployeePassword/${userId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -286,7 +286,7 @@
         const userId = button.getAttribute('data-userid');
 
         if (confirm("Активировать аккаунт пользователя " + username + "?")) {
-            window.location.href = '/employee/admin/employees/activateEmployee/' + userId;
+            window.location.href = '/employee/manager/employees/activateEmployee/' + userId;
         }
     }
 
@@ -295,7 +295,7 @@
         const userId = button.getAttribute('data-userid');
 
         if (confirm("Вы точно хотите УДАЛИТЬ пользователя " + username + "? Это действие необратимо!")) {
-            window.location.href = '/employee/admin/employees/deleteEmployee/' + userId;
+            window.location.href = '/employee/manager/employees/deleteEmployee/' + userId;
         }
     }
 </script>

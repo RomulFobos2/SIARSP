@@ -1,4 +1,4 @@
-package com.mai.siarsp.controllers.employee.admin;
+package com.mai.siarsp.controllers.employee.manager;
 
 import com.mai.siarsp.dto.EmployeeDTO;
 import com.mai.siarsp.mapper.EmployeeMapper;
@@ -23,7 +23,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
-@Controller
+@Controller("managerEmployeeController")
 @Slf4j
 public class EmployeeController {
 
@@ -33,7 +33,7 @@ public class EmployeeController {
         this.employeeService = employeeService;
     }
 
-    @GetMapping("/employee/admin/employees/check-username")
+    @GetMapping("/employee/manager/employees/check-username")
     public ResponseEntity<Map<String, Boolean>> checkUsername(@RequestParam String username) {
         log.info("Проверка имени пользователя {}.", username);
         boolean exists = employeeService.checkUserName(username);
@@ -42,21 +42,21 @@ public class EmployeeController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/employee/admin/employees/allEmployees")
+    @GetMapping("/employee/manager/employees/allEmployees")
     public String allEmployees(Model model) {
         model.addAttribute("allEmployees", employeeService.getAllEmployees().stream()
                 .sorted(Comparator.comparing(EmployeeDTO::getRoleDescription))
                 .toList());
-        return "/employee/admin/employees/allEmployees";
+        return "employee/manager/employees/allEmployees";
     }
 
-    @GetMapping("/employee/admin/employees/addEmployee")
+    @GetMapping("/employee/manager/employees/addEmployee")
     public String addEmployee(Model model) {
         model.addAttribute("allRoles", employeeService.getRoleRepository().findByNameStartingWith("ROLE_EMPLOYEE"));
-        return "/employee/admin/employees/addEmployee";
+        return "employee/manager/employees/addEmployee";
     }
 
-    @PostMapping("/employee/admin/employees/addEmployee")
+    @PostMapping("/employee/manager/employees/addEmployee")
     public String addEmployee(@RequestParam String inputLastName, @RequestParam String inputFirstName,
                               @RequestParam String inputPatronymicName, @RequestParam String inputUsername,
                               @RequestParam String inputPassword,
@@ -71,37 +71,37 @@ public class EmployeeController {
                 inputSalary, hiringOrderFile)) {
             model.addAttribute("usernameError", "Ошибка при сохранении.");
             model.addAttribute("allRoles", employeeService.getRoleRepository().findByNameStartingWith("ROLE_EMPLOYEE"));
-            return "employee/admin/employees/addEmployee";
+            return "employee/manager/employees/addEmployee";
         } else {
-            return "redirect:/employee/admin/employees/detailsEmployee/" + employee.getId();
+            return "redirect:/employee/manager/employees/detailsEmployee/" + employee.getId();
         }
     }
 
-    @GetMapping("/employee/admin/employees/detailsEmployee/{id}")
+    @GetMapping("/employee/manager/employees/detailsEmployee/{id}")
     public String detailsEmployee(@PathVariable(value = "id") long id, Model model) {
         if (!employeeService.getEmployeeRepository().existsById(id)) {
-            return "redirect:/employee/admin/employees/allEmployees";
+            return "redirect:/employee/manager/employees/allEmployees";
         }
         Employee employee = employeeService.getEmployeeRepository().findById(id).get();
         EmployeeDTO employeeDTO = EmployeeMapper.INSTANCE.toDTO(employee);
 
         model.addAttribute("employeeDTO", employeeDTO);
-        return "employee/admin/employees/detailsEmployee";
+        return "employee/manager/employees/detailsEmployee";
     }
 
-    @GetMapping("/employee/admin/employees/editEmployee/{id}")
+    @GetMapping("/employee/manager/employees/editEmployee/{id}")
     public String editEmployee(@PathVariable(value = "id") long id, Model model) {
         if (!employeeService.getEmployeeRepository().existsById(id)) {
-            return "redirect:/employee/admin/employees/allEmployees";
+            return "redirect:/employee/manager/employees/allEmployees";
         }
         Employee employee = employeeService.getEmployeeRepository().findById(id).get();
         EmployeeDTO employeeDTO = EmployeeMapper.INSTANCE.toDTO(employee);
         model.addAttribute("allRoles", employeeService.getRoleRepository().findByNameStartingWith("ROLE_EMPLOYEE"));
         model.addAttribute("employeeDTO", employeeDTO);
-        return "employee/admin/employees/editEmployee";
+        return "employee/manager/employees/editEmployee";
     }
 
-    @PostMapping("/employee/admin/employees/editEmployee/{id}")
+    @PostMapping("/employee/manager/employees/editEmployee/{id}")
     public String editEmployee(@PathVariable(value = "id") long id,
                                @RequestParam String inputLastName, @RequestParam String inputFirstName,
                                @RequestParam String inputPatronymicName, @RequestParam String inputUsername,
@@ -113,13 +113,13 @@ public class EmployeeController {
         if (!employeeService.editEmployee(id, inputLastName, inputFirstName, inputPatronymicName, inputUsername,
                 inputRole, inputSpecialization, inputQualification, inputSalary)) {
             redirectAttributes.addFlashAttribute("usernameError", "Ошибка при сохранении изменений.");
-            return "redirect:/employee/admin/employees/editEmployee/" + id;
+            return "redirect:/employee/manager/employees/editEmployee/" + id;
         } else {
-            return "redirect:/employee/admin/employees/detailsEmployee/" + id;
+            return "redirect:/employee/manager/employees/detailsEmployee/" + id;
         }
     }
 
-    @PostMapping("/employee/admin/employees/resetEmployeePassword/{id}")
+    @PostMapping("/employee/manager/employees/resetEmployeePassword/{id}")
     public ResponseEntity<?> resetEmployeePassword(@PathVariable long id, @RequestBody Map<String, String> payload) {
         String newPassword = payload.get("newPassword");
         if (employeeService.resetEmployeePassword(id, newPassword)) {
@@ -129,7 +129,7 @@ public class EmployeeController {
         }
     }
 
-    @PostMapping("/employee/admin/employees/deactivateEmployee/{id}")
+    @PostMapping("/employee/manager/employees/deactivateEmployee/{id}")
     public String deactivateEmployee(@PathVariable long id,
                                      @RequestParam(required = false) MultipartFile dismissalOrderFile,
                                      RedirectAttributes redirectAttributes) {
@@ -138,33 +138,33 @@ public class EmployeeController {
         } else {
             redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при деактивации аккаунта.");
         }
-        return "redirect:/employee/admin/employees/detailsEmployee/" + id;
+        return "redirect:/employee/manager/employees/detailsEmployee/" + id;
     }
 
-    @GetMapping("/employee/admin/employees/activateEmployee/{id}")
+    @GetMapping("/employee/manager/employees/activateEmployee/{id}")
     public String activateEmployee(@PathVariable long id, RedirectAttributes redirectAttributes) {
         if (employeeService.accountEmployeeUnlocked(id)) {
             redirectAttributes.addFlashAttribute("successMessage", "Аккаунт сотрудника активирован.");
         } else {
             redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при активации аккаунта.");
         }
-        return "redirect:/employee/admin/employees/detailsEmployee/" + id;
+        return "redirect:/employee/manager/employees/detailsEmployee/" + id;
     }
 
-    @GetMapping("/employee/admin/employees/deleteEmployee/{id}")
+    @GetMapping("/employee/manager/employees/deleteEmployee/{id}")
     public String deleteEmployee(@PathVariable(value = "id") long id,
                                  Model model, RedirectAttributes redirectAttributes) {
         if (!employeeService.deleteEmployee(id)) {
             redirectAttributes.addFlashAttribute("deleteError", "Ошибка при удалении.");
-            return "redirect:/employee/admin/employees/detailsEmployee/" + id;
+            return "redirect:/employee/manager/employees/detailsEmployee/" + id;
         } else {
-            return "redirect:/employee/admin/employees/allEmployees";
+            return "redirect:/employee/manager/employees/allEmployees";
         }
     }
 
     // ========== СКАЧИВАНИЕ ПРИКАЗОВ ==========
 
-    @GetMapping("/employee/admin/employees/downloadHiringOrder/{id}")
+    @GetMapping("/employee/manager/employees/downloadHiringOrder/{id}")
     public ResponseEntity<Resource> downloadHiringOrder(@PathVariable long id) throws IOException {
         if (!employeeService.getEmployeeRepository().existsById(id)) {
             return ResponseEntity.notFound().build();
@@ -183,7 +183,7 @@ public class EmployeeController {
         return ResponseEntity.ok().headers(headers).body(resource);
     }
 
-    @GetMapping("/employee/admin/employees/downloadDismissalOrder/{id}")
+    @GetMapping("/employee/manager/employees/downloadDismissalOrder/{id}")
     public ResponseEntity<Resource> downloadDismissalOrder(@PathVariable long id) throws IOException {
         if (!employeeService.getEmployeeRepository().existsById(id)) {
             return ResponseEntity.notFound().build();
@@ -201,5 +201,4 @@ public class EmployeeController {
         headers.set(HttpHeaders.CONTENT_TYPE, "application/pdf");
         return ResponseEntity.ok().headers(headers).body(resource);
     }
-
 }
