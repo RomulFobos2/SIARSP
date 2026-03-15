@@ -1,3 +1,24 @@
+-- Обновляем «Срок годности» с количества дней на формат даты (для существующей БД)
+UPDATE t_product_attribute_value pav
+JOIN t_product p ON pav.product_id = p.id
+JOIN t_product_attribute a ON pav.attribute_id = a.id
+SET pav.value = CASE p.article
+    WHEN 'МЛК-001' THEN '2027-01-15'
+    WHEN 'МЛК-002' THEN '2026-03-25'
+    WHEN 'СЫР-001' THEN '2026-09-10'
+    WHEN 'СЫР-002' THEN '2026-05-14'
+    WHEN 'ГВД-001' THEN '2029-03-01'
+    WHEN 'ГВД-002' THEN '2026-03-22'
+    WHEN 'КРЦ-001' THEN '2029-02-20'
+    WHEN 'КРЦ-002' THEN '2026-03-20'
+    WHEN 'ЯБЛ-001' THEN '2027-03-10'
+    WHEN 'ЯБЛ-002' THEN '2026-04-14'
+    WHEN 'ОГУ-001' THEN '2028-03-15'
+    WHEN 'ОГУ-002' THEN '2026-03-22'
+END
+WHERE a.name = 'Срок годности';
+
+-- Полная вставка значений атрибутов (для чистой БД)
 INSERT INTO t_product_attribute_value (value, product_id, attribute_id)
 SELECT x.val, p.id, a.id
 FROM (
