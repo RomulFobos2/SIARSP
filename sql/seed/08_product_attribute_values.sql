@@ -1,89 +1,101 @@
 INSERT INTO t_product_attribute_value (value, product_id, attribute_id)
 SELECT x.val, p.id, a.id
 FROM (
-    SELECT 'МЛК-REG' article, 'Длина упаковки' attr, '10' val UNION ALL
-    SELECT 'МЛК-REG', 'Ширина упаковки', '10' UNION ALL
-    SELECT 'МЛК-REG', 'Высота упаковки', '23' UNION ALL
-    SELECT 'МЛК-REG', 'Срок годности', '10' UNION ALL
-    SELECT 'МЛК-REG', 'Жирность молока МЛК-REG', '3.2' UNION ALL
-    SELECT 'МЛК-REG', 'Объем молока МЛК-REG', '1.0' UNION ALL
+    -- === Молоко сухое цельное 500г (МЛК-001, REGULAR) ===
+    SELECT 'МЛК-001' article, 'Длина упаковки' attr, '15' val UNION ALL
+    SELECT 'МЛК-001', 'Ширина упаковки', '10' UNION ALL
+    SELECT 'МЛК-001', 'Высота упаковки', '20' UNION ALL
+    SELECT 'МЛК-001', 'Срок годности', '240' UNION ALL
+    SELECT 'МЛК-001', 'Жирность', '25' UNION ALL
+    SELECT 'МЛК-001', 'Объём', '0.5' UNION ALL
 
-    SELECT 'МЛК-REF', 'Длина упаковки', '10' UNION ALL
-    SELECT 'МЛК-REF', 'Ширина упаковки', '10' UNION ALL
-    SELECT 'МЛК-REF', 'Высота упаковки', '23' UNION ALL
-    SELECT 'МЛК-REF', 'Срок годности', '14' UNION ALL
-    SELECT 'МЛК-REF', 'Жирность молока МЛК-REF', '3.2' UNION ALL
-    SELECT 'МЛК-REF', 'Объем молока МЛК-REF', '1.0' UNION ALL
+    -- === Молоко пастеризованное 3.2% 1л (МЛК-002, REFRIGERATOR) ===
+    SELECT 'МЛК-002', 'Длина упаковки', '10' UNION ALL
+    SELECT 'МЛК-002', 'Ширина упаковки', '10' UNION ALL
+    SELECT 'МЛК-002', 'Высота упаковки', '23' UNION ALL
+    SELECT 'МЛК-002', 'Срок годности', '10' UNION ALL
+    SELECT 'МЛК-002', 'Жирность', '3.2' UNION ALL
+    SELECT 'МЛК-002', 'Объём', '1.0' UNION ALL
 
-    SELECT 'СЫР-REG', 'Длина упаковки', '18' UNION ALL
-    SELECT 'СЫР-REG', 'Ширина упаковки', '12' UNION ALL
-    SELECT 'СЫР-REG', 'Высота упаковки', '8' UNION ALL
-    SELECT 'СЫР-REG', 'Срок годности', '60' UNION ALL
-    SELECT 'СЫР-REG', 'Выдержка сыра СЫР-REG', '3' UNION ALL
-    SELECT 'СЫР-REG', 'Тип сыра СЫР-REG', 'Полутвердый' UNION ALL
+    -- === Сыр плавленый «Дружба» 200г (СЫР-001, REGULAR) ===
+    SELECT 'СЫР-001', 'Длина упаковки', '10' UNION ALL
+    SELECT 'СЫР-001', 'Ширина упаковки', '10' UNION ALL
+    SELECT 'СЫР-001', 'Высота упаковки', '4' UNION ALL
+    SELECT 'СЫР-001', 'Срок годности', '180' UNION ALL
+    SELECT 'СЫР-001', 'Массовая доля жира', '45' UNION ALL
+    SELECT 'СЫР-001', 'Срок созревания', '0' UNION ALL
 
-    SELECT 'СЫР-REF', 'Длина упаковки', '18' UNION ALL
-    SELECT 'СЫР-REF', 'Ширина упаковки', '12' UNION ALL
-    SELECT 'СЫР-REF', 'Высота упаковки', '8' UNION ALL
-    SELECT 'СЫР-REF', 'Срок годности', '90' UNION ALL
-    SELECT 'СЫР-REF', 'Выдержка сыра СЫР-REF', '6' UNION ALL
-    SELECT 'СЫР-REF', 'Тип сыра СЫР-REF', 'Твердый' UNION ALL
+    -- === Сыр полутвёрдый «Российский» 300г (СЫР-002, REFRIGERATOR) ===
+    SELECT 'СЫР-002', 'Длина упаковки', '18' UNION ALL
+    SELECT 'СЫР-002', 'Ширина упаковки', '12' UNION ALL
+    SELECT 'СЫР-002', 'Высота упаковки', '8' UNION ALL
+    SELECT 'СЫР-002', 'Срок годности', '60' UNION ALL
+    SELECT 'СЫР-002', 'Массовая доля жира', '50' UNION ALL
+    SELECT 'СЫР-002', 'Срок созревания', '3' UNION ALL
 
-    SELECT 'ГВД-REG', 'Длина упаковки', '28' UNION ALL
-    SELECT 'ГВД-REG', 'Ширина упаковки', '20' UNION ALL
-    SELECT 'ГВД-REG', 'Высота упаковки', '10' UNION ALL
-    SELECT 'ГВД-REG', 'Срок годности', '7' UNION ALL
-    SELECT 'ГВД-REG', 'Категория говядины ГВД-REG', 'Первая' UNION ALL
-    SELECT 'ГВД-REG', 'Вес куска говядины ГВД-REG', '1.5' UNION ALL
+    -- === Говядина тушёная ГОСТ 338г (ГВД-001, REGULAR) ===
+    SELECT 'ГВД-001', 'Длина упаковки', '10' UNION ALL
+    SELECT 'ГВД-001', 'Ширина упаковки', '10' UNION ALL
+    SELECT 'ГВД-001', 'Высота упаковки', '11' UNION ALL
+    SELECT 'ГВД-001', 'Срок годности', '1095' UNION ALL
+    SELECT 'ГВД-001', 'Сорт мяса', 'Высший' UNION ALL
+    SELECT 'ГВД-001', 'Масса нетто', '0.338' UNION ALL
 
-    SELECT 'ГВД-REF', 'Длина упаковки', '28' UNION ALL
-    SELECT 'ГВД-REF', 'Ширина упаковки', '20' UNION ALL
-    SELECT 'ГВД-REF', 'Высота упаковки', '10' UNION ALL
-    SELECT 'ГВД-REF', 'Срок годности', '12' UNION ALL
-    SELECT 'ГВД-REF', 'Категория говядины ГВД-REF', 'Высшая' UNION ALL
-    SELECT 'ГВД-REF', 'Вес куска говядины ГВД-REF', '1.8' UNION ALL
+    -- === Говядина охлаждённая вырезка 1кг (ГВД-002, REFRIGERATOR) ===
+    SELECT 'ГВД-002', 'Длина упаковки', '28' UNION ALL
+    SELECT 'ГВД-002', 'Ширина упаковки', '20' UNION ALL
+    SELECT 'ГВД-002', 'Высота упаковки', '8' UNION ALL
+    SELECT 'ГВД-002', 'Срок годности', '7' UNION ALL
+    SELECT 'ГВД-002', 'Сорт мяса', 'Первый' UNION ALL
+    SELECT 'ГВД-002', 'Масса нетто', '1.0' UNION ALL
 
-    SELECT 'КРЦ-REG', 'Длина упаковки', '30' UNION ALL
-    SELECT 'КРЦ-REG', 'Ширина упаковки', '20' UNION ALL
-    SELECT 'КРЦ-REG', 'Высота упаковки', '12' UNION ALL
-    SELECT 'КРЦ-REG', 'Срок годности', '5' UNION ALL
-    SELECT 'КРЦ-REG', 'Тип разделки курицы КРЦ-REG', 'Тушка' UNION ALL
-    SELECT 'КРЦ-REG', 'Вес упаковки курицы КРЦ-REG', '1.7' UNION ALL
+    -- === Курица тушёная ГОСТ 325г (КРЦ-001, REGULAR) ===
+    SELECT 'КРЦ-001', 'Длина упаковки', '10' UNION ALL
+    SELECT 'КРЦ-001', 'Ширина упаковки', '10' UNION ALL
+    SELECT 'КРЦ-001', 'Высота упаковки', '11' UNION ALL
+    SELECT 'КРЦ-001', 'Срок годности', '1095' UNION ALL
+    SELECT 'КРЦ-001', 'Вид разделки', 'Тушка' UNION ALL
+    SELECT 'КРЦ-001', 'Вес упаковки', '0.325' UNION ALL
 
-    SELECT 'КРЦ-REF', 'Длина упаковки', '30' UNION ALL
-    SELECT 'КРЦ-REF', 'Ширина упаковки', '20' UNION ALL
-    SELECT 'КРЦ-REF', 'Высота упаковки', '12' UNION ALL
-    SELECT 'КРЦ-REF', 'Срок годности', '9' UNION ALL
-    SELECT 'КРЦ-REF', 'Тип разделки курицы КРЦ-REF', 'Филе' UNION ALL
-    SELECT 'КРЦ-REF', 'Вес упаковки курицы КРЦ-REF', '1.2' UNION ALL
+    -- === Филе куриное охлаждённое 0.8кг (КРЦ-002, REFRIGERATOR) ===
+    SELECT 'КРЦ-002', 'Длина упаковки', '25' UNION ALL
+    SELECT 'КРЦ-002', 'Ширина упаковки', '18' UNION ALL
+    SELECT 'КРЦ-002', 'Высота упаковки', '6' UNION ALL
+    SELECT 'КРЦ-002', 'Срок годности', '5' UNION ALL
+    SELECT 'КРЦ-002', 'Вид разделки', 'Филе' UNION ALL
+    SELECT 'КРЦ-002', 'Вес упаковки', '0.8' UNION ALL
 
-    SELECT 'ЯБЛ-REG', 'Длина упаковки', '35' UNION ALL
-    SELECT 'ЯБЛ-REG', 'Ширина упаковки', '25' UNION ALL
-    SELECT 'ЯБЛ-REG', 'Высота упаковки', '18' UNION ALL
-    SELECT 'ЯБЛ-REG', 'Срок годности', '20' UNION ALL
-    SELECT 'ЯБЛ-REG', 'Сорт яблок ЯБЛ-REG', 'Гренни Смит' UNION ALL
-    SELECT 'ЯБЛ-REG', 'Калибр яблок ЯБЛ-REG', '75' UNION ALL
+    -- === Яблоки сушёные 200г (ЯБЛ-001, REGULAR) ===
+    SELECT 'ЯБЛ-001', 'Длина упаковки', '20' UNION ALL
+    SELECT 'ЯБЛ-001', 'Ширина упаковки', '15' UNION ALL
+    SELECT 'ЯБЛ-001', 'Высота упаковки', '5' UNION ALL
+    SELECT 'ЯБЛ-001', 'Срок годности', '365' UNION ALL
+    SELECT 'ЯБЛ-001', 'Сорт', 'Антоновка' UNION ALL
+    SELECT 'ЯБЛ-001', 'Калибр плода', '0' UNION ALL
 
-    SELECT 'ЯБЛ-REF', 'Длина упаковки', '35' UNION ALL
-    SELECT 'ЯБЛ-REF', 'Ширина упаковки', '25' UNION ALL
-    SELECT 'ЯБЛ-REF', 'Высота упаковки', '18' UNION ALL
-    SELECT 'ЯБЛ-REF', 'Срок годности', '35' UNION ALL
-    SELECT 'ЯБЛ-REF', 'Сорт яблок ЯБЛ-REF', 'Фуджи' UNION ALL
-    SELECT 'ЯБЛ-REF', 'Калибр яблок ЯБЛ-REF', '80' UNION ALL
+    -- === Яблоки свежие «Гала» 1кг (ЯБЛ-002, REFRIGERATOR) ===
+    SELECT 'ЯБЛ-002', 'Длина упаковки', '30' UNION ALL
+    SELECT 'ЯБЛ-002', 'Ширина упаковки', '22' UNION ALL
+    SELECT 'ЯБЛ-002', 'Высота упаковки', '12' UNION ALL
+    SELECT 'ЯБЛ-002', 'Срок годности', '30' UNION ALL
+    SELECT 'ЯБЛ-002', 'Сорт', 'Гала' UNION ALL
+    SELECT 'ЯБЛ-002', 'Калибр плода', '75' UNION ALL
 
-    SELECT 'ОГУ-REG', 'Длина упаковки', '32' UNION ALL
-    SELECT 'ОГУ-REG', 'Ширина упаковки', '24' UNION ALL
-    SELECT 'ОГУ-REG', 'Высота упаковки', '16' UNION ALL
-    SELECT 'ОГУ-REG', 'Срок годности', '7' UNION ALL
-    SELECT 'ОГУ-REG', 'Тип огурцов ОГУ-REG', 'Короткоплодные' UNION ALL
-    SELECT 'ОГУ-REG', 'Длина огурца ОГУ-REG', '11' UNION ALL
+    -- === Огурцы маринованные 720мл (ОГУ-001, REGULAR) ===
+    SELECT 'ОГУ-001', 'Длина упаковки', '10' UNION ALL
+    SELECT 'ОГУ-001', 'Ширина упаковки', '10' UNION ALL
+    SELECT 'ОГУ-001', 'Высота упаковки', '17' UNION ALL
+    SELECT 'ОГУ-001', 'Срок годности', '730' UNION ALL
+    SELECT 'ОГУ-001', 'Тип плода', 'Корнишоны' UNION ALL
+    SELECT 'ОГУ-001', 'Средняя длина плода', '8' UNION ALL
 
-    SELECT 'ОГУ-REF', 'Длина упаковки', '32' UNION ALL
-    SELECT 'ОГУ-REF', 'Ширина упаковки', '24' UNION ALL
-    SELECT 'ОГУ-REF', 'Высота упаковки', '16' UNION ALL
-    SELECT 'ОГУ-REF', 'Срок годности', '12' UNION ALL
-    SELECT 'ОГУ-REF', 'Тип огурцов ОГУ-REF', 'Длинноплодные' UNION ALL
-    SELECT 'ОГУ-REF', 'Длина огурца ОГУ-REF', '18'
+    -- === Огурцы свежие короткоплодные 1кг (ОГУ-002, REFRIGERATOR) ===
+    SELECT 'ОГУ-002', 'Длина упаковки', '30' UNION ALL
+    SELECT 'ОГУ-002', 'Ширина упаковки', '22' UNION ALL
+    SELECT 'ОГУ-002', 'Высота упаковки', '14' UNION ALL
+    SELECT 'ОГУ-002', 'Срок годности', '7' UNION ALL
+    SELECT 'ОГУ-002', 'Тип плода', 'Короткоплодные' UNION ALL
+    SELECT 'ОГУ-002', 'Средняя длина плода', '12'
 ) x
 JOIN t_product p ON p.article = x.article
 JOIN t_product_attribute a ON a.name = x.attr;
