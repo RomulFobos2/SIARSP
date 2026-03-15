@@ -1,4 +1,4 @@
-INSERT INTO t_productAttributeValue (value, product_id, attribute_id)
+INSERT INTO t_product_attribute_value (value, product_id, attribute_id)
 SELECT x.val, p.id, a.id
 FROM (
     SELECT 'МЛК-REG' article, 'Длина упаковки' attr, '10' val UNION ALL
@@ -86,4 +86,4 @@ FROM (
     SELECT 'ОГУ-REF', 'Длина огурца ОГУ-REF', '18'
 ) x
 JOIN t_product p ON p.article = x.article
-JOIN t_productAttribute a ON a.name = x.attr;
+JOIN t_product_attribute a ON a.name = x.attr;

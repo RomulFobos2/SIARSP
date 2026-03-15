@@ -1,4 +1,4 @@
-INSERT INTO t_productAttribute (name, unit, data_type)
+INSERT INTO t_product_attribute (name, unit, data_type)
 VALUES
 -- 4 базовые характеристики
 ('Длина упаковки', 'см', 'NUMBER'),

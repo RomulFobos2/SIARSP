@@ -1,4 +1,4 @@
-INSERT INTO t_equipmentType (name)
+INSERT INTO t_equipment_type (name)
 VALUES
 ('Погрузчик'),
 ('Холодильная камера'),
