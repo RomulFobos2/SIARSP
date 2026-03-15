@@ -1,6 +1,6 @@
 INSERT INTO t_supplier (
     name,
-    contact,
+    contact_info,
     address,
     inn,
     kpp,
@@ -10,7 +10,7 @@ INSERT INTO t_supplier (
     bank,
     director_last_name,
     director_first_name,
-    director_patronymic
+    director_patronymic_name
 )
 VALUES
 ('ООО "МилкТрейд"', 'Отдел продаж: +375295000001, milktrade@example.by', 'г. Минск, ул. Молочная, 1', '7712000001', '771201001', '1027712000001', '40702810000000000001', '044525225', 'ОАО "Белбанк"', 'Смирнов', 'Игорь', 'Павлович'),
