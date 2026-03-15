@@ -89,7 +89,8 @@ import retrofit2.http.Query
 
 // ========== КОНФИГУРАЦИЯ ==========
 
-private const val BASE_URL = "http://10.0.2.2:8080/"
+//private const val BASE_URL = "http://10.0.2.2:8080/"
+private const val BASE_URL = "http://94.19.110.44:18080/"
 
 object AppConfig {
     const val AUTO_LOCATION_SEND_INTERVAL_MS = 60_000L
@@ -698,7 +699,7 @@ private fun LoginScreen(vm: MainViewModel) {
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("SIARSP Mobile", style = MaterialTheme.typography.headlineSmall)
-                Text("Вход в мобильное приложение")
+                Text("Вход в мобильное приложение.")
                 OutlinedTextField(
                     vm.login,
                     { vm.login = it },
@@ -706,10 +707,11 @@ private fun LoginScreen(vm: MainViewModel) {
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(
                         capitalization = KeyboardCapitalization.None,
-                        autoCorrectEnabled = false,
+                        autoCorrect = false,
                         keyboardType = KeyboardType.Ascii
                     )
                 )
+
                 OutlinedTextField(
                     vm.password,
                     { vm.password = it },
@@ -718,7 +720,7 @@ private fun LoginScreen(vm: MainViewModel) {
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(
                         capitalization = KeyboardCapitalization.None,
-                        autoCorrectEnabled = false,
+                        autoCorrect = false,
                         keyboardType = KeyboardType.Password
                     )
                 )
