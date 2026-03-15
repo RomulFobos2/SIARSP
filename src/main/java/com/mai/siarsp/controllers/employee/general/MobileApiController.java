@@ -4,7 +4,10 @@ import com.mai.siarsp.dto.*;
 import com.mai.siarsp.mapper.*;
 import com.mai.siarsp.models.Employee;
 import com.mai.siarsp.repo.AcceptanceActRepository;
+import com.mai.siarsp.repo.OrderedProductRepository;
+import com.mai.siarsp.repo.SupplyRepository;
 import com.mai.siarsp.repo.TTNRepository;
+import com.mai.siarsp.repo.WriteOffActRepository;
 import com.mai.siarsp.service.employee.ClientOrderService;
 import com.mai.siarsp.service.employee.DeliveryTaskService;
 import com.mai.siarsp.service.employee.EmployeeService;
@@ -13,13 +16,18 @@ import com.mai.siarsp.service.employee.manager.ProductService;
 import com.mai.siarsp.service.employee.manager.SupplierService;
 import com.mai.siarsp.service.employee.manager.VehicleService;
 import com.mai.siarsp.service.employee.warehouseManager.WarehouseService;
+import com.mai.siarsp.models.OrderedProduct;
+import com.mai.siarsp.models.Supply;
+import com.mai.siarsp.models.WriteOffAct;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * REST API контроллер для мобильного приложения
@@ -42,6 +50,9 @@ public class MobileApiController {
     private final DeliveryTaskService deliveryTaskService;
     private final TTNRepository ttnRepository;
     private final AcceptanceActRepository acceptanceActRepository;
+    private final SupplyRepository supplyRepository;
+    private final OrderedProductRepository orderedProductRepository;
+    private final WriteOffActRepository writeOffActRepository;
 
     public MobileApiController(EmployeeService employeeService,
                                ClientService clientService,
@@ -52,7 +63,10 @@ public class MobileApiController {
                                ClientOrderService clientOrderService,
                                DeliveryTaskService deliveryTaskService,
                                TTNRepository ttnRepository,
-                               AcceptanceActRepository acceptanceActRepository) {
+                               AcceptanceActRepository acceptanceActRepository,
+                               SupplyRepository supplyRepository,
+                               OrderedProductRepository orderedProductRepository,
+                               WriteOffActRepository writeOffActRepository) {
         this.employeeService = employeeService;
         this.clientService = clientService;
         this.supplierService = supplierService;
@@ -63,6 +77,9 @@ public class MobileApiController {
         this.deliveryTaskService = deliveryTaskService;
         this.ttnRepository = ttnRepository;
         this.acceptanceActRepository = acceptanceActRepository;
+        this.supplyRepository = supplyRepository;
+        this.orderedProductRepository = orderedProductRepository;
+        this.writeOffActRepository = writeOffActRepository;
     }
 
     // ========== ПРОФИЛЬ ==========
@@ -268,6 +285,62 @@ public class MobileApiController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error("Нет доступа"));
         }
         return ResponseEntity.ok(employeeService.getAllEmployees());
+    }
+
+    // ========== ИСТОРИЯ ТОВАРА ==========
+
+    /**
+     * История товара: поставки, заказы, акты списания
+     * Доступ: все кроме COURIER
+     */
+    @GetMapping("/products/{id}/history")
+    public ResponseEntity<?> getProductHistory(@AuthenticationPrincipal Employee currentUser, @PathVariable Long id) {
+        if (hasAnyRole(currentUser, "ROLE_EMPLOYEE_COURIER")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error("Нет доступа"));
+        }
+
+        List<Supply> supplies = supplyRepository.findByProductIdOrderByDelivery_DeliveryDateDesc(id);
+        List<OrderedProduct> orderedProducts = orderedProductRepository.findByProductIdOrderByClientOrder_OrderDateDesc(id);
+        List<WriteOffAct> writeOffActs = writeOffActRepository.findByProductIdOrderByActDateDesc(id);
+
+        List<Map<String, Object>> suppliesList = supplies.stream().map(s -> {
+            Map<String, Object> m = new HashMap<>();
+            m.put("deliveryDate", s.getDelivery().getDeliveryDate());
+            m.put("supplierName", s.getDelivery().getSupplier().getName());
+            m.put("quantity", s.getQuantity());
+            m.put("purchasePrice", s.getPurchasePrice());
+            m.put("totalPrice", s.getTotalPrice());
+            m.put("unit", s.getUnit());
+            return m;
+        }).toList();
+
+        List<Map<String, Object>> ordersList = orderedProducts.stream().map(op -> {
+            Map<String, Object> m = new HashMap<>();
+            m.put("orderNumber", op.getClientOrder().getOrderNumber());
+            m.put("orderDate", op.getClientOrder().getOrderDate().toLocalDate());
+            m.put("quantity", op.getQuantity());
+            m.put("price", op.getPrice());
+            m.put("totalPrice", op.getTotalPrice());
+            m.put("status", op.getClientOrder().getStatus().getDisplayName());
+            return m;
+        }).toList();
+
+        List<Map<String, Object>> writeOffsList = writeOffActs.stream().map(wa -> {
+            Map<String, Object> m = new HashMap<>();
+            m.put("actNumber", wa.getActNumber());
+            m.put("actDate", wa.getActDate());
+            m.put("quantity", wa.getQuantity());
+            m.put("reason", wa.getReason().getDisplayName());
+            m.put("status", wa.getStatus().getDisplayName());
+            return m;
+        }).toList();
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("supplies", suppliesList);
+        result.put("orders", ordersList);
+        result.put("writeOffs", writeOffsList);
+
+        return ResponseEntity.ok(result);
     }
 
     // ========== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ==========
