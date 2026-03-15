@@ -22,9 +22,9 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Сервис размещения, изъятия и перемещения товаров в зонах хранения.
- * Переиспользует логику ZoneProduct.findBestOrientation().
+ * Сервис адресного размещения: подбирает место хранения и контролирует корректность посадки товара.
  */
+
 @Service("storagePlacementService")
 @Slf4j
 public class StoragePlacementService {
@@ -44,10 +44,6 @@ public class StoragePlacementService {
         this.productRepository = productRepository;
     }
 
-    /**
-     * Находит оптимальную зону и размещает товар.
-     * Выбирает зону с минимальным заполнением среди совместимых складов.
-     */
     @Transactional
     public PlacementInfo placeOptimal(Product product, int quantity) {
         try {
@@ -96,9 +92,6 @@ public class StoragePlacementService {
         }
     }
 
-    /**
-     * Размещает товар в конкретной зоне (автоподбор ориентации).
-     */
     @Transactional
     public PlacementInfo placeInZone(Product product, StorageZone zone, int quantity) {
         // Проверка: хватает ли свободного объёма в зоне
@@ -127,10 +120,6 @@ public class StoragePlacementService {
         return placeInZone(product, zone, quantity, orientation);
     }
 
-    /**
-     * Размещает товар в конкретной зоне с заданной ориентацией.
-     * Создаёт или обновляет ZoneProduct. Уменьшает product.quantityForStock.
-     */
     @Transactional
     public PlacementInfo placeInZone(Product product, StorageZone zone, int quantity, BoxOrientation orientation) {
         try {
@@ -164,10 +153,6 @@ public class StoragePlacementService {
         }
     }
 
-    /**
-     * Убирает товар из зоны хранения.
-     * Уменьшает ZoneProduct.quantity или удаляет запись. Увеличивает quantityForStock.
-     */
     @Transactional
     public RemovalInfo removeFromZone(Product product, StorageZone zone, int quantity) {
         try {
@@ -200,9 +185,6 @@ public class StoragePlacementService {
         }
     }
 
-    /**
-     * Перемещает товар из одной зоны в другую.
-     */
     @Transactional
     public MoveInfo moveProduct(Product product, StorageZone from, StorageZone to, int quantity) {
         try {

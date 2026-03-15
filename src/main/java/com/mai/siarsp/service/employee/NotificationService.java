@@ -17,15 +17,9 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Сервис для управления уведомлениями сотрудников
- *
- * Предоставляет функционал:
- * - Создание уведомления для конкретного сотрудника
- * - Массовая рассылка уведомлений по роли
- * - Получение списка уведомлений сотрудника
- * - Подсчёт непрочитанных уведомлений (для badge в header)
- * - Отметка уведомлений как прочитанных
+ * Сервис оповещений. Рассылает сотрудникам события, чтобы процессы не «зависали» между этапами.
  */
+
 @Service
 @Slf4j
 public class NotificationService {
@@ -39,12 +33,6 @@ public class NotificationService {
         this.employeeRepository = employeeRepository;
     }
 
-    /**
-     * Создаёт уведомление для конкретного сотрудника
-     *
-     * @param recipient сотрудник-получатель
-     * @param text текст уведомления
-     */
     @Transactional
     public void createNotification(Employee recipient, String text) {
         Notification notification = new Notification(recipient, text);
@@ -52,12 +40,6 @@ public class NotificationService {
         log.info("Создано уведомление для сотрудника '{}': {}", recipient.getFullName(), text);
     }
 
-    /**
-     * Рассылает уведомление всем сотрудникам с указанной ролью
-     *
-     * @param roleName имя роли (например, "ROLE_EMPLOYEE_MANAGER")
-     * @param text текст уведомления
-     */
     @Transactional
     public void notifyByRole(String roleName, String text) {
         List<Employee> employees = employeeRepository.findAllByRoleName(roleName);
@@ -67,12 +49,6 @@ public class NotificationService {
         log.info("Отправлено уведомление {} сотрудникам с ролью '{}'.", employees.size(), roleName);
     }
 
-    /**
-     * Рассылает уведомление всем сотрудникам с указанными ролями
-     *
-     * @param roleNames список имён ролей
-     * @param text текст уведомления
-     */
     @Transactional
     public void notifyByRoles(List<String> roleNames, String text) {
         for (String roleName : roleNames) {
@@ -80,26 +56,11 @@ public class NotificationService {
         }
     }
 
-    /**
-     * Возвращает все уведомления сотрудника (новейшие первыми)
-     *
-     * @param employeeId ID сотрудника
-     * @return список NotificationDTO
-     */
     public List<NotificationDTO> getNotificationsForEmployee(Long employeeId) {
         List<Notification> notifications = notificationRepository.findByRecipientIdAndVisibleTrueOrderByCreatedAtDesc(employeeId);
         return NotificationMapper.INSTANCE.toDTOList(notifications);
     }
 
-    /**
-     * Возвращает уведомления сотрудника с пагинацией и фильтрацией
-     *
-     * @param employeeId ID сотрудника
-     * @param status     фильтр по статусу (может быть null)
-     * @param search     поиск по тексту (может быть null или пустым)
-     * @param pageable   параметры пагинации
-     * @return страница NotificationDTO
-     */
     public Page<NotificationDTO> getNotificationsForEmployee(Long employeeId, NotificationStatus status, String search, Pageable pageable) {
         Page<Notification> page;
         boolean hasSearch = search != null && !search.isBlank();
@@ -117,21 +78,10 @@ public class NotificationService {
         return page.map(NotificationMapper.INSTANCE::toDTO);
     }
 
-    /**
-     * Возвращает количество непрочитанных уведомлений сотрудника
-     *
-     * @param employeeId ID сотрудника
-     * @return количество непрочитанных
-     */
     public long getUnreadCount(Long employeeId) {
         return notificationRepository.countByRecipientIdAndStatusAndVisibleTrue(employeeId, NotificationStatus.NEW);
     }
 
-    /**
-     * Отмечает уведомление как прочитанное
-     *
-     * @param notificationId ID уведомления
-     */
     @Transactional
     public void markAsRead(Long notificationId) {
         Optional<Notification> optional = notificationRepository.findById(notificationId);
@@ -142,11 +92,6 @@ public class NotificationService {
         }
     }
 
-    /**
-     * Отмечает все уведомления сотрудника как прочитанные
-     *
-     * @param employeeId ID сотрудника
-     */
     @Transactional
     public void markAllAsRead(Long employeeId) {
         List<Notification> unread = notificationRepository
@@ -158,13 +103,6 @@ public class NotificationService {
         log.info("Все уведомления сотрудника id={} отмечены как прочитанные ({} шт.).", employeeId, unread.size());
     }
 
-    /**
-     * Скрывает уведомление (устанавливает visible = false).
-     * Уведомление остаётся в БД для расследования, но не отображается пользователю.
-     *
-     * @param notificationId ID уведомления
-     * @return true при успешном скрытии
-     */
     @Transactional
     public boolean hideNotification(Long notificationId) {
         Optional<Notification> optional = notificationRepository.findById(notificationId);

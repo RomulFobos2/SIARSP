@@ -17,11 +17,9 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Сервис загрузки, скачивания и удаления файлов контрактов (договоров на отгрузку).
- *
- * Допустимые форматы: PDF, DOC, DOCX.
- * Путь хранения настраивается через свойство {@code contract.upload.path} в application.properties.
+ * Генерация и хранение договорных документов по заказам и поставкам.
  */
+
 @Service
 @Slf4j
 public class ContractService {
@@ -39,14 +37,6 @@ public class ContractService {
         log.info("ContractService инициализирован: uploadPath = {}", uploadPath);
     }
 
-    /**
-     * Загружает файл контракта на сервер.
-     *
-     * @param file MultipartFile из формы
-     * @return имя сохранённого файла (UUID_originalname)
-     * @throws IOException              при ошибке сохранения
-     * @throws IllegalArgumentException если файл пустой или недопустимый формат
-     */
     public static String uploadContract(MultipartFile file) throws IOException {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Файл контракта пустой или null");
@@ -70,13 +60,6 @@ public class ContractService {
         return fileName;
     }
 
-    /**
-     * Возвращает Resource для скачивания файла контракта.
-     *
-     * @param contractFileName имя файла контракта
-     * @return Resource
-     * @throws IOException если файл не найден или нечитаем
-     */
     public static Resource getContractData(String contractFileName) throws IOException {
         Path filePath = Paths.get(uploadPath).resolve(contractFileName);
         Resource resource = new UrlResource(filePath.toUri());
@@ -88,12 +71,6 @@ public class ContractService {
         throw new IOException("Не удалось прочитать файл контракта: " + contractFileName);
     }
 
-    /**
-     * Удаляет файл контракта (используется при замене контракта).
-     * Не выбрасывает исключений — только логирует ошибки.
-     *
-     * @param contractFileName имя файла контракта
-     */
     public static void deleteContract(String contractFileName) {
         try {
             Path filePath = Paths.get(uploadPath).resolve(contractFileName);
@@ -105,9 +82,6 @@ public class ContractService {
         }
     }
 
-    /**
-     * Извлекает расширение файла (в нижнем регистре).
-     */
     private static String getFileExtension(String filename) {
         if (filename == null || !filename.contains(".")) {
             return "";

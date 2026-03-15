@@ -10,6 +10,10 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+/**
+ * Почтовые отправки системы: уведомления, сервисные письма и рассылка документов.
+ */
+
 @Service
 @Slf4j
 public class MailService {

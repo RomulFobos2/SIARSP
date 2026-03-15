@@ -20,6 +20,10 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Сервис сотрудников: управление профилями, ролями и связанной кадровой информацией для бизнес-операций.
+ */
+
 @Service
 @Getter
 @Slf4j

@@ -15,14 +15,9 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Сервис для управления глобальными категориями товаров.
- *
- * Обеспечивает CRUD-операции для верхнего уровня классификации товаров
- * (например: "Молочная продукция", "Мясная продукция", "Бакалея").
- *
- * Защита удаления: категория не может быть удалена,
- * если к ней привязаны подкатегории (ProductCategory).
+ * Сервис верхнеуровневых категорий: поддерживает единую таксономию для товаров и отчетности.
  */
+
 @Service
 @Getter
 @Slf4j
@@ -37,13 +32,6 @@ public class GlobalProductCategoryService {
         this.productCategoryRepository = productCategoryRepository;
     }
 
-    /**
-     * Проверка уникальности названия глобальной категории.
-     *
-     * @param name название для проверки
-     * @param id   ID текущей категории (для исключения при редактировании), может быть null
-     * @return true если категория с таким названием уже существует
-     */
     public boolean checkName(String name, Long id) {
         if (name == null || name.isBlank()) {
             return false;
@@ -55,12 +43,6 @@ public class GlobalProductCategoryService {
         }
     }
 
-    /**
-     * Сохранение новой глобальной категории.
-     *
-     * @param category сущность глобальной категории для сохранения
-     * @return true при успешном сохранении, false при ошибке или дублировании имени
-     */
     @Transactional
     public boolean saveGlobalProductCategory(GlobalProductCategory category) {
         log.info("Начинаем сохранение глобальной категории с названием = {}...", category.getName());
@@ -82,13 +64,6 @@ public class GlobalProductCategoryService {
         return true;
     }
 
-    /**
-     * Редактирование существующей глобальной категории.
-     *
-     * @param id        ID редактируемой категории
-     * @param inputName новое название
-     * @return true при успешном сохранении изменений
-     */
     @Transactional
     public boolean editGlobalProductCategory(Long id, String inputName) {
         Optional<GlobalProductCategory> categoryOptional = globalProductCategoryRepository.findById(id);
@@ -120,13 +95,6 @@ public class GlobalProductCategoryService {
         return true;
     }
 
-    /**
-     * Удаление глобальной категории.
-     * Запрещено при наличии связанных подкатегорий (ProductCategory).
-     *
-     * @param id ID удаляемой категории
-     * @return true при успешном удалении
-     */
     @Transactional
     public boolean deleteGlobalProductCategory(Long id) {
         Optional<GlobalProductCategory> categoryOptional = globalProductCategoryRepository.findById(id);
@@ -158,11 +126,6 @@ public class GlobalProductCategoryService {
         return true;
     }
 
-    /**
-     * Получение списка всех глобальных категорий в формате DTO.
-     *
-     * @return список GlobalProductCategoryDTO
-     */
     public List<GlobalProductCategoryDTO> getAllGlobalProductCategories() {
         List<GlobalProductCategory> categories = globalProductCategoryRepository.findAll();
         return GlobalProductCategoryMapper.INSTANCE.toDTOList(categories);

@@ -16,8 +16,9 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import java.util.Optional;
 
 /**
- * Сервис создания и удаления складов со структурой (стеллажи и зоны)
+ * Сервис первичной настройки склада: создание зон, полок и стартовой инфраструктуры.
  */
+
 @Service("warehouseCreationService")
 @Slf4j
 public class WarehouseCreationService {
@@ -37,19 +38,6 @@ public class WarehouseCreationService {
         this.zoneProductRepository = zoneProductRepository;
     }
 
-    /**
-     * Атомарно создаёт склад со структурой: стеллажи и зоны хранения.
-     *
-     * @param name          название склада
-     * @param type          тип склада (REGULAR / REFRIGERATOR)
-     * @param address       физический адрес
-     * @param shelfCount    количество стеллажей
-     * @param zonesPerShelf количество зон (полок) на каждом стеллаже
-     * @param zoneLength    длина зоны в см
-     * @param zoneWidth     ширина зоны в см
-     * @param zoneHeight    высота зоны в см
-     * @return созданный склад или empty при ошибке
-     */
     @Transactional
     public Optional<Warehouse> createWarehouseWithStructure(String name, WarehouseType type,
                                                             String address,
@@ -89,12 +77,6 @@ public class WarehouseCreationService {
         }
     }
 
-    /**
-     * Удаляет склад, только если в нём нет товаров.
-     *
-     * @param warehouseId ID склада
-     * @return true если склад удалён, false если есть товары или склад не найден
-     */
     @Transactional
     public boolean deleteWarehouseIfEmpty(Long warehouseId) {
         try {
@@ -117,12 +99,6 @@ public class WarehouseCreationService {
         }
     }
 
-    /**
-     * Удаляет стеллаж, только если в его зонах нет товаров.
-     *
-     * @param shelfId ID стеллажа
-     * @return true если стеллаж удалён, false если есть товары или стеллаж не найден
-     */
     @Transactional
     public boolean deleteShelfIfEmpty(Long shelfId) {
         try {
@@ -145,13 +121,6 @@ public class WarehouseCreationService {
         }
     }
 
-    /**
-     * Обновляет адрес склада.
-     *
-     * @param warehouseId ID склада
-     * @param newAddress  новый адрес
-     * @return true если адрес обновлён, false при ошибке
-     */
     @Transactional
     public boolean updateWarehouseAddress(Long warehouseId, String newAddress) {
         try {
@@ -172,19 +141,6 @@ public class WarehouseCreationService {
         }
     }
 
-    /**
-     * Добавляет новый стеллаж к существующему складу.
-     *
-     * Автоматически определяет код стеллажа (A, B, ..., Z, ST-27, ...),
-     * создаёт указанное количество зон хранения и пересчитывает объём склада.
-     *
-     * @param warehouseId   ID склада
-     * @param zonesPerShelf количество зон (полок) на стеллаже
-     * @param zoneLength    длина зоны в см
-     * @param zoneWidth     ширина зоны в см
-     * @param zoneHeight    высота зоны в см
-     * @return true если стеллаж добавлен, false при ошибке
-     */
     @Transactional
     public boolean addShelfToWarehouse(Long warehouseId, int zonesPerShelf,
                                         double zoneLength, double zoneWidth, double zoneHeight) {
@@ -228,10 +184,6 @@ public class WarehouseCreationService {
         }
     }
 
-    /**
-     * Рассчитывает общий объём склада в литрах.
-     * Формула: (zoneL × zoneW × zoneH) / 1_000_000 × shelfCount × zonesPerShelf
-     */
     private double calculateTotalVolume(int shelfCount, int zonesPerShelf,
                                         double zoneL, double zoneW, double zoneH) {
         double zoneVolumeLiters = (zoneL * zoneW * zoneH) / 1_000_000.0 * 1000.0;
@@ -240,10 +192,6 @@ public class WarehouseCreationService {
         return zoneVolumeL * shelfCount * zonesPerShelf;
     }
 
-    /**
-     * Генерирует код стеллажа по порядковому индексу (0-based).
-     * 0→A, 1→B, …, 25→Z, 26→ST-27, 27→ST-28, …
-     */
     private String generateShelfCode(int index) {
         if (index < 26) {
             return String.valueOf((char) ('A' + index));

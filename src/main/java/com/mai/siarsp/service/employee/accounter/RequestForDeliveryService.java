@@ -21,11 +21,9 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Сервис для работы с заявками на поставку со стороны бухгалтера (ACCOUNTER)
- *
- * Бухгалтер может просматривать заявки и согласовывать/отклонять заявки
- * в статусе PENDING_ACCOUNTANT.
+ * Сервис обработки заявок на поставку в контуре роли. Отвечает за статусы, позиции и движение заявки по процессу.
  */
+
 @Service("accounterRequestForDeliveryService")
 @Getter
 @Slf4j
