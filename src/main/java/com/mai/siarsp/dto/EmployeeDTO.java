@@ -2,6 +2,7 @@ package com.mai.siarsp.dto;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Data
@@ -17,4 +18,9 @@ public class EmployeeDTO {
     private LocalDate dateOfRegistration;
     private boolean needChangePass;
     private boolean active;
+    private String specialization;
+    private String qualification;
+    private BigDecimal salary;
+    private String hiringOrderFile;
+    private String dismissalOrderFile;
 }

@@ -20,7 +20,7 @@
                class="btn btn-secondary btn-profile">
                 ← Главная
             </a>
-            <a th:href="'/employee/admin/employees/addEmployee'"
+            <a th:href="'/employee/manager/employees/addEmployee'"
                class="btn btn-success btn-profile">
                 + Добавить пользователя
             </a>
@@ -52,7 +52,7 @@
                     <td th:text="${index.index+1}"></td>
                     <td>
                         <a th:text="${employee.getFullName()}"
-                           th:href="'/employee/admin/employees/detailsEmployee/' + ${employee.getId()}"></a>
+                           th:href="'/employee/manager/employees/detailsEmployee/' + ${employee.getId()}"></a>
                     </td>
                     <td th:text="${employee.getRoleDescription()}"></td>
                     <td th:text="${employee.getSpecialization()}"></td>
