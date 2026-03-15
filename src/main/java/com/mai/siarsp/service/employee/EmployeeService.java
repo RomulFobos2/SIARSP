@@ -54,6 +54,41 @@ public class EmployeeService implements UserDetailsService {
         return employee;
     }
 
+    //Для админа только
+    @Transactional
+    public boolean saveEmployee(Employee newEmployee, String roleName) {
+        log.info("Начинаем сохранять сотрудника с username = {}...", newEmployee.getUsername());
+
+        if (checkUserName(newEmployee.getUsername())) {
+            log.error("Сотрудник с username = {} уже существует. Используйте другой username.", newEmployee.getUsername());
+            return false;
+        }
+
+        Optional<Role> roleOptional = roleRepository.findByName(roleName);
+
+        if (roleOptional.isEmpty()) {
+            log.error("Роль {} не найдена в базе данных. Невозможно создать сотрудника.", roleName);
+            return false;
+        }
+
+        Role role = roleOptional.get();
+        newEmployee.setRole(role);
+        newEmployee.setPassword(bCryptPasswordEncoder.encode(newEmployee.getPassword()));
+
+        try {
+            employeeRepository.save(newEmployee);
+        } catch (Exception e) {
+            log.error("Ошибка при сохранении сотрудника {}: {}", newEmployee.getUsername(), e.getMessage(), e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return false;
+        }
+
+        log.info("Сотрудник с username = {} ({}) успешно сохранён.", newEmployee.getUsername(), role.getDescription());
+
+        return true;
+    }
+
+
     @Transactional
     public boolean saveEmployee(Employee newEmployee, String roleName,
                                 String specialization, String qualification,
@@ -153,6 +188,58 @@ public class EmployeeService implements UserDetailsService {
 
         return true;
     }
+
+    //Для админа только
+    @Transactional
+    public boolean editEmployee(Long id,
+                                String inputLastName, String inputFirstName,
+                                String inputPatronymicName, String inputUsername,
+                                String roleName) {
+        Optional<Employee> employeeOptional = employeeRepository.findById(id);
+
+        if (employeeOptional.isEmpty()) {
+            log.error("Не найден сотрудник с id = {}...", id);
+            return false;
+        }
+
+        if (employeeRepository.existsByUsernameAndIdNot(inputUsername, id)) {
+            log.error("Сотрудник с username = {} уже существует. Используйте другой username.", inputUsername);
+            return false;
+        }
+
+        Optional<Role> roleOptional = roleRepository.findByName(roleName);
+
+        if (roleOptional.isEmpty()) {
+            log.error("Роль {} не найдена в базе данных. Невозможно отредактировать сотрудника.", roleName);
+            return false;
+        }
+
+        Role role = roleOptional.get();
+        Employee employee = employeeOptional.get();
+
+        log.info("Начинаем сохранять изменения для сотрудника с username = {}...", employee.getUsername());
+
+        employee.setRole(role);
+        employee.setFirstName(inputFirstName);
+        employee.setLastName(inputLastName);
+        employee.setPatronymicName(inputPatronymicName.isEmpty() ? inputPatronymicName : "");
+        employee.setUsername(inputUsername);
+
+        try {
+            employeeRepository.save(employee);
+        } catch (Exception e) {
+            log.error("Ошибка при сохранении изменений: {}", e.getMessage(), e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return false;
+        }
+
+        log.info("Изменения для сотрудника успешно сохранены.");
+
+        return true;
+    }
+
+
+
 
     @Transactional
     public boolean resetEmployeePassword(long id, String newPassword) {
