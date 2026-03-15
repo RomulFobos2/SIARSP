@@ -56,8 +56,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -373,7 +376,13 @@ class SessionRepository {
                 val req: Request = chain.request().newBuilder()
                     .header("Accept", "application/json")
                     .build()
-                return chain.proceed(req)
+
+                val response = chain.proceed(req)
+                Log.d(
+                    "SIARSP",
+                    "HTTP ${req.method} ${req.url.encodedPath} -> ${response.code}, location=${response.header("Location") ?: "-"}"
+                )
+                return response
             }
         })
         .build()
@@ -388,13 +397,30 @@ class SessionRepository {
     val mobileApi: MobileApi = retrofit.create(MobileApi::class.java)
 
     suspend fun login(username: String, password: String): Boolean = withContext(Dispatchers.IO) {
-        val body = FormBody.Builder().add("username", username).add("password", password).build()
+        val normalizedUsername = username.trim()
+        val body = FormBody.Builder().add("username", normalizedUsername).add("password", password).build()
 
         val request = Request.Builder().url("${BASE_URL}employee/login").post(body).build()
 
         okHttpClient.newCall(request).execute().use { resp ->
-            Log.e("SIARSP", "LOGIN resp.code=${resp.code}, isRedirect=${resp.isRedirect}, Location=${resp.header("Location")}")
-            cookieJar.loadForRequest(BASE_URL.toHttpUrl()).any { it.name.equals("JSESSIONID", ignoreCase = true) }
+            val redirectLocation = resp.header("Location").orEmpty()
+            val hasSessionCookie = cookieJar
+                .loadForRequest(BASE_URL.toHttpUrl())
+                .any { it.name.equals("JSESSIONID", ignoreCase = true) }
+
+            val isLoginRedirect = redirectLocation.contains("/employee/login", ignoreCase = true)
+            val isLoginErrorRedirect = redirectLocation.contains("/employee/login?error", ignoreCase = true)
+
+            Log.i(
+                "SIARSP",
+                "LOGIN request: user='$normalizedUsername', passwordLength=${password.length}, code=${resp.code}, isRedirect=${resp.isRedirect}, location=$redirectLocation, hasSessionCookie=$hasSessionCookie"
+            )
+
+            if (resp.isRedirect) {
+                return@use hasSessionCookie && !isLoginRedirect && !isLoginErrorRedirect
+            }
+
+            resp.isSuccessful && hasSessionCookie
         }
     }
 
@@ -451,10 +477,12 @@ class MainViewModel : ViewModel() {
 
     fun doLogin() {
         viewModelScope.launch {
-            runCatching { repo.login(login, password) }
+            val usernameForLogin = login.trim()
+            runCatching { repo.login(usernameForLogin, password) }
                 .onSuccess {
                     isLoggedIn = it
                     message = if (it) "Вход выполнен" else "Ошибка логина"
+                    Log.i("SIARSP", "Login result: success=$it, user='$usernameForLogin'")
                     if (it) {
                         loadProfile()
                     }
@@ -472,6 +500,7 @@ class MainViewModel : ViewModel() {
                 .onSuccess {
                     profile = it
                     userRole = it.roleName ?: ""
+                    Log.i("SIARSP", "Profile loaded: username=${it.username}, role=$userRole")
                     if (isCourier()) {
                         refreshTasks()
                     }
@@ -670,14 +699,30 @@ private fun LoginScreen(vm: MainViewModel) {
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("SIARSP Mobile", style = MaterialTheme.typography.headlineSmall)
-                Text("Вход в мобильное приложение")
-                OutlinedTextField(vm.login, { vm.login = it }, label = { Text("Логин") }, modifier = Modifier.fillMaxWidth())
+                Text("Вход в мобильное приложение.")
+                OutlinedTextField(
+                    vm.login,
+                    { vm.login = it },
+                    label = { Text("Логин") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.None,
+                        autoCorrect = false,
+                        keyboardType = KeyboardType.Ascii
+                    )
+                )
+
                 OutlinedTextField(
                     vm.password,
                     { vm.password = it },
                     label = { Text("Пароль") },
                     visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.None,
+                        autoCorrect = false,
+                        keyboardType = KeyboardType.Password
+                    )
                 )
                 Button(onClick = { vm.doLogin() }, modifier = Modifier.fillMaxWidth()) { Text("Войти") }
                 Text(vm.message)

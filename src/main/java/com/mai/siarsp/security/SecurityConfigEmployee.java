@@ -21,10 +21,17 @@ public class SecurityConfigEmployee {
 
     private final EmployeeService employeeService;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
+    private final AuthenticationLoggingSuccessHandler authenticationLoggingSuccessHandler;
+    private final AuthenticationLoggingFailureHandler authenticationLoggingFailureHandler;
 
-    public SecurityConfigEmployee(EmployeeService employeeService, BCryptPasswordEncoder bCryptPasswordEncoder) {
+    public SecurityConfigEmployee(EmployeeService employeeService,
+                                  BCryptPasswordEncoder bCryptPasswordEncoder,
+                                  AuthenticationLoggingSuccessHandler authenticationLoggingSuccessHandler,
+                                  AuthenticationLoggingFailureHandler authenticationLoggingFailureHandler) {
         this.employeeService = employeeService;
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
+        this.authenticationLoggingSuccessHandler = authenticationLoggingSuccessHandler;
+        this.authenticationLoggingFailureHandler = authenticationLoggingFailureHandler;
     }
 
     @Bean
@@ -49,8 +56,8 @@ public class SecurityConfigEmployee {
                 .formLogin(form -> form
                         .loginPage("/employee/login")
                         .loginProcessingUrl("/employee/login")
-                        .failureUrl("/employee/login?error=loginError")
-                        .defaultSuccessUrl("/", true)
+                        .successHandler(authenticationLoggingSuccessHandler)
+                        .failureHandler(authenticationLoggingFailureHandler)
                         .permitAll()
                 )
                 .logout(logout -> logout.permitAll().logoutSuccessUrl("/"))
