@@ -129,29 +129,29 @@
                     <!-- ========== Dropdown: Поставки (MANAGER, WAREHOUSE_MANAGER, ACCOUNTER) ========== -->
                     <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
                         <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Поставки
+                            Заказ товара
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/employee/manager/requestsForDelivery/allRequestsForDelivery">Заявки на поставку</a></li>
+                            <li><a class="dropdown-item" href="/employee/manager/requestsForDelivery/allRequestsForDelivery">Заявки на заказ товара</a></li>
                             <li><a class="dropdown-item" href="/employee/manager/suppliers/allSuppliers">Поставщики</a></li>
                         </ul>
                     </li>
                     <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
                         <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Поставки
+                            Заказ товара
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/employee/warehouseManager/requestsForDelivery/allRequestsForDelivery">Заявки на поставку</a></li>
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/requestsForDelivery/allRequestsForDelivery">Заявки на заказ товара</a></li>
                             <li><a class="dropdown-item" href="/employee/warehouseManager/reference/allSuppliers">Поставщики</a></li>
-                            <li><a class="dropdown-item" href="/employee/warehouseManager/deliveries/allDeliveries">Приёмка поставок</a></li>
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/deliveries/allDeliveries">Приёмка товара</a></li>
                         </ul>
                     </li>
                     <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_ACCOUNTER')">
                         <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Поставки
+                            Заказ товара
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/employee/accounter/requestsForDelivery/allRequestsForDelivery">Заявки на поставку</a></li>
+                            <li><a class="dropdown-item" href="/employee/accounter/requestsForDelivery/allRequestsForDelivery">Заявки на заказ товара</a></li>
                             <li><a class="dropdown-item" href="/employee/accounter/reference/allSuppliers">Поставщики</a></li>
                             <li><a class="dropdown-item" href="/employee/accounter/products/allProducts">Товары</a></li>
                         </ul>
@@ -160,32 +160,32 @@
                     <!-- ========== Dropdown: Заказы (MANAGER, WAREHOUSE_MANAGER, ACCOUNTER) ========== -->
                     <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
                         <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Заказы
+                            Поставки
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/employee/manager/clientOrders/allClientOrders">Все заказы</a></li>
-                            <li><a class="dropdown-item" href="/employee/manager/clientOrders/createClientOrder">Создать заказ</a></li>
-                            <li><a class="dropdown-item" href="/employee/manager/deliveryTasks/allDeliveryTasks">Задачи на доставку</a></li>
+                            <li><a class="dropdown-item" href="/employee/manager/clientOrders/allClientOrders">Все поставки</a></li>
+                            <li><a class="dropdown-item" href="/employee/manager/clientOrders/createClientOrder">Создать поставку</a></li>
+                            <li><a class="dropdown-item" href="/employee/manager/deliveryTasks/allDeliveryTasks">Задачи на поставку</a></li>
                             <li><a class="dropdown-item" href="/employee/manager/clients/allClients">Клиенты</a></li>
                         </ul>
                     </li>
                     <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_WAREHOUSE_MANAGER')">
                         <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Заказы
+                            Поставки
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/employee/warehouseManager/clientOrders/allClientOrders">Все заказы</a></li>
-                            <li><a class="dropdown-item" href="/employee/warehouseManager/deliveryTasks/allDeliveryTasks">Задачи на доставку</a></li>
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/clientOrders/allClientOrders">Все поставки</a></li>
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/deliveryTasks/allDeliveryTasks">Задачи на поставку</a></li>
                             <li><a class="dropdown-item" href="/employee/warehouseManager/reference/allClients">Клиенты</a></li>
                         </ul>
                     </li>
                     <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_ACCOUNTER')">
                         <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Заказы
+                            Поставки
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/employee/accounter/clientOrders/allClientOrders">Все заказы</a></li>
-                            <li><a class="dropdown-item" href="/employee/accounter/deliveryTasks/allDeliveryTasks">Задачи на доставку</a></li>
+                            <li><a class="dropdown-item" href="/employee/accounter/clientOrders/allClientOrders">Все поставки</a></li>
+                            <li><a class="dropdown-item" href="/employee/accounter/deliveryTasks/allDeliveryTasks">Задачи на поставку</a></li>
                             <li><a class="dropdown-item" href="/employee/accounter/reference/allClients">Клиенты</a></li>
                         </ul>
                     </li>

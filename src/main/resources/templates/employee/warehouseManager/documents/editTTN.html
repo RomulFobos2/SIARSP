@@ -18,7 +18,7 @@
 
             <div class="card border-0 bg-light mb-4">
                 <div class="card-body">
-                    <p class="mb-1"><strong>Заказ:</strong> <span th:text="${order.orderNumber}"></span></p>
+                    <p class="mb-1"><strong>Поставка:</strong> <span th:text="${order.orderNumber}"></span></p>
                     <p class="mb-1"><strong>Клиент:</strong> <span th:text="${order.client.organizationName}"></span></p>
                     <p class="mb-0"><strong>Дата выдачи:</strong>
                         <span th:text="${#temporals.format(ttn.issueDate, 'dd.MM.yyyy')}"></span></p>

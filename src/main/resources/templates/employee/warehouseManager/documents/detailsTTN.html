@@ -35,8 +35,8 @@
                 <div class="col-md-6">
                     <div class="card border-0 bg-light">
                         <div class="card-body">
-                            <h6 class="card-title fw-bold">Заказ</h6>
-                            <p class="mb-1"><strong>Номер заказа:</strong> <span th:text="${order.orderNumber}"></span></p>
+                            <h6 class="card-title fw-bold">Поставка</h6>
+                            <p class="mb-1"><strong>Номер поставки:</strong> <span th:text="${order.orderNumber}"></span></p>
                             <p class="mb-1"><strong>Клиент:</strong> <span th:text="${order.client.organizationName}"></span></p>
                             <p class="mb-0"><strong>Адрес:</strong> <span th:text="${order.client.deliveryAddress}"></span></p>
                         </div>
@@ -64,7 +64,7 @@
             </div>
 
             <div class="link-section">
-                <a th:href="${backUrl}">&larr; К заказу</a>
+                <a th:href="${backUrl}">&larr; К поставке</a>
             </div>
         </div>
     </div>
