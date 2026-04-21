@@ -38,7 +38,7 @@
                 <div class="col-md-6">
                     <div class="card border-0 bg-light">
                         <div class="card-body">
-                            <h6 class="card-title fw-bold">Заказ</h6>
+                            <h6 class="card-title fw-bold">Поставка</h6>
                             <p class="mb-1"><strong>Номер:</strong> <span th:text="${task.clientOrder.orderNumber}"></span></p>
                             <p class="mb-1"><strong>Клиент:</strong> <span th:text="${task.clientOrder.client.organizationName}"></span></p>
                             <p class="mb-0"><strong>Сумма:</strong>
@@ -81,8 +81,8 @@
                    class="btn btn-primary">Оформить ТТН</a>
             </div>
 
-            <!-- Позиции заказа -->
-            <h5 class="fw-bold mb-3">Позиции заказа</h5>
+            <!-- Позиции поставки -->
+            <h5 class="fw-bold mb-3">Позиции поставки</h5>
             <div class="table-responsive mb-4">
                 <table class="table table-modern">
                     <thead>

@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Заявка на поставку | СИАРСП</title>
+    <title>Заявка на заказ товара | СИАРСП</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="/css/bootstrap.min.css" rel="stylesheet">
@@ -23,7 +23,7 @@
     <div th:if="${requestSuccess}" class="alert alert-success" th:text="${requestSuccess}"></div>
 
     <div class="profile-card p-4">
-        <h2 class="h3 mb-4 fw-bold">Заявка на поставку №<span th:text="${requestDTO.getId()}"></span></h2>
+        <h2 class="h3 mb-4 fw-bold">Заявка на заказ товара №<span th:text="${requestDTO.getId()}"></span></h2>
 
         <div class="row mb-3">
             <div class="col-md-4"><strong>Дата создания:</strong></div>
