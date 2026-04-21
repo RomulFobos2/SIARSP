@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Заказ | СИАРСП</title>
+    <title>Поставка | СИАРСП</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="/css/bootstrap.min.css" rel="stylesheet">
@@ -22,7 +22,7 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h1 class="page-title">
-                        Заказ <span th:text="${order.orderNumber}"></span>
+                        Поставка <span th:text="${order.orderNumber}"></span>
                     </h1>
                     <span class="badge fs-6"
                           th:text="${order.status.displayName}"
@@ -42,7 +42,7 @@
                 <div class="col-md-6">
                     <div class="card border-0 bg-light">
                         <div class="card-body">
-                            <h6 class="card-title fw-bold">Информация о заказе</h6>
+                            <h6 class="card-title fw-bold">Информация о поставке</h6>
                             <p class="mb-1"><strong>Номер:</strong> <span th:text="${order.orderNumber}"></span></p>
                             <p class="mb-1"><strong>Дата создания:</strong>
                                 <span th:text="${#temporals.format(order.orderDate, 'dd.MM.yyyy HH:mm')}"></span></p>
@@ -74,8 +74,8 @@
                 </div>
             </div>
 
-            <!-- Позиции заказа -->
-            <h5 class="fw-bold mb-3">Позиции заказа</h5>
+            <!-- Позиции поставки -->
+            <h5 class="fw-bold mb-3">Позиции поставки</h5>
             <div class="table-responsive mb-4">
                 <table class="table table-modern">
                     <thead>
@@ -123,13 +123,13 @@
                 <form th:if="${order.status.name() == 'NEW'}"
                       th:action="'/employee/manager/clientOrders/confirmClientOrder/' + ${order.id}"
                       method="post" class="d-inline">
-                    <button type="submit" class="btn btn-success">Подтвердить заказ</button>
+                    <button type="submit" class="btn btn-success">Подтвердить поставку</button>
                 </form>
 
                 <!-- Отмена: NEW, CONFIRMED, RESERVED -->
                 <button th:if="${order.status.name() == 'NEW' or order.status.name() == 'CONFIRMED' or order.status.name() == 'RESERVED'}"
                         type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">
-                    Отменить заказ
+                    Отменить поставку
                 </button>
             </div>
 
@@ -157,7 +157,7 @@
             </div>
 
             <div class="link-section">
-                <a href="/employee/manager/clientOrders/allClientOrders">&larr; К списку заказов</a>
+                <a href="/employee/manager/clientOrders/allClientOrders">&larr; К списку поставок</a>
             </div>
         </div>
     </div>

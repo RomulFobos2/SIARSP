@@ -16,7 +16,7 @@
             <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
             <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
-            <h1 class="page-title mb-4">Заказы на сборку</h1>
+            <h1 class="page-title mb-4">Поставки на сборку</h1>
 
             <!-- Фильтр и поиск -->
             <form method="get" action="/employee/warehouseWorker/clientOrders/allClientOrders" class="mb-4">
@@ -61,7 +61,7 @@
                     <thead>
                     <tr>
                         <th>#</th>
-                        <th>Номер заказа</th>
+                        <th>Номер поставки</th>
                         <th>Клиент</th>
                         <th>Дата доставки</th>
                         <th>Сумма</th>

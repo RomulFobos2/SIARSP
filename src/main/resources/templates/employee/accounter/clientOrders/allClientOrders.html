@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Заказы клиентов | СИАРСП</title>
+    <title>Поставки клиентам | СИАРСП</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="/css/bootstrap.min.css" rel="stylesheet">
@@ -14,8 +14,8 @@
 <div class="container my-5">
 
     <div class="mb-4">
-        <h1 class="page-title">Заказы клиентов</h1>
-        <p class="page-subtitle">Просмотр заказов</p>
+        <h1 class="page-title">Поставки клиентам</h1>
+        <p class="page-subtitle">Просмотр поставок</p>
     </div>
 
     <!-- Поиск и фильтрация -->
@@ -34,13 +34,13 @@
         </div>
     </div>
 
-    <div th:if="${orders.isEmpty()}" class="alert alert-info">Заказы не найдены.</div>
+    <div th:if="${orders.isEmpty()}" class="alert alert-info">Поставки не найдены.</div>
 
     <div th:if="${!orders.isEmpty()}" class="table-responsive">
         <table class="table table-modern" id="ordersTable">
             <thead>
             <tr>
-                <th>№ заказа</th>
+                <th>№ поставки</th>
                 <th>Дата</th>
                 <th>Клиент</th>
                 <th>Ответственный</th>
