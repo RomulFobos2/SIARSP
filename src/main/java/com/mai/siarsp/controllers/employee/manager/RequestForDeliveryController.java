@@ -3,7 +3,11 @@ package com.mai.siarsp.controllers.employee.manager;
 import com.mai.siarsp.dto.RequestForDeliveryDTO;
 import com.mai.siarsp.enumeration.RequestStatus;
 import com.mai.siarsp.models.RequestForDelivery;
+import com.mai.siarsp.service.employee.ClientOrderService;
 import com.mai.siarsp.service.employee.manager.RequestForDeliveryService;
+import com.mai.siarsp.service.employee.manager.SupplierService;
+import com.mai.siarsp.service.employee.warehouseManager.ProductService;
+import com.mai.siarsp.service.employee.warehouseManager.WarehouseService;
 import com.mai.siarsp.service.general.ReportDocumentService;
 import com.mai.siarsp.service.general.RequestForDeliveryDocumentService;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.List;
 
 @Controller("managerRequestForDeliveryController")
@@ -29,10 +34,52 @@ import java.util.List;
 public class RequestForDeliveryController {
 
     private final RequestForDeliveryService requestForDeliveryService;
+    private final SupplierService supplierService;
+    private final ProductService productService;
+    private final WarehouseService warehouseService;
+    private final ClientOrderService clientOrderService;
 
     public RequestForDeliveryController(
-            @Qualifier("managerRequestForDeliveryService") RequestForDeliveryService requestForDeliveryService) {
+            @Qualifier("managerRequestForDeliveryService") RequestForDeliveryService requestForDeliveryService,
+            SupplierService supplierService,
+            @Qualifier("warehouseManagerProductService") ProductService productService,
+            @Qualifier("warehouseManagerWarehouseService") WarehouseService warehouseService,
+            ClientOrderService clientOrderService) {
         this.requestForDeliveryService = requestForDeliveryService;
+        this.supplierService = supplierService;
+        this.productService = productService;
+        this.warehouseService = warehouseService;
+        this.clientOrderService = clientOrderService;
+    }
+
+    @Transactional
+    @GetMapping("/employee/manager/requestsForDelivery/addRequestForDelivery")
+    public String addRequestForDelivery(Model model) {
+        model.addAttribute("allSuppliers", supplierService.getAllSuppliers());
+        model.addAttribute("allProducts", productService.getAllProducts());
+        model.addAttribute("allWarehouses", warehouseService.getAllWarehouses());
+        model.addAttribute("deficitData", clientOrderService.getProductDeficit());
+        model.addAttribute("warehouseCapacityData", warehouseService.getWarehouseCapacityData());
+        model.addAttribute("productVolumeData", warehouseService.getProductVolumeData());
+        return "employee/manager/requestsForDelivery/addRequestForDelivery";
+    }
+
+    @PostMapping("/employee/manager/requestsForDelivery/addRequestForDelivery")
+    public String addRequestForDelivery(@RequestParam Long supplierId,
+                                        @RequestParam Long warehouseId,
+                                        @RequestParam BigDecimal deliveryCost,
+                                        @RequestParam List<Long> productIds,
+                                        @RequestParam List<Integer> quantities,
+                                        @RequestParam List<BigDecimal> purchasePrices,
+                                        @RequestParam(required = false) List<String> units,
+                                        RedirectAttributes redirectAttributes) {
+        if (!requestForDeliveryService.createRequestByDirector(
+                supplierId, warehouseId, deliveryCost, productIds, quantities, purchasePrices, units)) {
+            redirectAttributes.addFlashAttribute("requestError", "Ошибка при создании заявки.");
+            return "redirect:/employee/manager/requestsForDelivery/addRequestForDelivery";
+        }
+        redirectAttributes.addFlashAttribute("requestSuccess", "Заявка создана и автоматически согласована.");
+        return "redirect:/employee/manager/requestsForDelivery/allRequestsForDelivery";
     }
 
     @Transactional

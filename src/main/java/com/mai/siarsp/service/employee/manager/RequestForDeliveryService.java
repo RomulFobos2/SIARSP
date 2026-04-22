@@ -3,11 +3,8 @@ package com.mai.siarsp.service.employee.manager;
 import com.mai.siarsp.dto.RequestForDeliveryDTO;
 import com.mai.siarsp.enumeration.RequestStatus;
 import com.mai.siarsp.mapper.RequestForDeliveryMapper;
-import com.mai.siarsp.models.Comment;
-import com.mai.siarsp.models.Employee;
-import com.mai.siarsp.models.RequestForDelivery;
-import com.mai.siarsp.repo.CommentRepository;
-import com.mai.siarsp.repo.RequestForDeliveryRepository;
+import com.mai.siarsp.models.*;
+import com.mai.siarsp.repo.*;
 import com.mai.siarsp.service.employee.EmployeeService;
 import com.mai.siarsp.service.employee.NotificationService;
 import lombok.Getter;
@@ -16,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
+import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
@@ -34,15 +32,27 @@ public class RequestForDeliveryService {
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     private final RequestForDeliveryRepository requestForDeliveryRepository;
+    private final RequestedProductRepository requestedProductRepository;
+    private final SupplierRepository supplierRepository;
+    private final ProductRepository productRepository;
+    private final WarehouseRepository warehouseRepository;
     private final EmployeeService employeeService;
     private final NotificationService notificationService;
     private final CommentRepository commentRepository;
 
     public RequestForDeliveryService(RequestForDeliveryRepository requestForDeliveryRepository,
+                                      RequestedProductRepository requestedProductRepository,
+                                      SupplierRepository supplierRepository,
+                                      ProductRepository productRepository,
+                                      WarehouseRepository warehouseRepository,
                                       EmployeeService employeeService,
                                       NotificationService notificationService,
                                       CommentRepository commentRepository) {
         this.requestForDeliveryRepository = requestForDeliveryRepository;
+        this.requestedProductRepository = requestedProductRepository;
+        this.supplierRepository = supplierRepository;
+        this.productRepository = productRepository;
+        this.warehouseRepository = warehouseRepository;
         this.employeeService = employeeService;
         this.notificationService = notificationService;
         this.commentRepository = commentRepository;
@@ -65,6 +75,74 @@ public class RequestForDeliveryService {
 
     public RequestForDelivery getRequestEntity(Long id) {
         return requestForDeliveryRepository.findById(id).orElse(null);
+    }
+
+    @Transactional
+    public boolean createRequestByDirector(Long supplierId, Long warehouseId, BigDecimal deliveryCost,
+                                            List<Long> productIds, List<Integer> quantities,
+                                            List<BigDecimal> purchasePrices, List<String> units) {
+        log.info("Директор создаёт заявку на заказ товара для поставщика id={}...", supplierId);
+
+        Optional<Supplier> supplierOpt = supplierRepository.findById(supplierId);
+        if (supplierOpt.isEmpty()) {
+            log.error("Поставщик с id={} не найден.", supplierId);
+            return false;
+        }
+
+        Optional<Warehouse> warehouseOpt = warehouseRepository.findById(warehouseId);
+        if (warehouseOpt.isEmpty()) {
+            log.error("Склад с id={} не найден.", warehouseId);
+            return false;
+        }
+
+        if (productIds == null || productIds.isEmpty()) {
+            log.error("Список товаров пуст.");
+            return false;
+        }
+
+        RequestForDelivery request = new RequestForDelivery(supplierOpt.get());
+        request.setWarehouse(warehouseOpt.get());
+        request.setDeliveryCost(deliveryCost != null ? deliveryCost : BigDecimal.ZERO);
+        request.setStatus(RequestStatus.APPROVED);
+
+        for (int i = 0; i < productIds.size(); i++) {
+            Optional<Product> productOpt = productRepository.findById(productIds.get(i));
+            if (productOpt.isEmpty()) {
+                log.error("Товар с id={} не найден.", productIds.get(i));
+                return false;
+            }
+            int qty = (quantities != null && i < quantities.size()) ? quantities.get(i) : 1;
+            BigDecimal price = (purchasePrices != null && i < purchasePrices.size()) ? purchasePrices.get(i) : BigDecimal.ZERO;
+            String unit = (units != null && i < units.size()) ? units.get(i) : null;
+            RequestedProduct rp = new RequestedProduct(productOpt.get(), qty, price);
+            rp.setUnit(unit);
+            request.addRequestedProduct(rp);
+        }
+
+        Warehouse warehouse = warehouseOpt.get();
+        for (RequestedProduct rp : request.getRequestedProducts()) {
+            if (!warehouse.canStoreProduct(rp.getProduct())) {
+                log.error("Товар '{}' несовместим со складом '{}'",
+                        rp.getProduct().getName(), warehouse.getName());
+                return false;
+            }
+        }
+
+        try {
+            requestForDeliveryRepository.save(request);
+        } catch (Exception e) {
+            log.error("Ошибка при сохранении заявки директора: {}", e.getMessage(), e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return false;
+        }
+
+        String notificationText = String.format(
+                "Директор создал заявку на заказ товара №%d для поставщика «%s». Заявка согласована и готова к приёмке.",
+                request.getId(), request.getSupplier().getName());
+        notificationService.notifyByRoles(List.of("ROLE_EMPLOYEE_WAREHOUSE_MANAGER"), notificationText);
+
+        log.info("Заявка №{} создана директором со статусом APPROVED.", request.getId());
+        return true;
     }
 
     @Transactional
