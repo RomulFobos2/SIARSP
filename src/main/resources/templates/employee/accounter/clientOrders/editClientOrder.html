@@ -1,0 +1,395 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Редактирование поставки | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <style>
+        #productsContainer .product-row {
+            margin-bottom: 2.25rem !important;
+        }
+
+        #productsContainer .product-row .quantity-col {
+            position: relative;
+        }
+
+        #productsContainer .product-row .available-hint {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 0.25rem;
+            white-space: nowrap;
+        }
+    </style>
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/javascript.js"></script>
+</head>
+<body>
+<header th:insert="~{blocks/header :: header}"></header>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+            <div class="profile-card p-4">
+
+                <h1 class="page-title">Редактирование поставки</h1>
+                <p class="page-subtitle">
+                    Поставка <span th:text="${order.orderNumber}"></span> для
+                    <span th:text="${order.client.organizationName}"></span>
+                </p>
+
+                <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+                <form id="orderForm" method="post" enctype="multipart/form-data"
+                      th:action="'/employee/accounter/clientOrders/editClientOrder/' + ${order.id}">
+
+                    <!-- Клиент (readonly) -->
+                    <div class="mb-4">
+                        <h6 class="form-section-title">Клиент</h6>
+                        <input type="text" class="form-control" disabled
+                               th:value="${order.client.getDisplayName()}">
+                    </div>
+
+                    <!-- Дата доставки и комментарий -->
+                    <div class="mb-4">
+                        <h6 class="form-section-title">Параметры заказа</h6>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="deliveryDate" class="form-label">Дата доставки *</label>
+                                <input type="date" id="deliveryDate" name="deliveryDate"
+                                       class="form-control" required
+                                       th:value="${order.deliveryDate}">
+                            </div>
+                            <div class="col-md-8">
+                                <label for="comment" class="form-label">Комментарий</label>
+                                <textarea id="comment" name="comment" class="form-control"
+                                          maxlength="500" rows="2"
+                                          th:text="${order.comment}"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Контракт -->
+                    <div class="mb-4">
+                        <h6 class="form-section-title">Контракт</h6>
+                        <div th:if="${order.contractFile != null}" class="mb-2">
+                            <span class="text-muted">Текущий файл:</span>
+                            <strong th:text="${order.contractFile.contains('_') ? order.contractFile.substring(order.contractFile.indexOf('_') + 1) : order.contractFile}"></strong>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="contractFile" class="form-label">Заменить файл контракта (PDF, DOC, DOCX)</label>
+                            <input type="file" id="contractFile" name="contractFile"
+                                   class="form-control" accept=".pdf,.doc,.docx">
+                            <small class="text-muted">Оставьте пустым, чтобы сохранить текущий файл</small>
+                        </div>
+                    </div>
+
+                    <!-- Позиции поставки -->
+                    <div class="mb-4">
+                        <h6 class="form-section-title">Позиции поставки</h6>
+                        <div id="productsContainer">
+                            <!-- Динамические строки загружаются JS -->
+                        </div>
+                        <button type="button" id="addProductBtn" class="btn btn-outline-primary mt-2"
+                                onclick="addProductRow()">
+                            + Добавить товар
+                        </button>
+                    </div>
+
+                    <!-- Итого -->
+                    <div class="mb-4 p-3 bg-light rounded">
+                        <h5 class="mb-0">Итого: <span id="grandTotal" class="fw-bold">0.00</span> руб.</h5>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button type="submit" class="btn btn-primary btn-profile">Сохранить изменения</button>
+                    </div>
+
+                    <div class="divider"><span>или</span></div>
+                    <div class="link-section">
+                        <a th:href="'/employee/accounter/clientOrders/detailsClientOrder/' + ${order.id}">&larr; Назад к поставке</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:insert="~{blocks/footer :: footer}"></div>
+
+<script th:inline="javascript">
+    var productsData = /*[[${productsList}]]*/ [];
+    var existingProducts = /*[[${orderProducts}]]*/ [];
+</script>
+<script>
+    var rowIndex = 0;
+
+    function toJsNumber(value) {
+        if (value === null || value === undefined) return 0;
+        var normalized = String(value).replace(/\s/g, '').replace(',', '.').replace(/[^0-9.-]/g, '');
+        var num = parseFloat(normalized);
+        return isNaN(num) ? 0 : num;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        for (var i = 0; i < existingProducts.length; i++) {
+            addProductRowWithData(existingProducts[i]);
+        }
+        if (existingProducts.length === 0) {
+            addProductRow();
+        }
+        updateSelectOptions();
+    });
+
+    function addProductRowWithData(data) {
+        rowIndex++;
+        var container = document.getElementById('productsContainer');
+        var row = document.createElement('div');
+        row.className = 'row g-2 mb-3 product-row align-items-end';
+        row.setAttribute('data-row-index', rowIndex);
+        row.innerHTML =
+            '<div class="col-md-4">' +
+                '<label class="form-label">Товар *</label>' +
+                '<select name="productId" class="form-select product-select" required onchange="onProductChange(this)">' +
+                    '<option value="">-- Выберите --</option>' +
+                    buildProductOptions(data.productId) +
+                '</select>' +
+            '</div>' +
+            '<div class="col-md-2 quantity-col">' +
+                '<label class="form-label">Кол-во *</label>' +
+                '<input type="number" name="quantity" class="form-control quantity-input" min="1" required oninput="calculateRowTotal(this)" value="' + toJsNumber(data.quantity) + '">' +
+                '<small class="text-muted available-hint"></small>' +
+            '</div>' +
+            '<div class="col-md-2">' +
+                '<label class="form-label">Цена без скидки *</label>' +
+                '<input type="number" name="originalPrice" class="form-control original-price-input" min="0.01" step="0.01" required oninput="calculateDiscountedPrice(this)" value="' + toJsNumber(data.originalPrice || data.price) + '">' +
+            '</div>' +
+            '<div class="col-md-1">' +
+                '<label class="form-label">Скидка %</label>' +
+                '<input type="number" name="discountPercent" class="form-control discount-input" min="0" max="100" oninput="calculateDiscountedPrice(this)" value="' + (toJsNumber(data.discountPercent) || 0) + '">' +
+            '</div>' +
+            '<div class="col-md-1">' +
+                '<label class="form-label">Цена</label>' +
+                '<input type="number" name="price" class="form-control price-input" step="0.01" readonly required value="' + toJsNumber(data.price) + '">' +
+            '</div>' +
+            '<div class="col-md-1">' +
+                '<label class="form-label">Сумма</label>' +
+                '<input type="text" class="form-control row-total" readonly value="' + (toJsNumber(data.quantity) * toJsNumber(data.price)).toFixed(2) + '">' +
+            '</div>' +
+            '<div class="col-md-1 d-flex align-items-end">' +
+                '<button type="button" class="btn btn-outline-danger btn-sm" onclick="removeProductRow(this)">Удалить</button>' +
+            '</div>';
+        container.appendChild(row);
+
+        var select = row.querySelector('.product-select');
+        onProductChange(select);
+        updateGrandTotal();
+    }
+
+    function addProductRow() {
+        rowIndex++;
+        var container = document.getElementById('productsContainer');
+        var row = document.createElement('div');
+        row.className = 'row g-2 mb-3 product-row align-items-end';
+        row.setAttribute('data-row-index', rowIndex);
+        row.innerHTML =
+            '<div class="col-md-4">' +
+                '<label class="form-label">Товар *</label>' +
+                '<select name="productId" class="form-select product-select" required onchange="onProductChange(this)">' +
+                    '<option value="">-- Выберите --</option>' +
+                    buildProductOptions(null) +
+                '</select>' +
+            '</div>' +
+            '<div class="col-md-2 quantity-col">' +
+                '<label class="form-label">Кол-во *</label>' +
+                '<input type="number" name="quantity" class="form-control quantity-input" min="1" required oninput="calculateRowTotal(this)">' +
+                '<small class="text-muted available-hint"></small>' +
+            '</div>' +
+            '<div class="col-md-2">' +
+                '<label class="form-label">Цена без скидки *</label>' +
+                '<input type="number" name="originalPrice" class="form-control original-price-input" min="0.01" step="0.01" required oninput="calculateDiscountedPrice(this)">' +
+            '</div>' +
+            '<div class="col-md-1">' +
+                '<label class="form-label">Скидка %</label>' +
+                '<input type="number" name="discountPercent" class="form-control discount-input" min="0" max="100" value="0" oninput="calculateDiscountedPrice(this)">' +
+            '</div>' +
+            '<div class="col-md-1">' +
+                '<label class="form-label">Цена</label>' +
+                '<input type="number" name="price" class="form-control price-input" step="0.01" readonly required>' +
+            '</div>' +
+            '<div class="col-md-1">' +
+                '<label class="form-label">Сумма</label>' +
+                '<input type="text" class="form-control row-total" readonly value="0.00">' +
+            '</div>' +
+            '<div class="col-md-1 d-flex align-items-end">' +
+                '<button type="button" class="btn btn-outline-danger btn-sm" onclick="removeProductRow(this)">Удалить</button>' +
+            '</div>';
+        container.appendChild(row);
+        updateSelectOptions();
+    }
+
+    function buildProductOptions(selectedId) {
+        var html = '';
+        for (var i = 0; i < productsData.length; i++) {
+            var p = productsData[i];
+            var selected = (selectedId && p.id == selectedId) ? ' selected' : '';
+            var avgDel = p.avgDeliveryDays ? Math.round(p.avgDeliveryDays) : 0;
+            html += '<option value="' + p.id + '" data-available="' + p.availableQuantity
+                + '" data-stock="' + p.stockQuantity
+                + '" data-avg-delivery="' + avgDel + '"' + selected + '>'
+                + p.name + ' (' + p.article + ') — на складе: ' + p.stockQuantity + ' шт.'
+                + '</option>';
+        }
+        return html;
+    }
+
+    function onProductChange(select) {
+        if (!select) return;
+        var allSelects = document.querySelectorAll('.product-select');
+        for (var i = 0; i < allSelects.length; i++) {
+            if (allSelects[i] !== select && allSelects[i].value === select.value && select.value) {
+                alert('Этот товар уже добавлен в заказ.');
+                select.value = '';
+
+                var row = select.closest('.product-row');
+                if (!row) { updateSelectOptions(); return; }
+                var qtyInput = row.querySelector('.quantity-input');
+                var hint = row.querySelector('.available-hint');
+                if (!qtyInput || !hint) { updateSelectOptions(); return; }
+
+                qtyInput.value = '';
+                hint.textContent = '';
+                row.querySelector('.original-price-input').value = '';
+                row.querySelector('.discount-input').value = '0';
+                row.querySelector('.price-input').value = '';
+                row.querySelector('.row-total').value = '0.00';
+                updateGrandTotal();
+                updateSelectOptions();
+                return;
+            }
+        }
+
+        var row = select.closest('.product-row');
+        if (!row) { updateSelectOptions(); return; }
+        var qtyInput = row.querySelector('.quantity-input');
+        var selectedOption = select.options[select.selectedIndex];
+        var hint = row.querySelector('.available-hint');
+        if (!selectedOption || !qtyInput || !hint) { updateSelectOptions(); return; }
+
+        if (selectedOption.value) {
+            var available = parseInt(selectedOption.getAttribute('data-available'), 10);
+            hint.textContent = 'Доступно: ' + available + ' шт.';
+            hint.className = 'text-muted available-hint';
+            updateDeficitHint(row);
+        } else {
+            hint.textContent = '';
+            hint.className = 'text-muted available-hint';
+        }
+        updateSelectOptions();
+    }
+
+    function updateDeficitHint(row) {
+        var select = row.querySelector('.product-select');
+        var selectedOption = select.options[select.selectedIndex];
+        var qtyInput = row.querySelector('.quantity-input');
+        var hint = row.querySelector('.available-hint');
+
+        if (!selectedOption || !selectedOption.value) {
+            hint.textContent = '';
+            hint.className = 'text-muted available-hint';
+            return;
+        }
+
+        var available = parseInt(selectedOption.getAttribute('data-available'));
+        var qty = parseInt(qtyInput.value) || 0;
+
+        if (qty > available) {
+            var deficit = qty - available;
+            var avgDays = parseInt(selectedOption.getAttribute('data-avg-delivery')) || 0;
+            var text = 'Дефицит: ' + deficit + ' шт.';
+            if (avgDays > 0) text += ' | Среднее время поставки: ' + avgDays + ' дн.';
+            hint.textContent = text;
+            hint.className = 'text-warning available-hint';
+        } else {
+            hint.textContent = 'Доступно: ' + available + ' шт.';
+            hint.className = 'text-muted available-hint';
+        }
+    }
+
+    function updateSelectOptions() {
+        var allSelects = document.querySelectorAll('.product-select');
+        var selectedValues = [];
+        for (var i = 0; i < allSelects.length; i++) {
+            if (allSelects[i].value) selectedValues.push(allSelects[i].value);
+        }
+        for (var i = 0; i < allSelects.length; i++) {
+            var currentVal = allSelects[i].value;
+            var options = allSelects[i].querySelectorAll('option');
+            for (var j = 0; j < options.length; j++) {
+                if (!options[j].value) continue;
+                options[j].disabled = (options[j].value !== currentVal && selectedValues.indexOf(options[j].value) !== -1);
+            }
+        }
+    }
+
+    function calculateDiscountedPrice(input) {
+        var row = input.closest('.product-row');
+        var originalPrice = parseFloat(row.querySelector('.original-price-input').value) || 0;
+        var discount = parseFloat(row.querySelector('.discount-input').value) || 0;
+        if (discount < 0) discount = 0;
+        if (discount > 100) discount = 100;
+        var discounted = originalPrice * (1 - discount / 100);
+        row.querySelector('.price-input').value = discounted.toFixed(2);
+        calculateRowTotal(row.querySelector('.price-input'));
+    }
+
+    function calculateRowTotal(input) {
+        var row = input.closest('.product-row');
+        var qty = parseFloat(row.querySelector('.quantity-input').value) || 0;
+        var price = parseFloat(row.querySelector('.price-input').value) || 0;
+        row.querySelector('.row-total').value = (qty * price).toFixed(2);
+        updateGrandTotal();
+        updateDeficitHint(row);
+    }
+
+    function updateGrandTotal() {
+        var totals = document.querySelectorAll('.row-total');
+        var sum = 0;
+        for (var i = 0; i < totals.length; i++) {
+            sum += parseFloat(totals[i].value) || 0;
+        }
+        document.getElementById('grandTotal').textContent = sum.toFixed(2);
+    }
+
+    function removeProductRow(btn) {
+        btn.closest('.product-row').remove();
+        updateGrandTotal();
+        updateSelectOptions();
+    }
+
+    document.getElementById('orderForm').addEventListener('submit', function(e) {
+        var rows = document.querySelectorAll('.product-row');
+        if (rows.length === 0) {
+            e.preventDefault();
+            alert('Добавьте хотя бы один товар в заказ.');
+            return;
+        }
+        var selects = document.querySelectorAll('.product-select');
+        var selectedIds = [];
+        for (var i = 0; i < selects.length; i++) {
+            if (!selects[i].value) {
+                e.preventDefault();
+                alert('Выберите товар во всех позициях.');
+                return;
+            }
+            if (selectedIds.indexOf(selects[i].value) !== -1) {
+                e.preventDefault();
+                alert('Один и тот же товар не может быть добавлен дважды.');
+                return;
+            }
+            selectedIds.push(selects[i].value);
+        }
+    });
+</script>
+</body>
+</html>

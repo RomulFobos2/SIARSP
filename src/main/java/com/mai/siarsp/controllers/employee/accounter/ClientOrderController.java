@@ -1,8 +1,12 @@
 package com.mai.siarsp.controllers.employee.accounter;
 
 import com.mai.siarsp.enumeration.ClientOrderStatus;
+import com.mai.siarsp.models.*;
 import com.mai.siarsp.models.AcceptanceAct;
 import com.mai.siarsp.models.ClientOrder;
+import com.mai.siarsp.repo.ClientRepository;
+import com.mai.siarsp.repo.ProductRepository;
+import com.mai.siarsp.repo.RequestForDeliveryRepository;
 import com.mai.siarsp.service.employee.ClientOrderService;
 import com.mai.siarsp.service.employee.DeliveryTaskService;
 import com.mai.siarsp.service.general.AcceptanceActDocumentService;
@@ -15,13 +19,18 @@ import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
-import java.util.Optional;
+import java.math.BigDecimal;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Controller("accounterClientOrderController")
 @RequestMapping("/employee/accounter/clientOrders")
@@ -30,11 +39,20 @@ public class ClientOrderController {
 
     private final ClientOrderService clientOrderService;
     private final DeliveryTaskService deliveryTaskService;
+    private final ClientRepository clientRepository;
+    private final ProductRepository productRepository;
+    private final RequestForDeliveryRepository requestForDeliveryRepository;
 
     public ClientOrderController(ClientOrderService clientOrderService,
-                                 DeliveryTaskService deliveryTaskService) {
+                                 DeliveryTaskService deliveryTaskService,
+                                 ClientRepository clientRepository,
+                                 ProductRepository productRepository,
+                                 RequestForDeliveryRepository requestForDeliveryRepository) {
         this.clientOrderService = clientOrderService;
         this.deliveryTaskService = deliveryTaskService;
+        this.clientRepository = clientRepository;
+        this.productRepository = productRepository;
+        this.requestForDeliveryRepository = requestForDeliveryRepository;
     }
 
     @GetMapping("/allClientOrders")
@@ -55,6 +73,117 @@ public class ClientOrderController {
         ClientOrder order = optOrder.get();
         model.addAttribute("order", order);
         return "employee/accounter/clientOrders/detailsClientOrder";
+    }
+
+    // ========== СОЗДАНИЕ / РЕДАКТИРОВАНИЕ ==========
+
+    @Transactional(readOnly = true)
+    @GetMapping("/createClientOrder")
+    public String createClientOrderPage(Model model) {
+        List<Client> clients = clientRepository.findAll().stream()
+                .sorted(Comparator.comparing(Client::getOrganizationName))
+                .collect(Collectors.toList());
+
+        List<Map<String, Object>> productsList = buildProductsList();
+
+        model.addAttribute("clients", clients);
+        model.addAttribute("productsList", productsList);
+        return "employee/accounter/clientOrders/createClientOrder";
+    }
+
+    @PostMapping("/createClientOrder")
+    public String createClientOrder(@RequestParam Long clientId,
+                                    @RequestParam String deliveryDate,
+                                    @RequestParam(required = false) String comment,
+                                    @RequestParam("productId") List<Long> productIds,
+                                    @RequestParam("quantity") List<Integer> quantities,
+                                    @RequestParam("price") List<BigDecimal> prices,
+                                    @RequestParam(value = "originalPrice", required = false) List<BigDecimal> originalPrices,
+                                    @RequestParam(value = "discountPercent", required = false) List<Integer> discountPercents,
+                                    @RequestParam("contractFile") MultipartFile contractFile,
+                                    @AuthenticationPrincipal Employee currentEmployee,
+                                    RedirectAttributes redirectAttributes) {
+        List<ClientOrderService.OrderItemRequest> items = new ArrayList<>();
+        for (int i = 0; i < productIds.size(); i++) {
+            BigDecimal origPrice = (originalPrices != null && i < originalPrices.size()) ? originalPrices.get(i) : null;
+            Integer discount = (discountPercents != null && i < discountPercents.size()) ? discountPercents.get(i) : null;
+            items.add(new ClientOrderService.OrderItemRequest(
+                    productIds.get(i), quantities.get(i), prices.get(i), origPrice, discount));
+        }
+
+        java.time.LocalDate date = java.time.LocalDate.parse(deliveryDate);
+
+        if (!clientOrderService.createOrder(clientId, date, comment, items, currentEmployee, contractFile)) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при создании поставки.");
+            return "redirect:/employee/accounter/clientOrders/createClientOrder";
+        }
+
+        redirectAttributes.addFlashAttribute("successMessage", "Поставка успешно создана.");
+        return "redirect:/employee/accounter/clientOrders/allClientOrders";
+    }
+
+    @Transactional(readOnly = true)
+    @GetMapping("/editClientOrder/{id}")
+    public String editClientOrderPage(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
+        Optional<ClientOrder> optOrder = clientOrderService.getOrderById(id);
+        if (optOrder.isEmpty()) {
+            return "redirect:/employee/accounter/clientOrders/allClientOrders";
+        }
+
+        ClientOrder order = optOrder.get();
+        if (order.getStatus() != ClientOrderStatus.NEW) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Редактировать можно только поставки в статусе «Новая».");
+            return "redirect:/employee/accounter/clientOrders/detailsClientOrder/" + id;
+        }
+
+        List<Map<String, Object>> productsList = buildProductsList();
+
+        List<Map<String, Object>> orderProducts = new ArrayList<>();
+        for (var op : order.getOrderedProducts()) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("productId", op.getProduct().getId());
+            item.put("productName", op.getProduct().getName());
+            item.put("quantity", op.getQuantity());
+            item.put("price", op.getPrice());
+            item.put("originalPrice", op.getOriginalPrice());
+            item.put("discountPercent", op.getDiscountPercent());
+            orderProducts.add(item);
+        }
+
+        model.addAttribute("order", order);
+        model.addAttribute("productsList", productsList);
+        model.addAttribute("orderProducts", orderProducts);
+        return "employee/accounter/clientOrders/editClientOrder";
+    }
+
+    @PostMapping("/editClientOrder/{id}")
+    public String editClientOrder(@PathVariable Long id,
+                                  @RequestParam String deliveryDate,
+                                  @RequestParam(required = false) String comment,
+                                  @RequestParam("productId") List<Long> productIds,
+                                  @RequestParam("quantity") List<Integer> quantities,
+                                  @RequestParam("price") List<BigDecimal> prices,
+                                  @RequestParam(value = "originalPrice", required = false) List<BigDecimal> originalPrices,
+                                  @RequestParam(value = "discountPercent", required = false) List<Integer> discountPercents,
+                                  @RequestParam(value = "contractFile", required = false) MultipartFile contractFile,
+                                  RedirectAttributes redirectAttributes) {
+        List<ClientOrderService.OrderItemRequest> items = new ArrayList<>();
+        for (int i = 0; i < productIds.size(); i++) {
+            BigDecimal origPrice = (originalPrices != null && i < originalPrices.size()) ? originalPrices.get(i) : null;
+            Integer discount = (discountPercents != null && i < discountPercents.size()) ? discountPercents.get(i) : null;
+            items.add(new ClientOrderService.OrderItemRequest(
+                    productIds.get(i), quantities.get(i), prices.get(i), origPrice, discount));
+        }
+
+        java.time.LocalDate date = java.time.LocalDate.parse(deliveryDate);
+
+        if (!clientOrderService.updateOrder(id, date, comment, items, contractFile)) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при обновлении поставки.");
+            return "redirect:/employee/accounter/clientOrders/editClientOrder/" + id;
+        }
+
+        redirectAttributes.addFlashAttribute("successMessage", "Поставка обновлена.");
+        return "redirect:/employee/accounter/clientOrders/detailsClientOrder/" + id;
     }
 
     // ========== ПРОСМОТР ДОКУМЕНТОВ (read-only) ==========
@@ -153,5 +282,43 @@ public class ClientOrderController {
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
         headers.setContentDisposition(ContentDisposition.attachment().filename(file.fileName()).build());
         return ResponseEntity.ok().headers(headers).body(file.content());
+    }
+
+    // ========== ВСПОМОГАТЕЛЬНЫЕ ==========
+
+    /**
+     * Формирует список товаров для JS в форме создания/редактирования.
+     * Включает среднее время поставки по каждому товару.
+     */
+    private List<Map<String, Object>> buildProductsList() {
+        List<Product> products = productRepository.findAll();
+
+        Map<Long, Double> avgDeliveryMap = new HashMap<>();
+        try {
+            List<Object[]> avgData = requestForDeliveryRepository.findAverageDeliveryDaysByProduct();
+            for (Object[] row : avgData) {
+                Long productId = ((Number) row[0]).longValue();
+                Double avgDays = row[1] != null ? ((Number) row[1]).doubleValue() : null;
+                if (avgDays != null) {
+                    avgDeliveryMap.put(productId, avgDays);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Не удалось загрузить среднее время поставки: {}", e.getMessage());
+        }
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Product p : products) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", p.getId());
+            map.put("name", p.getName());
+            map.put("article", p.getArticle());
+            map.put("availableQuantity", p.getAvailableQuantity());
+            map.put("stockQuantity", p.getStockQuantity());
+            map.put("avgDeliveryDays", avgDeliveryMap.getOrDefault(p.getId(), 0.0));
+            result.add(map);
+        }
+        result.sort(Comparator.comparing(m -> (String) m.get("name")));
+        return result;
     }
 }

@@ -13,9 +13,21 @@
 <header th:insert="~{blocks/header :: header}"></header>
 <div class="container my-5">
 
-    <div class="mb-4">
-        <h1 class="page-title">Поставки клиентам</h1>
-        <p class="page-subtitle">Просмотр поставок</p>
+    <div class="mb-4 d-flex justify-content-between align-items-start">
+        <div>
+            <h1 class="page-title">Поставки клиентам</h1>
+            <p class="page-subtitle">Просмотр и управление поставками</p>
+        </div>
+        <a href="/employee/accounter/clientOrders/createClientOrder" class="btn btn-success">+ Создать поставку</a>
+    </div>
+
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${successMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${errorMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 
     <!-- Поиск и фильтрация -->
