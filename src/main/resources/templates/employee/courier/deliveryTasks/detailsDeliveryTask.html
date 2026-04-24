@@ -42,7 +42,20 @@
                             <h6 class="card-title fw-bold">Поставка</h6>
                             <p class="mb-1"><strong>Номер:</strong> <span th:text="${task.clientOrder.orderNumber}"></span></p>
                             <p class="mb-1"><strong>Клиент:</strong> <span th:text="${task.clientOrder.client.organizationName}"></span></p>
-                            <p class="mb-0"><strong>Адрес доставки:</strong> <span th:text="${task.clientOrder.client.deliveryAddress}"></span></p>
+                            <p class="mb-1"><strong>Адрес доставки:</strong> <span th:text="${task.clientOrder.client.deliveryAddress}"></span></p>
+                            <p class="mb-1" th:if="${task.clientOrder.client.contactPerson != null and !task.clientOrder.client.contactPerson.isBlank()}">
+                                <strong>Контактное лицо:</strong> <span th:text="${task.clientOrder.client.contactPerson}"></span>
+                            </p>
+                            <p class="mb-1" th:if="${task.clientOrder.client.phoneNumber != null and !task.clientOrder.client.phoneNumber.isBlank()}">
+                                <strong>Телефон:</strong>
+                                <a th:href="'tel:' + ${task.clientOrder.client.phoneNumber}"
+                                   th:text="${task.clientOrder.client.phoneNumber}"></a>
+                            </p>
+                            <p class="mb-0" th:if="${task.clientOrder.client.email != null and !task.clientOrder.client.email.isBlank()}">
+                                <strong>Email:</strong>
+                                <a th:href="'mailto:' + ${task.clientOrder.client.email}"
+                                   th:text="${task.clientOrder.client.email}"></a>
+                            </p>
                         </div>
                     </div>
                 </div>
