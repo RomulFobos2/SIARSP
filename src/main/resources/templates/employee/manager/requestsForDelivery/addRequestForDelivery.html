@@ -1,0 +1,363 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Создание заявки | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/select2.min.css" />
+    <link rel="stylesheet" href="/css/select2-bootstrap-5-theme.min.css" />
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/select2.min.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container my-5">
+    <div class="profile-card mb-4">
+        <div class="profile-actions">
+            <a th:href="'/employee/manager/requestsForDelivery/allRequestsForDelivery'" class="btn btn-secondary btn-profile">← Назад к списку</a>
+        </div>
+    </div>
+
+    <div th:if="${requestError}" class="alert alert-danger" th:text="${requestError}"></div>
+
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>Внимание:</strong> Заявка, созданная директором, автоматически получает статус «Согласовано» и сразу доступна для приёмки начальником склада.
+    </div>
+
+    <!-- Блок дефицита товаров по заказам -->
+    <div th:if="${!deficitData.isEmpty()}" class="card border-warning mb-4">
+        <div class="card-header bg-warning bg-opacity-25 d-flex justify-content-between align-items-center">
+            <strong>Дефицит товаров по поставкам</strong>
+            <button type="button" class="btn btn-sm btn-warning" onclick="autoFillByDeficit()">
+                <i class="bi bi-lightning-fill"></i> Автозаполнение по дефициту
+            </button>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-sm table-striped mb-0">
+                <thead>
+                    <tr>
+                        <th>Товар</th>
+                        <th>Артикул</th>
+                        <th>Заказано</th>
+                        <th>На складе</th>
+                        <th>Доступно</th>
+                        <th class="text-danger">Дефицит</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="item : ${deficitData}">
+                        <td th:text="${item.get('productName')}"></td>
+                        <td th:text="${item.get('article')}"></td>
+                        <td th:text="${item.get('orderedTotal')}"></td>
+                        <td th:text="${item.get('stockQuantity')}"></td>
+                        <td th:text="${item.get('availableQuantity')}"></td>
+                        <td class="text-danger fw-bold" th:text="${item.get('deficit')}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="profile-card p-4">
+        <h2 class="h3 mb-4 fw-bold">Создание заявки на заказ товара</h2>
+
+        <form method="post" th:action="@{/employee/manager/requestsForDelivery/addRequestForDelivery}">
+            <div class="mb-3">
+                <label for="supplierId" class="form-label fw-semibold">Поставщик</label>
+                <select id="supplierId" name="supplierId" class="form-select" required>
+                    <option value="" disabled selected>Выберите поставщика</option>
+                    <option th:each="supplier : ${allSuppliers}"
+                            th:value="${supplier.getId()}"
+                            th:text="${supplier.getName()}"></option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="warehouseId" class="form-label fw-semibold">Склад-получатель</label>
+                <select id="warehouseId" name="warehouseId" class="form-select" required>
+                    <option value="" disabled selected>Выберите склад</option>
+                    <option th:each="warehouse : ${allWarehouses}"
+                            th:value="${warehouse.getId()}"
+                            th:data-type="${warehouse.getType().name()}"
+                            th:text="${warehouse.getName() + ' (' + warehouse.getAddress() + ') — ' + warehouse.getType().getDisplayName()}"></option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="deliveryCost" class="form-label fw-semibold">Стоимость доставки (руб.)</label>
+                <input type="number" id="deliveryCost" name="deliveryCost" class="form-control" step="0.01" min="0" value="0" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Товары</label>
+                <div id="productRows"></div>
+                <button type="button" class="btn btn-sm btn-outline-success mt-2" onclick="addProductRow()">
+                    <i class="bi bi-plus-circle"></i> Добавить товар
+                </button>
+            </div>
+
+            <template id="productTemplate">
+                <div class="row g-2 mb-2 product-row">
+                    <div class="col-md-4">
+                        <select name="productIds" class="form-select product-select" required>
+                            <option value="">Поиск товара...</option>
+                            <option th:each="product : ${allProducts}"
+                                    th:value="${product.getId()}"
+                                    th:data-warehouse-type="${product.getWarehouseType().name()}"
+                                    th:text="${product.getName() + ' (' + product.getArticle() + ')'}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="text" name="units" class="form-control" placeholder="Ед. изм." maxlength="100">
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" name="quantities" class="form-control" placeholder="Кол-во" min="1" value="1" required>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" name="purchasePrices" class="form-control" placeholder="Цена за ед." step="0.01" min="0" value="0" required>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeProductRow(this)">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </template>
+
+            <div id="capacityAlert" class="mt-3" style="display:none;"></div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-check-circle"></i> Создать заявку
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+
+<script th:inline="javascript">
+    var deficitData = /*[[${deficitData}]]*/ [];
+    var warehouseCapacityData = /*[[${warehouseCapacityData}]]*/ {};
+    var productVolumeData = /*[[${productVolumeData}]]*/ {};
+</script>
+<script>
+    function initSelect2(selectElement) {
+        $(selectElement).select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Поиск товара...',
+            allowClear: false,
+            width: '100%'
+        }).on('change', function() {
+            updateProductOptions();
+        });
+    }
+
+    function addProductRow(productId, quantity, price, unit) {
+        var template = document.getElementById('productTemplate');
+        var clone = template.content.cloneNode(true);
+        if (quantity) {
+            var input = clone.querySelector('input[name="quantities"]');
+            input.value = quantity;
+        }
+        if (price) {
+            var priceInput = clone.querySelector('input[name="purchasePrices"]');
+            priceInput.value = price;
+        }
+        if (unit) {
+            var unitInput = clone.querySelector('input[name="units"]');
+            unitInput.value = unit;
+        }
+        document.getElementById('productRows').appendChild(clone);
+
+        var rows = document.querySelectorAll('.product-row');
+        var lastRow = rows[rows.length - 1];
+        var select = lastRow.querySelector('select.product-select');
+
+        initSelect2(select);
+
+        if (productId) {
+            $(select).val(productId).trigger('change');
+        }
+
+        updateProductOptions();
+    }
+
+    function removeProductRow(btn) {
+        var rows = document.querySelectorAll('.product-row');
+        if (rows.length > 1) {
+            var row = btn.closest('.product-row');
+            var select = row.querySelector('select.product-select');
+            $(select).select2('destroy');
+            row.remove();
+            updateProductOptions();
+        }
+    }
+
+    function updateProductOptions() {
+        var rows = document.querySelectorAll('.product-row');
+        var selectedValues = [];
+
+        rows.forEach(function(row) {
+            var select = row.querySelector('select.product-select');
+            var val = $(select).val();
+            if (val) {
+                selectedValues.push(val);
+            }
+        });
+
+        rows.forEach(function(row) {
+            var select = row.querySelector('select.product-select');
+            var currentVal = $(select).val();
+
+            $(select).find('option').each(function() {
+                var optVal = $(this).val();
+                if (optVal && optVal !== currentVal && selectedValues.indexOf(optVal) !== -1) {
+                    $(this).prop('disabled', true);
+                } else {
+                    $(this).prop('disabled', false);
+                }
+            });
+        });
+
+        updateWarehouseOptions();
+        checkWarehouseCapacity();
+    }
+
+    function updateWarehouseOptions() {
+        var rows = document.querySelectorAll('.product-row');
+        var warehouseTypes = new Set();
+
+        rows.forEach(function(row) {
+            var select = row.querySelector('select.product-select');
+            var val = $(select).val();
+            if (val) {
+                var selectedOption = select.querySelector('option[value="' + val + '"]');
+                if (selectedOption) {
+                    var wt = selectedOption.getAttribute('data-warehouse-type');
+                    if (wt) warehouseTypes.add(wt);
+                }
+            }
+        });
+
+        var warehouseSelect = document.getElementById('warehouseId');
+        var currentWarehouse = warehouseSelect.value;
+
+        warehouseSelect.querySelectorAll('option').forEach(function(opt) {
+            if (!opt.value) return;
+            var whType = opt.getAttribute('data-type');
+            if (warehouseTypes.size === 0) {
+                opt.disabled = false;
+                opt.style.display = '';
+            } else if (warehouseTypes.has('REFRIGERATOR') && warehouseTypes.has('REGULAR')) {
+                opt.disabled = false;
+                opt.style.display = '';
+            } else {
+                var requiredType = warehouseTypes.values().next().value;
+                if (whType === requiredType) {
+                    opt.disabled = false;
+                    opt.style.display = '';
+                } else {
+                    opt.disabled = true;
+                    opt.style.display = 'none';
+                }
+            }
+        });
+
+        var currentOption = warehouseSelect.querySelector('option[value="' + currentWarehouse + '"]');
+        if (currentOption && currentOption.disabled) {
+            warehouseSelect.value = '';
+        }
+    }
+
+    function autoFillByDeficit() {
+        var rows = document.querySelectorAll('.product-row');
+        rows.forEach(function(row) {
+            var select = row.querySelector('select.product-select');
+            if (select) {
+                try { $(select).select2('destroy'); } catch(e) {}
+            }
+            row.remove();
+        });
+
+        if (deficitData.length === 0) {
+            addProductRow();
+            return;
+        }
+
+        for (var i = 0; i < deficitData.length; i++) {
+            var item = deficitData[i];
+            addProductRow(item.productId, item.deficit, 0);
+        }
+    }
+
+    function checkWarehouseCapacity() {
+        var alertDiv = document.getElementById('capacityAlert');
+        alertDiv.style.display = 'none';
+        alertDiv.innerHTML = '';
+
+        var warehouseId = document.getElementById('warehouseId').value;
+        if (!warehouseId || !warehouseCapacityData[warehouseId]) return;
+
+        var capacityInfo = warehouseCapacityData[warehouseId];
+        var totalVolume = capacityInfo[0];
+        var usedVolume = capacityInfo[1];
+
+        if (totalVolume <= 0) return;
+
+        var rows = document.querySelectorAll('.product-row');
+        var newVolume = 0;
+        rows.forEach(function(row) {
+            var select = row.querySelector('select.product-select');
+            var productId = $(select).val();
+            var qtyInput = row.querySelector('input[name="quantities"]');
+            var qty = parseInt(qtyInput ? qtyInput.value : 0) || 0;
+            if (productId && productVolumeData[productId]) {
+                newVolume += productVolumeData[productId] * qty;
+            }
+        });
+
+        if (newVolume === 0) return;
+
+        var totalAfter = usedVolume + newVolume;
+        var percentAfter = (totalAfter / totalVolume) * 100;
+
+        if (totalAfter > totalVolume) {
+            alertDiv.innerHTML = '<div class="alert alert-danger mb-0">' +
+                '<i class="bi bi-exclamation-triangle-fill me-2"></i>' +
+                '<strong>Внимание!</strong> На складе не хватит места для товаров из этой заявки. ' +
+                'Заполнение после приёмки товара: ' + percentAfter.toFixed(1) + '% ' +
+                '(занято ' + usedVolume.toFixed(4) + ' м³, новый товар ' + newVolume.toFixed(4) + ' м³, ' +
+                'ёмкость ' + totalVolume.toFixed(4) + ' м³).</div>';
+            alertDiv.style.display = 'block';
+        } else if (percentAfter > 80) {
+            alertDiv.innerHTML = '<div class="alert alert-warning mb-0">' +
+                '<i class="bi bi-exclamation-circle-fill me-2"></i>' +
+                '<strong>Предупреждение:</strong> После приёмки товара склад будет заполнен на ' + percentAfter.toFixed(1) + '%. ' +
+                '(занято ' + usedVolume.toFixed(4) + ' м³, новый товар ' + newVolume.toFixed(4) + ' м³, ' +
+                'ёмкость ' + totalVolume.toFixed(4) + ' м³).</div>';
+            alertDiv.style.display = 'block';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        addProductRow();
+
+        document.getElementById('warehouseId').addEventListener('change', checkWarehouseCapacity);
+
+        document.getElementById('productRows').addEventListener('input', function(e) {
+            if (e.target && e.target.name === 'quantities') {
+                checkWarehouseCapacity();
+            }
+        });
+    });
+</script>
+</body>
+</html>

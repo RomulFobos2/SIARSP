@@ -1,6 +1,8 @@
-package com.mai.siarsp.controllers.employee.accounter;
+package com.mai.siarsp.controllers.employee.admin;
 
+import com.mai.siarsp.dto.ClientOrderDTO;
 import com.mai.siarsp.enumeration.ClientOrderStatus;
+import com.mai.siarsp.mapper.ClientOrderMapper;
 import com.mai.siarsp.models.*;
 import com.mai.siarsp.models.AcceptanceAct;
 import com.mai.siarsp.models.ClientOrder;
@@ -10,8 +12,8 @@ import com.mai.siarsp.repo.RequestForDeliveryRepository;
 import com.mai.siarsp.service.employee.ClientOrderService;
 import com.mai.siarsp.service.employee.DeliveryTaskService;
 import com.mai.siarsp.service.general.AcceptanceActDocumentService;
-import com.mai.siarsp.service.general.ReportDocumentService;
 import com.mai.siarsp.service.general.ContractService;
+import com.mai.siarsp.service.general.ReportDocumentService;
 import com.mai.siarsp.service.general.TTNDocumentService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
@@ -32,34 +34,41 @@ import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Controller("accounterClientOrderController")
-@RequestMapping("/employee/accounter/clientOrders")
+/**
+ * Контроллер поставок клиентам для администратора (ADMIN).
+ *
+ * Администратор имеет полный доступ: просмотр всех поставок, создание, редактирование,
+ * просмотр и скачивание документов (ТТН, акт, контракт).
+ */
+@Controller("adminClientOrderController")
+@RequestMapping("/employee/admin/clientOrders")
 @Slf4j
 public class ClientOrderController {
 
     private final ClientOrderService clientOrderService;
-    private final DeliveryTaskService deliveryTaskService;
     private final ClientRepository clientRepository;
     private final ProductRepository productRepository;
     private final RequestForDeliveryRepository requestForDeliveryRepository;
+    private final DeliveryTaskService deliveryTaskService;
 
     public ClientOrderController(ClientOrderService clientOrderService,
-                                 DeliveryTaskService deliveryTaskService,
                                  ClientRepository clientRepository,
                                  ProductRepository productRepository,
-                                 RequestForDeliveryRepository requestForDeliveryRepository) {
+                                 RequestForDeliveryRepository requestForDeliveryRepository,
+                                 DeliveryTaskService deliveryTaskService) {
         this.clientOrderService = clientOrderService;
-        this.deliveryTaskService = deliveryTaskService;
         this.clientRepository = clientRepository;
         this.productRepository = productRepository;
         this.requestForDeliveryRepository = requestForDeliveryRepository;
+        this.deliveryTaskService = deliveryTaskService;
     }
 
+    @Transactional(readOnly = true)
     @GetMapping("/allClientOrders")
     public String allClientOrders(Model model) {
         model.addAttribute("orders", clientOrderService.getAllOrders());
         model.addAttribute("statuses", ClientOrderStatus.values());
-        return "employee/accounter/clientOrders/allClientOrders";
+        return "employee/admin/clientOrders/allClientOrders";
     }
 
     @Transactional(readOnly = true)
@@ -67,15 +76,15 @@ public class ClientOrderController {
     public String detailsClientOrder(@PathVariable Long id, Model model) {
         Optional<ClientOrder> optOrder = clientOrderService.getOrderById(id);
         if (optOrder.isEmpty()) {
-            return "redirect:/employee/accounter/clientOrders/allClientOrders";
+            return "redirect:/employee/admin/clientOrders/allClientOrders";
         }
 
         ClientOrder order = optOrder.get();
+        ClientOrderDTO orderDTO = ClientOrderMapper.INSTANCE.toDTO(order);
         model.addAttribute("order", order);
-        return "employee/accounter/clientOrders/detailsClientOrder";
+        model.addAttribute("orderDTO", orderDTO);
+        return "employee/admin/clientOrders/detailsClientOrder";
     }
-
-    // ========== СОЗДАНИЕ / РЕДАКТИРОВАНИЕ ==========
 
     @Transactional(readOnly = true)
     @GetMapping("/createClientOrder")
@@ -85,10 +94,9 @@ public class ClientOrderController {
                 .collect(Collectors.toList());
 
         List<Map<String, Object>> productsList = buildProductsList();
-
         model.addAttribute("clients", clients);
         model.addAttribute("productsList", productsList);
-        return "employee/accounter/clientOrders/createClientOrder";
+        return "employee/admin/clientOrders/createClientOrder";
     }
 
     @PostMapping("/createClientOrder")
@@ -115,11 +123,11 @@ public class ClientOrderController {
 
         if (!clientOrderService.createOrder(clientId, date, comment, items, currentEmployee, contractFile)) {
             redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при создании поставки.");
-            return "redirect:/employee/accounter/clientOrders/createClientOrder";
+            return "redirect:/employee/admin/clientOrders/createClientOrder";
         }
 
         redirectAttributes.addFlashAttribute("successMessage", "Поставка успешно создана.");
-        return "redirect:/employee/accounter/clientOrders/allClientOrders";
+        return "redirect:/employee/admin/clientOrders/allClientOrders";
     }
 
     @Transactional(readOnly = true)
@@ -127,13 +135,13 @@ public class ClientOrderController {
     public String editClientOrderPage(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
         Optional<ClientOrder> optOrder = clientOrderService.getOrderById(id);
         if (optOrder.isEmpty()) {
-            return "redirect:/employee/accounter/clientOrders/allClientOrders";
+            return "redirect:/employee/admin/clientOrders/allClientOrders";
         }
 
         ClientOrder order = optOrder.get();
         if (order.getStatus() != ClientOrderStatus.NEW) {
             redirectAttributes.addFlashAttribute("errorMessage", "Редактировать можно только поставки в статусе «Новая».");
-            return "redirect:/employee/accounter/clientOrders/detailsClientOrder/" + id;
+            return "redirect:/employee/admin/clientOrders/detailsClientOrder/" + id;
         }
 
         List<Map<String, Object>> productsList = buildProductsList();
@@ -153,7 +161,7 @@ public class ClientOrderController {
         model.addAttribute("order", order);
         model.addAttribute("productsList", productsList);
         model.addAttribute("orderProducts", orderProducts);
-        return "employee/accounter/clientOrders/editClientOrder";
+        return "employee/admin/clientOrders/editClientOrder";
     }
 
     @PostMapping("/editClientOrder/{id}")
@@ -179,48 +187,31 @@ public class ClientOrderController {
 
         if (!clientOrderService.updateOrder(id, date, comment, items, contractFile)) {
             redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при обновлении поставки.");
-            return "redirect:/employee/accounter/clientOrders/editClientOrder/" + id;
+            return "redirect:/employee/admin/clientOrders/editClientOrder/" + id;
         }
 
         redirectAttributes.addFlashAttribute("successMessage", "Поставка обновлена.");
-        return "redirect:/employee/accounter/clientOrders/detailsClientOrder/" + id;
+        return "redirect:/employee/admin/clientOrders/detailsClientOrder/" + id;
     }
 
-    // ========== ПРОСМОТР ДОКУМЕНТОВ (read-only) ==========
-
-    @Transactional(readOnly = true)
-    @GetMapping("/detailsTTN/{orderId}")
-    public String detailsTTN(@PathVariable Long orderId, Model model) {
-        Optional<ClientOrder> optOrder = clientOrderService.getOrderById(orderId);
-        if (optOrder.isEmpty() || optOrder.get().getDeliveryTask() == null
-                || optOrder.get().getDeliveryTask().getTtn() == null) {
-            return "redirect:/employee/accounter/clientOrders/detailsClientOrder/" + orderId;
+    @PostMapping("/confirmClientOrder/{id}")
+    public String confirmClientOrder(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        if (!clientOrderService.confirmOrder(id)) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при подтверждении поставки.");
+        } else {
+            redirectAttributes.addFlashAttribute("successMessage", "Поставка подтверждена и отправлена на склад.");
         }
-        model.addAttribute("order", optOrder.get());
-        model.addAttribute("ttn", optOrder.get().getDeliveryTask().getTtn());
-        model.addAttribute("canEdit", false);
-        model.addAttribute("backUrl", "/employee/accounter/clientOrders/detailsClientOrder/" + orderId);
-        model.addAttribute("downloadUrl", "/employee/accounter/clientOrders/downloadTTN/" + orderId);
-        return "employee/warehouseManager/documents/detailsTTN";
+        return "redirect:/employee/admin/clientOrders/detailsClientOrder/" + id;
     }
 
-    @Transactional(readOnly = true)
-    @GetMapping("/detailsAcceptanceAct/{orderId}")
-    public String detailsAcceptanceAct(@PathVariable Long orderId, Model model) {
-        Optional<ClientOrder> optOrder = clientOrderService.getOrderById(orderId);
-        if (optOrder.isEmpty()) {
-            return "redirect:/employee/accounter/clientOrders/allClientOrders";
+    @PostMapping("/cancelClientOrder/{id}")
+    public String cancelClientOrder(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        if (!clientOrderService.cancelOrder(id)) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при отмене поставки.");
+        } else {
+            redirectAttributes.addFlashAttribute("successMessage", "Поставка отменена.");
         }
-        Optional<AcceptanceAct> optAct = deliveryTaskService.getAcceptanceActByOrder(orderId);
-        if (optAct.isEmpty()) {
-            return "redirect:/employee/accounter/clientOrders/detailsClientOrder/" + orderId;
-        }
-        model.addAttribute("order", optOrder.get());
-        model.addAttribute("act", optAct.get());
-        model.addAttribute("canEdit", false);
-        model.addAttribute("backUrl", "/employee/accounter/clientOrders/detailsClientOrder/" + orderId);
-        model.addAttribute("downloadUrl", "/employee/accounter/clientOrders/downloadAcceptanceAct/" + orderId);
-        return "employee/warehouseManager/documents/detailsAcceptanceAct";
+        return "redirect:/employee/admin/clientOrders/detailsClientOrder/" + id;
     }
 
     // ========== СКАЧИВАНИЕ КОНТРАКТА ==========
@@ -244,6 +235,43 @@ public class ClientOrderController {
             log.error("Ошибка скачивания контракта: {}", e.getMessage());
             return ResponseEntity.notFound().build();
         }
+    }
+
+    // ========== ПРОСМОТР ДОКУМЕНТОВ (read-only) ==========
+
+    @Transactional(readOnly = true)
+    @GetMapping("/detailsTTN/{orderId}")
+    public String detailsTTN(@PathVariable Long orderId, Model model) {
+        Optional<ClientOrder> optOrder = clientOrderService.getOrderById(orderId);
+        if (optOrder.isEmpty() || optOrder.get().getDeliveryTask() == null
+                || optOrder.get().getDeliveryTask().getTtn() == null) {
+            return "redirect:/employee/admin/clientOrders/detailsClientOrder/" + orderId;
+        }
+        model.addAttribute("order", optOrder.get());
+        model.addAttribute("ttn", optOrder.get().getDeliveryTask().getTtn());
+        model.addAttribute("canEdit", false);
+        model.addAttribute("backUrl", "/employee/admin/clientOrders/detailsClientOrder/" + orderId);
+        model.addAttribute("downloadUrl", "/employee/admin/clientOrders/downloadTTN/" + orderId);
+        return "employee/warehouseManager/documents/detailsTTN";
+    }
+
+    @Transactional(readOnly = true)
+    @GetMapping("/detailsAcceptanceAct/{orderId}")
+    public String detailsAcceptanceAct(@PathVariable Long orderId, Model model) {
+        Optional<ClientOrder> optOrder = clientOrderService.getOrderById(orderId);
+        if (optOrder.isEmpty()) {
+            return "redirect:/employee/admin/clientOrders/allClientOrders";
+        }
+        Optional<AcceptanceAct> optAct = deliveryTaskService.getAcceptanceActByOrder(orderId);
+        if (optAct.isEmpty()) {
+            return "redirect:/employee/admin/clientOrders/detailsClientOrder/" + orderId;
+        }
+        model.addAttribute("order", optOrder.get());
+        model.addAttribute("act", optAct.get());
+        model.addAttribute("canEdit", false);
+        model.addAttribute("backUrl", "/employee/admin/clientOrders/detailsClientOrder/" + orderId);
+        model.addAttribute("downloadUrl", "/employee/admin/clientOrders/downloadAcceptanceAct/" + orderId);
+        return "employee/warehouseManager/documents/detailsAcceptanceAct";
     }
 
     // ========== СКАЧИВАНИЕ ДОКУМЕНТОВ ==========
@@ -286,10 +314,6 @@ public class ClientOrderController {
 
     // ========== ВСПОМОГАТЕЛЬНЫЕ ==========
 
-    /**
-     * Формирует список товаров для JS в форме создания/редактирования.
-     * Включает среднее время поставки по каждому товару.
-     */
     private List<Map<String, Object>> buildProductsList() {
         List<Product> products = productRepository.findAll();
 

@@ -13,22 +13,18 @@
 <header th:insert="~{blocks/header :: header}"></header>
 <div class="container my-5">
 
-    <div class="mb-4 d-flex justify-content-between align-items-start">
+    <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h1 class="page-title">Поставки клиентам</h1>
-            <p class="page-subtitle">Просмотр и управление поставками</p>
+            <p class="page-subtitle">Управление поставками</p>
         </div>
-        <a href="/employee/accounter/clientOrders/createClientOrder" class="btn btn-success">+ Создать поставку</a>
+        <a href="/employee/admin/clientOrders/createClientOrder" class="btn btn-primary">
+            + Создать поставку
+        </a>
     </div>
 
-    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
-        <span th:text="${successMessage}"></span>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
-        <span th:text="${errorMessage}"></span>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
     <!-- Поиск и фильтрация -->
     <div class="row g-3 mb-4 align-items-end">
@@ -87,7 +83,7 @@
                                            order.status.name() == 'CANCELLED' ? 'bg-danger' : 'bg-secondary'}"></span>
                 </td>
                 <td>
-                    <a th:href="'/employee/accounter/clientOrders/detailsClientOrder/' + ${order.id}"
+                    <a th:href="'/employee/admin/clientOrders/detailsClientOrder/' + ${order.id}"
                        class="btn btn-sm btn-outline-primary">Подробнее</a>
                 </td>
             </tr>

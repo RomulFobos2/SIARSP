@@ -16,7 +16,17 @@
     <div class="profile-card mb-4">
         <div class="profile-actions">
             <a th:href="'/'" class="btn btn-secondary btn-profile">← Главная</a>
+            <a th:href="'/employee/manager/requestsForDelivery/addRequestForDelivery'" class="btn btn-success btn-profile">+ Создать заявку</a>
         </div>
+    </div>
+
+    <div th:if="${requestSuccess}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${requestSuccess}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${requestError}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${requestError}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 
     <div class="profile-card p-4">

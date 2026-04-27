@@ -16,7 +16,7 @@
     <div class="profile-card mb-4">
         <div class="profile-actions">
             <a th:href="'/'" class="btn btn-secondary btn-profile">← Главная</a>
-            <a th:href="'/employee/accounter/requestsForDelivery/addRequestForDelivery'" class="btn btn-success btn-profile">+ Создать заявку</a>
+            <a th:href="'/employee/admin/requestsForDelivery/addRequestForDelivery'" class="btn btn-success btn-profile">+ Создать заявку</a>
         </div>
     </div>
 
@@ -30,7 +30,7 @@
     </div>
 
     <div class="profile-card p-4">
-        <h2 class="h3 mb-4 fw-bold">Заявки на заказ товара (бухгалтер)</h2>
+        <h2 class="h3 mb-4 fw-bold">Заявки на заказ товара (директор)</h2>
 
         <!-- Поиск и фильтры -->
         <div class="row g-3 mb-4">
@@ -83,7 +83,7 @@
                 </thead>
                 <tbody>
                 <tr th:each="request : ${allRequests}"
-                    th:classappend="${request.getStatus().name() == 'PENDING_ACCOUNTANT'} ? 'table-info' : ''"
+                    th:classappend="${request.getStatus().name() == 'PENDING_DIRECTOR'} ? 'table-warning' : ''"
                     th:data-id="${request.getId()}"
                     th:data-supplier="${request.getSupplierName()}"
                     th:data-status="${request.getStatus().name()}"
@@ -105,7 +105,7 @@
                     </td>
                     <td th:text="${request.getRequestedProducts() != null ? request.getRequestedProducts().size() : 0}"></td>
                     <td>
-                        <a th:href="'/employee/accounter/requestsForDelivery/detailsRequestForDelivery/' + ${request.getId()}"
+                        <a th:href="'/employee/admin/requestsForDelivery/detailsRequestForDelivery/' + ${request.getId()}"
                            class="btn btn-sm btn-outline-primary">Подробнее</a>
                     </td>
                 </tr>

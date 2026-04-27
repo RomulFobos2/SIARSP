@@ -1,4 +1,4 @@
-package com.mai.siarsp.controllers.employee.manager;
+package com.mai.siarsp.controllers.employee.admin;
 
 import com.mai.siarsp.dto.RequestForDeliveryDTO;
 import com.mai.siarsp.enumeration.RequestStatus;
@@ -29,7 +29,13 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 
-@Controller("managerRequestForDeliveryController")
+/**
+ * Контроллер заявок на закупку товара для администратора (ADMIN).
+ *
+ * Администратор имеет полный доступ: просмотр всех заявок, создание (статус APPROVED),
+ * согласование/отклонение, скачивание договора.
+ */
+@Controller("adminRequestForDeliveryController")
 @Slf4j
 public class RequestForDeliveryController {
 
@@ -53,37 +59,7 @@ public class RequestForDeliveryController {
     }
 
     @Transactional
-    @GetMapping("/employee/manager/requestsForDelivery/addRequestForDelivery")
-    public String addRequestForDelivery(Model model) {
-        model.addAttribute("allSuppliers", supplierService.getAllSuppliers());
-        model.addAttribute("allProducts", productService.getAllProducts());
-        model.addAttribute("allWarehouses", warehouseService.getAllWarehouses());
-        model.addAttribute("deficitData", clientOrderService.getProductDeficit());
-        model.addAttribute("warehouseCapacityData", warehouseService.getWarehouseCapacityData());
-        model.addAttribute("productVolumeData", warehouseService.getProductVolumeData());
-        return "employee/manager/requestsForDelivery/addRequestForDelivery";
-    }
-
-    @PostMapping("/employee/manager/requestsForDelivery/addRequestForDelivery")
-    public String addRequestForDelivery(@RequestParam Long supplierId,
-                                        @RequestParam Long warehouseId,
-                                        @RequestParam BigDecimal deliveryCost,
-                                        @RequestParam List<Long> productIds,
-                                        @RequestParam List<Integer> quantities,
-                                        @RequestParam List<BigDecimal> purchasePrices,
-                                        @RequestParam(required = false) List<String> units,
-                                        RedirectAttributes redirectAttributes) {
-        if (!requestForDeliveryService.createRequestByDirector(
-                supplierId, warehouseId, deliveryCost, productIds, quantities, purchasePrices, units)) {
-            redirectAttributes.addFlashAttribute("requestError", "Ошибка при создании заявки.");
-            return "redirect:/employee/manager/requestsForDelivery/addRequestForDelivery";
-        }
-        redirectAttributes.addFlashAttribute("requestSuccess", "Заявка создана и автоматически согласована.");
-        return "redirect:/employee/manager/requestsForDelivery/allRequestsForDelivery";
-    }
-
-    @Transactional
-    @GetMapping("/employee/manager/requestsForDelivery/allRequestsForDelivery")
+    @GetMapping("/employee/admin/requestsForDelivery/allRequestsForDelivery")
     public String allRequestsForDelivery(@RequestParam(value = "statusFilter", required = false) String statusFilter,
                                           Model model) {
         List<RequestForDeliveryDTO> requests;
@@ -101,48 +77,78 @@ public class RequestForDeliveryController {
         model.addAttribute("allRequests", requests);
         model.addAttribute("statuses", RequestStatus.values());
         model.addAttribute("currentFilter", statusFilter);
-        return "employee/manager/requestsForDelivery/allRequestsForDelivery";
+        return "employee/admin/requestsForDelivery/allRequestsForDelivery";
     }
 
     @Transactional
-    @GetMapping("/employee/manager/requestsForDelivery/detailsRequestForDelivery/{id}")
+    @GetMapping("/employee/admin/requestsForDelivery/detailsRequestForDelivery/{id}")
     public String detailsRequestForDelivery(@PathVariable(value = "id") long id, Model model) {
         RequestForDelivery request = requestForDeliveryService.getRequestEntity(id);
         if (request == null) {
-            return "redirect:/employee/manager/requestsForDelivery/allRequestsForDelivery";
+            return "redirect:/employee/admin/requestsForDelivery/allRequestsForDelivery";
         }
 
         RequestForDeliveryDTO dto = com.mai.siarsp.mapper.RequestForDeliveryMapper.INSTANCE.toDTO(request);
         model.addAttribute("requestDTO", dto);
-        return "employee/manager/requestsForDelivery/detailsRequestForDelivery";
+        return "employee/admin/requestsForDelivery/detailsRequestForDelivery";
     }
 
-    @PostMapping("/employee/manager/requestsForDelivery/approveRequestForDelivery/{id}")
+    @Transactional
+    @GetMapping("/employee/admin/requestsForDelivery/addRequestForDelivery")
+    public String addRequestForDelivery(Model model) {
+        model.addAttribute("allSuppliers", supplierService.getAllSuppliers());
+        model.addAttribute("allProducts", productService.getAllProducts());
+        model.addAttribute("allWarehouses", warehouseService.getAllWarehouses());
+        model.addAttribute("deficitData", clientOrderService.getProductDeficit());
+        model.addAttribute("warehouseCapacityData", warehouseService.getWarehouseCapacityData());
+        model.addAttribute("productVolumeData", warehouseService.getProductVolumeData());
+        return "employee/admin/requestsForDelivery/addRequestForDelivery";
+    }
+
+    @PostMapping("/employee/admin/requestsForDelivery/addRequestForDelivery")
+    public String addRequestForDelivery(@RequestParam Long supplierId,
+                                        @RequestParam Long warehouseId,
+                                        @RequestParam BigDecimal deliveryCost,
+                                        @RequestParam List<Long> productIds,
+                                        @RequestParam List<Integer> quantities,
+                                        @RequestParam List<BigDecimal> purchasePrices,
+                                        @RequestParam(required = false) List<String> units,
+                                        RedirectAttributes redirectAttributes) {
+        if (!requestForDeliveryService.createRequestByDirector(
+                supplierId, warehouseId, deliveryCost, productIds, quantities, purchasePrices, units)) {
+            redirectAttributes.addFlashAttribute("requestError", "Ошибка при создании заявки.");
+            return "redirect:/employee/admin/requestsForDelivery/addRequestForDelivery";
+        }
+        redirectAttributes.addFlashAttribute("requestSuccess", "Заявка создана и автоматически согласована.");
+        return "redirect:/employee/admin/requestsForDelivery/allRequestsForDelivery";
+    }
+
+    @PostMapping("/employee/admin/requestsForDelivery/approveRequestForDelivery/{id}")
     public String approveRequestForDelivery(@PathVariable(value = "id") long id,
                                              @RequestParam String commentText,
                                              RedirectAttributes redirectAttributes) {
         if (!requestForDeliveryService.approveByDirector(id, commentText)) {
             redirectAttributes.addFlashAttribute("requestError", "Ошибка при согласовании заявки.");
-            return "redirect:/employee/manager/requestsForDelivery/detailsRequestForDelivery/" + id;
+            return "redirect:/employee/admin/requestsForDelivery/detailsRequestForDelivery/" + id;
         }
-        redirectAttributes.addFlashAttribute("requestSuccess", "Заявка согласована и передана бухгалтеру.");
-        return "redirect:/employee/manager/requestsForDelivery/detailsRequestForDelivery/" + id;
+        redirectAttributes.addFlashAttribute("requestSuccess", "Заявка согласована.");
+        return "redirect:/employee/admin/requestsForDelivery/detailsRequestForDelivery/" + id;
     }
 
-    @PostMapping("/employee/manager/requestsForDelivery/rejectRequestForDelivery/{id}")
+    @PostMapping("/employee/admin/requestsForDelivery/rejectRequestForDelivery/{id}")
     public String rejectRequestForDelivery(@PathVariable(value = "id") long id,
                                             @RequestParam String commentText,
                                             RedirectAttributes redirectAttributes) {
         if (!requestForDeliveryService.rejectByDirector(id, commentText)) {
             redirectAttributes.addFlashAttribute("requestError", "Ошибка при отклонении заявки.");
-            return "redirect:/employee/manager/requestsForDelivery/detailsRequestForDelivery/" + id;
+            return "redirect:/employee/admin/requestsForDelivery/detailsRequestForDelivery/" + id;
         }
         redirectAttributes.addFlashAttribute("requestSuccess", "Заявка отклонена.");
-        return "redirect:/employee/manager/requestsForDelivery/detailsRequestForDelivery/" + id;
+        return "redirect:/employee/admin/requestsForDelivery/detailsRequestForDelivery/" + id;
     }
 
     @Transactional
-    @GetMapping("/employee/manager/requestsForDelivery/downloadContract/{id}")
+    @GetMapping("/employee/admin/requestsForDelivery/downloadContract/{id}")
     public ResponseEntity<byte[]> downloadContract(@PathVariable(value = "id") long id) throws IOException {
         RequestForDelivery request = requestForDeliveryService.getRequestEntity(id);
         if (request == null ||
