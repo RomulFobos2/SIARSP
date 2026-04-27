@@ -1,0 +1,117 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Поставки клиентам | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/javascript.js"></script>
+</head>
+<body>
+<header th:insert="~{blocks/header :: header}"></header>
+<div class="container my-5">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="page-title">Поставки клиентам</h1>
+            <p class="page-subtitle">Управление поставками</p>
+        </div>
+        <a href="/employee/admin/clientOrders/createClientOrder" class="btn btn-primary">
+            + Создать поставку
+        </a>
+    </div>
+
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+    <!-- Поиск и фильтрация -->
+    <div class="row g-3 mb-4 align-items-end">
+        <div class="col-md-5">
+            <input type="text" id="searchInput" class="form-control" placeholder="Поиск по номеру, клиенту, ответственному...">
+        </div>
+        <div class="col-md-3">
+            <select id="statusFilter" class="form-select">
+                <option value="">Все статусы</option>
+                <option th:each="s : ${statuses}" th:value="${s.name()}" th:text="${s.displayName}"></option>
+            </select>
+        </div>
+        <div class="col-md-4 text-muted">
+            Найдено: <span id="resultCount" th:text="${orders.size()}"></span>
+        </div>
+    </div>
+
+    <div th:if="${orders.isEmpty()}" class="alert alert-info">Поставки не найдены.</div>
+
+    <div th:if="${!orders.isEmpty()}" class="table-responsive">
+        <table class="table table-modern" id="ordersTable">
+            <thead>
+            <tr>
+                <th>№ поставки</th>
+                <th>Дата</th>
+                <th>Клиент</th>
+                <th>Ответственный</th>
+                <th>Сумма</th>
+                <th>Дата доставки</th>
+                <th>Статус</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="order : ${orders}"
+                th:attr="data-number=${order.orderNumber},
+                         data-client=${order.clientOrganizationName},
+                         data-employee=${order.responsibleEmployeeFullName},
+                         data-status=${order.status.name()}">
+                <td class="fw-semibold" th:text="${order.orderNumber}"></td>
+                <td th:text="${#temporals.format(order.orderDate, 'dd.MM.yyyy')}"></td>
+                <td th:text="${order.clientOrganizationName}"></td>
+                <td th:text="${order.responsibleEmployeeFullName}"></td>
+                <td th:text="${#numbers.formatDecimal(order.totalAmount, 1, 2) + ' руб.'}"></td>
+                <td th:text="${#temporals.format(order.deliveryDate, 'dd.MM.yyyy')}"></td>
+                <td>
+                    <span class="badge"
+                          th:text="${order.statusDisplayName}"
+                          th:classappend="${order.status.name() == 'NEW' ? 'bg-secondary' :
+                                           order.status.name() == 'CONFIRMED' ? 'bg-info text-dark' :
+                                           order.status.name() == 'RESERVED' ? 'bg-primary' :
+                                           order.status.name() == 'IN_PROGRESS' ? 'bg-warning text-dark' :
+                                           order.status.name() == 'READY' ? 'bg-success' :
+                                           order.status.name() == 'SHIPPED' ? 'bg-dark' :
+                                           order.status.name() == 'DELIVERED' ? 'bg-success' :
+                                           order.status.name() == 'CANCELLED' ? 'bg-danger' : 'bg-secondary'}"></span>
+                </td>
+                <td>
+                    <a th:href="'/employee/admin/clientOrders/detailsClientOrder/' + ${order.id}"
+                       class="btn btn-sm btn-outline-primary">Подробнее</a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<script>
+    function filterOrders() {
+        var search = document.getElementById('searchInput').value.toLowerCase().trim();
+        var status = document.getElementById('statusFilter').value;
+        var rows = document.querySelectorAll('#ordersTable tbody tr');
+        var visible = 0;
+        rows.forEach(function(row) {
+            var matchSearch = !search ||
+                (row.dataset.number || '').toLowerCase().includes(search) ||
+                (row.dataset.client || '').toLowerCase().includes(search) ||
+                (row.dataset.employee || '').toLowerCase().includes(search);
+            var matchStatus = !status || row.dataset.status === status;
+            var show = matchSearch && matchStatus;
+            row.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+        document.getElementById('resultCount').textContent = visible;
+    }
+    document.getElementById('searchInput').addEventListener('input', filterOrders);
+    document.getElementById('statusFilter').addEventListener('change', filterOrders);
+</script>
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>

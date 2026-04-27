@@ -1,0 +1,243 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Заявки на заказ товара | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container my-5">
+    <div class="profile-card mb-4">
+        <div class="profile-actions">
+            <a th:href="'/'" class="btn btn-secondary btn-profile">← Главная</a>
+            <a th:href="'/employee/admin/requestsForDelivery/addRequestForDelivery'" class="btn btn-success btn-profile">+ Создать заявку</a>
+        </div>
+    </div>
+
+    <div th:if="${requestSuccess}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${requestSuccess}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${requestError}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${requestError}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="profile-card p-4">
+        <h2 class="h3 mb-4 fw-bold">Заявки на заказ товара (директор)</h2>
+
+        <!-- Поиск и фильтры -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <input type="text" id="searchInput" class="form-control" placeholder="Поиск по № или поставщику...">
+            </div>
+            <div class="col-md-2">
+                <select id="statusFilter" class="form-select" onchange="applyFilters()">
+                    <option value="all">Все статусы</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select id="supplierFilter" class="form-select" onchange="applyFilters()">
+                    <option value="all">Все поставщики</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="date" id="dateFromFilter" class="form-control" onchange="applyFilters()" title="Дата от">
+            </div>
+            <div class="col-md-2">
+                <input type="date" id="dateToFilter" class="form-control" onchange="applyFilters()" title="Дата до">
+            </div>
+            <div class="col-md-1 d-flex align-items-start">
+                <button class="btn btn-outline-secondary" onclick="resetFilters()">Сбросить</button>
+            </div>
+        </div>
+
+        <!-- Активные фильтры -->
+        <div id="activeFilters" class="mb-3" style="display: none;">
+            <span class="text-muted me-2">Активные фильтры:</span>
+            <span id="filterBadges"></span>
+        </div>
+
+        <div th:if="${#lists.isEmpty(allRequests)}" class="text-center text-muted py-4">
+            <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+            <p class="mt-2">Заявки отсутствуют</p>
+        </div>
+
+        <div th:unless="${#lists.isEmpty(allRequests)}" class="table-responsive">
+            <table class="table table-modern" id="requestsTable">
+                <thead>
+                <tr>
+                    <th>№</th>
+                    <th>Дата</th>
+                    <th>Поставщик</th>
+                    <th>Статус</th>
+                    <th>Позиций</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="request : ${allRequests}"
+                    th:classappend="${request.getStatus().name() == 'PENDING_DIRECTOR'} ? 'table-warning' : ''"
+                    th:data-id="${request.getId()}"
+                    th:data-supplier="${request.getSupplierName()}"
+                    th:data-status="${request.getStatus().name()}"
+                    th:data-status-display="${request.getStatus().getDisplayName()}"
+                    th:data-date="${request.getRequestDate()}">
+                    <td th:text="${request.getId()}"></td>
+                    <td th:text="${#temporals.format(request.getRequestDate(), 'dd.MM.yyyy')}"></td>
+                    <td th:text="${request.getSupplierName()}"></td>
+                    <td>
+                        <span class="badge"
+                              th:classappend="${request.getStatus().name() == 'DRAFT'} ? 'bg-secondary' :
+                                              (${request.getStatus().name() == 'PENDING_DIRECTOR'} ? 'bg-warning text-dark' :
+                                              (${request.getStatus().name() == 'REJECTED_BY_DIRECTOR' || request.getStatus().name() == 'REJECTED_BY_ACCOUNTANT'} ? 'bg-danger' :
+                                              (${request.getStatus().name() == 'PENDING_ACCOUNTANT'} ? 'bg-info' :
+                                              (${request.getStatus().name() == 'APPROVED'} ? 'bg-success' :
+                                              (${request.getStatus().name() == 'PARTIALLY_RECEIVED' || request.getStatus().name() == 'RECEIVED'} ? 'bg-primary' :
+                                              'bg-dark')))))"
+                              th:text="${request.getStatus().getDisplayName()}"></span>
+                    </td>
+                    <td th:text="${request.getRequestedProducts() != null ? request.getRequestedProducts().size() : 0}"></td>
+                    <td>
+                        <a th:href="'/employee/admin/requestsForDelivery/detailsRequestForDelivery/' + ${request.getId()}"
+                           class="btn btn-sm btn-outline-primary">Подробнее</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Сообщение "Заявки не найдены" -->
+        <div id="noResults" class="text-center text-muted py-4" style="display: none;">
+            <i class="bi bi-search" style="font-size: 2rem;"></i>
+            <p class="mt-2">Заявки не найдены</p>
+        </div>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var rows = document.querySelectorAll('#requestsTable tbody tr');
+        var statuses = new Map();
+        var suppliers = new Set();
+
+        rows.forEach(function (row) {
+            var statusKey = row.getAttribute('data-status');
+            var statusDisplay = row.getAttribute('data-status-display');
+            if (statusKey && statusDisplay) statuses.set(statusKey, statusDisplay);
+            var supplier = row.getAttribute('data-supplier');
+            if (supplier) suppliers.add(supplier);
+        });
+
+        var statusSelect = document.getElementById('statusFilter');
+        statuses.forEach(function (display, key) {
+            var option = document.createElement('option');
+            option.value = key;
+            option.textContent = display;
+            statusSelect.appendChild(option);
+        });
+
+        var supplierSelect = document.getElementById('supplierFilter');
+        Array.from(suppliers).sort().forEach(function (s) {
+            var option = document.createElement('option');
+            option.value = s;
+            option.textContent = s;
+            supplierSelect.appendChild(option);
+        });
+
+        document.getElementById('searchInput').addEventListener('keyup', function () {
+            applyFilters();
+        });
+    });
+
+    function applyFilters() {
+        var search = document.getElementById('searchInput').value.trim().toLowerCase();
+        var statusFilter = document.getElementById('statusFilter').value;
+        var supplierFilter = document.getElementById('supplierFilter').value;
+        var dateFrom = document.getElementById('dateFromFilter').value;
+        var dateTo = document.getElementById('dateToFilter').value;
+        var rows = document.querySelectorAll('#requestsTable tbody tr');
+        var visibleCount = 0;
+
+        rows.forEach(function (row) {
+            var id = (row.getAttribute('data-id') || '').toLowerCase();
+            var supplier = (row.getAttribute('data-supplier') || '').toLowerCase();
+            var status = row.getAttribute('data-status') || '';
+            var date = row.getAttribute('data-date') || '';
+
+            var show = true;
+
+            if (search && !id.includes(search) && !supplier.includes(search)) {
+                show = false;
+            }
+            if (statusFilter !== 'all' && status !== statusFilter) {
+                show = false;
+            }
+            if (supplierFilter !== 'all' && (row.getAttribute('data-supplier') || '') !== supplierFilter) {
+                show = false;
+            }
+            if (dateFrom && date < dateFrom) {
+                show = false;
+            }
+            if (dateTo && date > dateTo) {
+                show = false;
+            }
+
+            row.style.display = show ? '' : 'none';
+            if (show) visibleCount++;
+        });
+
+        document.getElementById('noResults').style.display = visibleCount === 0 ? '' : 'none';
+        updateActiveFilters(search, statusFilter, supplierFilter, dateFrom, dateTo);
+    }
+
+    function updateActiveFilters(search, statusFilter, supplierFilter, dateFrom, dateTo) {
+        var container = document.getElementById('activeFilters');
+        var badges = document.getElementById('filterBadges');
+        badges.innerHTML = '';
+        var hasFilters = false;
+
+        if (search) {
+            badges.innerHTML += '<span class="badge bg-primary me-1">Поиск: ' + search + '</span>';
+            hasFilters = true;
+        }
+        if (statusFilter !== 'all') {
+            var statusText = document.getElementById('statusFilter');
+            badges.innerHTML += '<span class="badge bg-info me-1">' + statusText.options[statusText.selectedIndex].text + '</span>';
+            hasFilters = true;
+        }
+        if (supplierFilter !== 'all') {
+            badges.innerHTML += '<span class="badge bg-secondary me-1">' + supplierFilter + '</span>';
+            hasFilters = true;
+        }
+        if (dateFrom) {
+            badges.innerHTML += '<span class="badge bg-warning text-dark me-1">С ' + dateFrom + '</span>';
+            hasFilters = true;
+        }
+        if (dateTo) {
+            badges.innerHTML += '<span class="badge bg-warning text-dark me-1">По ' + dateTo + '</span>';
+            hasFilters = true;
+        }
+
+        container.style.display = hasFilters ? '' : 'none';
+    }
+
+    function resetFilters() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('statusFilter').value = 'all';
+        document.getElementById('supplierFilter').value = 'all';
+        document.getElementById('dateFromFilter').value = '';
+        document.getElementById('dateToFilter').value = '';
+        applyFilters();
+    }
+</script>
+</body>
+</html>

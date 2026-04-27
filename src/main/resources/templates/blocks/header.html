@@ -51,6 +51,32 @@
                         </ul>
                     </li>
 
+                    <!-- ========== ADMIN: Заказ товара ========== -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_ADMIN')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Заказ товара
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/admin/requestsForDelivery/allRequestsForDelivery">Заявки на поставку</a></li>
+                            <li><a class="dropdown-item" href="/employee/admin/requestsForDelivery/addRequestForDelivery">+ Создать заявку</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/employee/admin/deliveries/allDeliveries">Приёмки поставок</a></li>
+                            <li><a class="dropdown-item" href="/employee/admin/deliveries/addDelivery">+ Оформить приёмку</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- ========== ADMIN: Заказы ========== -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_ADMIN')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Заказы
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/admin/clientOrders/allClientOrders">Все заказы</a></li>
+                            <li><a class="dropdown-item" href="/employee/admin/clientOrders/createClientOrder">+ Создать заказ</a></li>
+                            <li><a class="dropdown-item" href="/employee/admin/deliveryTasks/allDeliveryTasks">Задачи на доставку</a></li>
+                        </ul>
+                    </li>
+
                     <!-- ========== MANAGER: Администрирование ========== -->
                     <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
                         <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
