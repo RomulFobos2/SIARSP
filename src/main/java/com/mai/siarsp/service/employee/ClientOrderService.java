@@ -446,6 +446,66 @@ public class ClientOrderService {
         }
     }
 
+    /**
+     * Полное удаление заказа администратором.
+     * Разрешено только до отгрузки (NEW, CONFIRMED, RESERVED, CANCELLED).
+     * При резервировании — освобождает резерв товара.
+     * Удаляет файл договора, если он есть.
+     */
+    @Transactional
+    public boolean deleteOrderByAdmin(Long orderId) {
+        try {
+            Optional<ClientOrder> optOrder = clientOrderRepository.findById(orderId);
+            if (optOrder.isEmpty()) {
+                log.error("Заказ с id={} не найден", orderId);
+                return false;
+            }
+
+            ClientOrder order = optOrder.get();
+            ClientOrderStatus currentStatus = order.getStatus();
+
+            if (currentStatus != ClientOrderStatus.NEW
+                    && currentStatus != ClientOrderStatus.CONFIRMED
+                    && currentStatus != ClientOrderStatus.RESERVED
+                    && currentStatus != ClientOrderStatus.CANCELLED) {
+                log.error("Удаление заказа №{} невозможно — статус {} (уже в работе или отгружен)",
+                        order.getOrderNumber(), currentStatus);
+                return false;
+            }
+
+            // Освобождаем резерв
+            if (currentStatus == ClientOrderStatus.RESERVED) {
+                for (OrderedProduct op : order.getOrderedProducts()) {
+                    Product product = op.getProduct();
+                    product.setReservedQuantity(
+                            Math.max(0, product.getReservedQuantity() - op.getQuantity()));
+                    productRepository.save(product);
+                }
+                log.info("Заказ №{}: резервирование снято при удалении", order.getOrderNumber());
+            }
+
+            // Удаляем файл договора
+            if (order.getContractFile() != null && !order.getContractFile().isBlank()) {
+                try {
+                    ContractService.deleteContract(order.getContractFile());
+                } catch (Exception e) {
+                    log.warn("Не удалось удалить файл договора '{}': {}", order.getContractFile(), e.getMessage());
+                }
+            }
+
+            String orderNumber = order.getOrderNumber();
+            clientOrderRepository.delete(order);
+
+            log.info("Заказ №{} удалён администратором", orderNumber);
+            return true;
+
+        } catch (Exception e) {
+            log.error("Ошибка при удалении заказа: {}", e.getMessage(), e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return false;
+        }
+    }
+
     // ========== АНАЛИТИКА ==========
 
     @Transactional(readOnly = true)

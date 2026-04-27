@@ -15,7 +15,10 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -76,10 +79,10 @@ public class RequestForDeliveryService {
     }
 
     @Transactional
-    public boolean createRequestByDirector(Long supplierId, Long warehouseId, BigDecimal deliveryCost,
-                                            List<Long> productIds, List<Integer> quantities,
-                                            List<BigDecimal> purchasePrices, List<String> units) {
-        log.info("Директор создаёт заявку на заказ товара для поставщика id={}...", supplierId);
+    public boolean createApprovedRequest(Long supplierId, Long warehouseId, BigDecimal deliveryCost,
+                                          List<Long> productIds, List<Integer> quantities,
+                                          List<BigDecimal> purchasePrices, List<String> units) {
+        log.info("Создание заявки на заказ товара со статусом APPROVED (директор/админ), поставщик id={}...", supplierId);
 
         Optional<Supplier> supplierOpt = supplierRepository.findById(supplierId);
         if (supplierOpt.isEmpty()) {
@@ -226,6 +229,144 @@ public class RequestForDeliveryService {
                 List.of("ROLE_EMPLOYEE_WAREHOUSE_MANAGER", "ROLE_EMPLOYEE_ACCOUNTER"), notificationText);
 
         log.info("Заявка №{} отклонена директором.", id);
+        return true;
+    }
+
+    // ========== АДМИНИСТРАТОР: РЕДАКТИРОВАНИЕ И УДАЛЕНИЕ ==========
+
+    /**
+     * Редактирование заявки администратором.
+     * Разрешено в любом статусе, кроме PARTIALLY_RECEIVED и RECEIVED
+     * (там уже есть фактическая приёмка — менять заявку нельзя).
+     */
+    @Transactional
+    public boolean updateRequestByAdmin(Long id, Long supplierId, Long warehouseId, BigDecimal deliveryCost,
+                                        List<Long> productIds, List<Integer> quantities,
+                                        List<BigDecimal> purchasePrices, List<String> units) {
+        Optional<RequestForDelivery> requestOpt = requestForDeliveryRepository.findById(id);
+        if (requestOpt.isEmpty()) {
+            log.error("Заявка с id={} не найдена.", id);
+            return false;
+        }
+
+        RequestForDelivery request = requestOpt.get();
+
+        if (request.getStatus() == RequestStatus.PARTIALLY_RECEIVED
+                || request.getStatus() == RequestStatus.RECEIVED) {
+            log.error("Заявку №{} нельзя редактировать — уже принята (статус '{}').",
+                    id, request.getStatus().getDisplayName());
+            return false;
+        }
+
+        Optional<Supplier> supplierOpt = supplierRepository.findById(supplierId);
+        if (supplierOpt.isEmpty()) {
+            log.error("Поставщик с id={} не найден.", supplierId);
+            return false;
+        }
+
+        Optional<Warehouse> warehouseOpt = warehouseRepository.findById(warehouseId);
+        if (warehouseOpt.isEmpty()) {
+            log.error("Склад с id={} не найден.", warehouseId);
+            return false;
+        }
+
+        request.setSupplier(supplierOpt.get());
+        request.setWarehouse(warehouseOpt.get());
+        request.setDeliveryCost(deliveryCost != null ? deliveryCost : BigDecimal.ZERO);
+
+        // Нормализуем входные позиции
+        Map<Long, AdminProductData> incoming = new LinkedHashMap<>();
+        for (int i = 0; i < productIds.size(); i++) {
+            Long pid = productIds.get(i);
+            if (pid == null) continue;
+            int qty = (quantities != null && i < quantities.size() && quantities.get(i) != null)
+                    ? quantities.get(i) : 1;
+            if (qty < 1) qty = 1;
+            BigDecimal price = (purchasePrices != null && i < purchasePrices.size() && purchasePrices.get(i) != null)
+                    ? purchasePrices.get(i) : BigDecimal.ZERO;
+            String unit = (units != null && i < units.size()) ? units.get(i) : null;
+            incoming.put(pid, new AdminProductData(qty, price, unit));
+        }
+
+        Map<Long, RequestedProduct> existing = new HashMap<>();
+        for (RequestedProduct rp : request.getRequestedProducts()) {
+            existing.put(rp.getProduct().getId(), rp);
+        }
+
+        for (Map.Entry<Long, AdminProductData> e : incoming.entrySet()) {
+            RequestedProduct rp = existing.get(e.getKey());
+            AdminProductData data = e.getValue();
+            if (rp != null) {
+                rp.setQuantity(data.quantity);
+                rp.setPurchasePrice(data.price);
+                rp.setUnit(data.unit);
+            } else {
+                Product product = productRepository.findById(e.getKey()).orElse(null);
+                if (product == null) {
+                    log.error("Товар с id={} не найден.", e.getKey());
+                    return false;
+                }
+                RequestedProduct newRp = new RequestedProduct(product, data.quantity, data.price);
+                newRp.setUnit(data.unit);
+                request.addRequestedProduct(newRp);
+            }
+        }
+
+        request.getRequestedProducts().removeIf(rp -> !incoming.containsKey(rp.getProduct().getId()));
+
+        Warehouse warehouse = warehouseOpt.get();
+        for (RequestedProduct rpCheck : request.getRequestedProducts()) {
+            if (!warehouse.canStoreProduct(rpCheck.getProduct())) {
+                log.error("Товар '{}' (тип {}) несовместим со складом '{}' (тип {})",
+                        rpCheck.getProduct().getName(), rpCheck.getProduct().getWarehouseType(),
+                        warehouse.getName(), warehouse.getType());
+                return false;
+            }
+        }
+
+        try {
+            requestForDeliveryRepository.save(request);
+        } catch (Exception e) {
+            log.error("Ошибка обновления заявки №{}: {}", id, e.getMessage(), e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return false;
+        }
+
+        log.info("Заявка №{} обновлена администратором.", id);
+        return true;
+    }
+
+    private record AdminProductData(int quantity, BigDecimal price, String unit) {}
+
+    /**
+     * Удаление заявки администратором.
+     * Запрещено только если уже была приёмка (PARTIALLY_RECEIVED / RECEIVED).
+     */
+    @Transactional
+    public boolean deleteRequestByAdmin(Long id) {
+        Optional<RequestForDelivery> requestOpt = requestForDeliveryRepository.findById(id);
+        if (requestOpt.isEmpty()) {
+            log.error("Заявка с id={} не найдена.", id);
+            return false;
+        }
+
+        RequestForDelivery request = requestOpt.get();
+        if (request.getStatus() == RequestStatus.PARTIALLY_RECEIVED
+                || request.getStatus() == RequestStatus.RECEIVED) {
+            log.error("Заявку №{} нельзя удалить — уже принята (статус '{}').",
+                    id, request.getStatus().getDisplayName());
+            return false;
+        }
+
+        try {
+            requestForDeliveryRepository.delete(request);
+        } catch (Exception e) {
+            log.error("Ошибка удаления заявки №{}: {}", id, e.getMessage(), e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return false;
+        }
+
+        log.info("Заявка №{} удалена администратором.", id);
         return true;
     }
 }

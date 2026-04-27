@@ -75,7 +75,7 @@
                     <td th:text="${iter.count}"></td>
                     <td th:text="${item.getProductArticle()}"></td>
                     <td>
-                        <a th:href="'/employee/manager/products/detailsProduct/' + ${item.getProductId()}"
+                        <a th:href="'/employee/admin/products/detailsProduct/' + ${item.getProductId()}"
                            th:text="${item.getProductName()}"></a>
                     </td>
                     <td th:text="${item.getUnit() != null ? item.getUnit() : '—'}"></td>
@@ -128,6 +128,37 @@
            || requestDTO.status.name() == 'RECEIVED'}"
                th:href="'/employee/admin/requestsForDelivery/downloadContract/' + ${requestDTO.getId()}"
                class="btn btn-outline-primary">Скачать договор</a>
+
+            <a th:if="${requestDTO.status.name() != 'PARTIALLY_RECEIVED' && requestDTO.status.name() != 'RECEIVED'}"
+               th:href="'/employee/admin/requestsForDelivery/editRequestForDelivery/' + ${requestDTO.getId()}"
+               class="btn btn-warning">Редактировать</a>
+
+            <button th:if="${requestDTO.status.name() != 'PARTIALLY_RECEIVED' && requestDTO.status.name() != 'RECEIVED'}"
+                    type="button" class="btn btn-outline-danger"
+                    data-bs-toggle="modal" data-bs-target="#deleteModal">
+                Удалить
+            </button>
+        </div>
+
+        <!-- Модальное окно удаления -->
+        <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form method="post" th:action="@{'/employee/admin/requestsForDelivery/deleteRequestForDelivery/' + ${requestDTO.getId()}}">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Удаление заявки</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            Удалить заявку №<span th:text="${requestDTO.getId()}"></span>? Действие необратимо.
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                            <button type="submit" class="btn btn-danger">Удалить</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 </div>

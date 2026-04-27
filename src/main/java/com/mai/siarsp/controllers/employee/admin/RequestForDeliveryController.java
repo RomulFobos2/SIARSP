@@ -114,12 +114,68 @@ public class RequestForDeliveryController {
                                         @RequestParam List<BigDecimal> purchasePrices,
                                         @RequestParam(required = false) List<String> units,
                                         RedirectAttributes redirectAttributes) {
-        if (!requestForDeliveryService.createRequestByDirector(
+        if (!requestForDeliveryService.createApprovedRequest(
                 supplierId, warehouseId, deliveryCost, productIds, quantities, purchasePrices, units)) {
             redirectAttributes.addFlashAttribute("requestError", "Ошибка при создании заявки.");
             return "redirect:/employee/admin/requestsForDelivery/addRequestForDelivery";
         }
         redirectAttributes.addFlashAttribute("requestSuccess", "Заявка создана и автоматически согласована.");
+        return "redirect:/employee/admin/requestsForDelivery/allRequestsForDelivery";
+    }
+
+    @Transactional
+    @GetMapping("/employee/admin/requestsForDelivery/editRequestForDelivery/{id}")
+    public String editRequestForDelivery(@PathVariable("id") long id, Model model,
+                                          RedirectAttributes redirectAttributes) {
+        RequestForDelivery request = requestForDeliveryService.getRequestEntity(id);
+        if (request == null) {
+            redirectAttributes.addFlashAttribute("requestError", "Заявка не найдена.");
+            return "redirect:/employee/admin/requestsForDelivery/allRequestsForDelivery";
+        }
+        if (request.getStatus() == RequestStatus.PARTIALLY_RECEIVED
+                || request.getStatus() == RequestStatus.RECEIVED) {
+            redirectAttributes.addFlashAttribute("requestError",
+                    "Редактирование запрещено — заявка уже принята (" + request.getStatus().getDisplayName() + ").");
+            return "redirect:/employee/admin/requestsForDelivery/detailsRequestForDelivery/" + id;
+        }
+
+        RequestForDeliveryDTO dto = com.mai.siarsp.mapper.RequestForDeliveryMapper.INSTANCE.toDTO(request);
+        model.addAttribute("requestDTO", dto);
+        model.addAttribute("allSuppliers", supplierService.getAllSuppliers());
+        model.addAttribute("allProducts", productService.getAllProducts());
+        model.addAttribute("allWarehouses", warehouseService.getAllWarehouses());
+        model.addAttribute("warehouseCapacityData", warehouseService.getWarehouseCapacityData());
+        model.addAttribute("productVolumeData", warehouseService.getProductVolumeData());
+        return "employee/admin/requestsForDelivery/editRequestForDelivery";
+    }
+
+    @PostMapping("/employee/admin/requestsForDelivery/editRequestForDelivery/{id}")
+    public String editRequestForDelivery(@PathVariable("id") long id,
+                                          @RequestParam Long supplierId,
+                                          @RequestParam Long warehouseId,
+                                          @RequestParam BigDecimal deliveryCost,
+                                          @RequestParam List<Long> productIds,
+                                          @RequestParam List<Integer> quantities,
+                                          @RequestParam List<BigDecimal> purchasePrices,
+                                          @RequestParam(required = false) List<String> units,
+                                          RedirectAttributes redirectAttributes) {
+        if (!requestForDeliveryService.updateRequestByAdmin(
+                id, supplierId, warehouseId, deliveryCost, productIds, quantities, purchasePrices, units)) {
+            redirectAttributes.addFlashAttribute("requestError", "Ошибка при обновлении заявки.");
+            return "redirect:/employee/admin/requestsForDelivery/editRequestForDelivery/" + id;
+        }
+        redirectAttributes.addFlashAttribute("requestSuccess", "Заявка обновлена.");
+        return "redirect:/employee/admin/requestsForDelivery/detailsRequestForDelivery/" + id;
+    }
+
+    @PostMapping("/employee/admin/requestsForDelivery/deleteRequestForDelivery/{id}")
+    public String deleteRequestForDelivery(@PathVariable("id") long id,
+                                            RedirectAttributes redirectAttributes) {
+        if (!requestForDeliveryService.deleteRequestByAdmin(id)) {
+            redirectAttributes.addFlashAttribute("requestError", "Ошибка при удалении заявки.");
+            return "redirect:/employee/admin/requestsForDelivery/detailsRequestForDelivery/" + id;
+        }
+        redirectAttributes.addFlashAttribute("requestSuccess", "Заявка удалена.");
         return "redirect:/employee/admin/requestsForDelivery/allRequestsForDelivery";
     }
 
