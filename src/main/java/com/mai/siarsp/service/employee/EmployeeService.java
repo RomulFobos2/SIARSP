@@ -6,6 +6,7 @@ import com.mai.siarsp.models.Employee;
 import com.mai.siarsp.models.Role;
 import com.mai.siarsp.repo.EmployeeRepository;
 import com.mai.siarsp.repo.RoleRepository;
+import com.mai.siarsp.service.general.ContractService;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,7 +17,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -54,6 +58,7 @@ public class EmployeeService implements UserDetailsService {
         return employee;
     }
 
+    //Для админа только
     @Transactional
     public boolean saveEmployee(Employee newEmployee, String roleName) {
         log.info("Начинаем сохранять сотрудника с username = {}...", newEmployee.getUsername());
@@ -87,6 +92,108 @@ public class EmployeeService implements UserDetailsService {
         return true;
     }
 
+
+    @Transactional
+    public boolean saveEmployee(Employee newEmployee, String roleName,
+                                String specialization, String qualification,
+                                BigDecimal salary, MultipartFile hiringOrderFile) {
+        log.info("Начинаем сохранять сотрудника с username = {}...", newEmployee.getUsername());
+
+        if (checkUserName(newEmployee.getUsername())) {
+            log.error("Сотрудник с username = {} уже существует. Используйте другой username.", newEmployee.getUsername());
+            return false;
+        }
+
+        Optional<Role> roleOptional = roleRepository.findByName(roleName);
+
+        if (roleOptional.isEmpty()) {
+            log.error("Роль {} не найдена в базе данных. Невозможно создать сотрудника.", roleName);
+            return false;
+        }
+
+        Role role = roleOptional.get();
+        newEmployee.setRole(role);
+        newEmployee.setPassword(bCryptPasswordEncoder.encode(newEmployee.getPassword()));
+        newEmployee.setSpecialization(specialization != null ? specialization : "");
+        newEmployee.setQualification(qualification != null ? qualification : "");
+        newEmployee.setSalary(salary);
+
+        if (hiringOrderFile != null && !hiringOrderFile.isEmpty()) {
+            try {
+                newEmployee.setHiringOrderFile(ContractService.uploadContract(hiringOrderFile));
+            } catch (IOException e) {
+                log.error("Ошибка при загрузке приказа о приёме: {}", e.getMessage(), e);
+                return false;
+            }
+        }
+
+        try {
+            employeeRepository.save(newEmployee);
+        } catch (Exception e) {
+            log.error("Ошибка при сохранении сотрудника {}: {}", newEmployee.getUsername(), e.getMessage(), e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return false;
+        }
+
+        log.info("Сотрудник с username = {} ({}) успешно сохранён.", newEmployee.getUsername(), role.getDescription());
+
+        return true;
+    }
+
+    @Transactional
+    public boolean editEmployee(Long id,
+                                String inputLastName, String inputFirstName,
+                                String inputPatronymicName, String inputUsername,
+                                String roleName,
+                                String specialization, String qualification,
+                                BigDecimal salary) {
+        Optional<Employee> employeeOptional = employeeRepository.findById(id);
+
+        if (employeeOptional.isEmpty()) {
+            log.error("Не найден сотрудник с id = {}...", id);
+            return false;
+        }
+
+        if (employeeRepository.existsByUsernameAndIdNot(inputUsername, id)) {
+            log.error("Сотрудник с username = {} уже существует. Используйте другой username.", inputUsername);
+            return false;
+        }
+
+        Optional<Role> roleOptional = roleRepository.findByName(roleName);
+
+        if (roleOptional.isEmpty()) {
+            log.error("Роль {} не найдена в базе данных. Невозможно отредактировать сотрудника.", roleName);
+            return false;
+        }
+
+        Role role = roleOptional.get();
+        Employee employee = employeeOptional.get();
+
+        log.info("Начинаем сохранять изменения для сотрудника с username = {}...", employee.getUsername());
+
+        employee.setRole(role);
+        employee.setFirstName(inputFirstName);
+        employee.setLastName(inputLastName);
+        employee.setPatronymicName(inputPatronymicName);
+        employee.setUsername(inputUsername);
+        employee.setSpecialization(specialization != null ? specialization : "");
+        employee.setQualification(qualification != null ? qualification : "");
+        employee.setSalary(salary);
+
+        try {
+            employeeRepository.save(employee);
+        } catch (Exception e) {
+            log.error("Ошибка при сохранении изменений: {}", e.getMessage(), e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return false;
+        }
+
+        log.info("Изменения для сотрудника успешно сохранены.");
+
+        return true;
+    }
+
+    //Для админа только
     @Transactional
     public boolean editEmployee(Long id,
                                 String inputLastName, String inputFirstName,
@@ -134,6 +241,9 @@ public class EmployeeService implements UserDetailsService {
 
         return true;
     }
+
+
+
 
     @Transactional
     public boolean resetEmployeePassword(long id, String newPassword) {
@@ -194,7 +304,7 @@ public class EmployeeService implements UserDetailsService {
         return employeeRepository.existsByUsername(username);
     }
 
-    public boolean accountEmployeeLocked(Long id) {
+    public boolean accountEmployeeLocked(Long id, MultipartFile dismissalOrderFile) {
         Optional<Employee> employeeOptional = employeeRepository.findById(id);
 
         if (employeeOptional.isEmpty()) {
@@ -205,6 +315,15 @@ public class EmployeeService implements UserDetailsService {
         Employee employee = employeeOptional.get();
         log.info("Начинаем блокировку аккаунта сотрудника с username = {}...", employee.getUsername());
         employee.setActive(false);
+
+        if (dismissalOrderFile != null && !dismissalOrderFile.isEmpty()) {
+            try {
+                employee.setDismissalOrderFile(ContractService.uploadContract(dismissalOrderFile));
+            } catch (IOException e) {
+                log.error("Ошибка при загрузке приказа об увольнении: {}", e.getMessage(), e);
+                return false;
+            }
+        }
 
         try {
             employeeRepository.save(employee);

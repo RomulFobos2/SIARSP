@@ -60,6 +60,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
@@ -171,6 +172,38 @@ data class ProductDto(
     val stockQuantity: Int,
     val categoryName: String?,
     val availableQuantity: Int
+)
+
+data class ProductSupplyDto(
+    val deliveryDate: String?,
+    val supplierName: String?,
+    val quantity: Int,
+    val purchasePrice: Double?,
+    val totalPrice: Double?,
+    val unit: String?
+)
+
+data class ProductOrderDto(
+    val orderNumber: String?,
+    val orderDate: String?,
+    val quantity: Int,
+    val price: Double?,
+    val totalPrice: Double?,
+    val status: String?
+)
+
+data class ProductWriteOffDto(
+    val actNumber: String?,
+    val actDate: String?,
+    val quantity: Int,
+    val reason: String?,
+    val status: String?
+)
+
+data class ProductHistoryDto(
+    val supplies: List<ProductSupplyDto>,
+    val orders: List<ProductOrderDto>,
+    val writeOffs: List<ProductWriteOffDto>
 )
 
 data class WarehouseDto(
@@ -328,6 +361,9 @@ interface MobileApi {
     @GET("api/mobile/products")
     suspend fun getProducts(): List<ProductDto>
 
+    @GET("api/mobile/products/{id}/history")
+    suspend fun getProductHistory(@Path("id") id: Long): ProductHistoryDto
+
     @GET("api/mobile/warehouses")
     suspend fun getWarehouses(): List<WarehouseDto>
 
@@ -464,6 +500,8 @@ class MainViewModel : ViewModel() {
     var clients by mutableStateOf<List<ClientDto>>(emptyList())
     var suppliers by mutableStateOf<List<SupplierDto>>(emptyList())
     var products by mutableStateOf<List<ProductDto>>(emptyList())
+    var selectedProduct by mutableStateOf<ProductDto?>(null)
+    var productHistory by mutableStateOf<ProductHistoryDto?>(null)
     var warehouses by mutableStateOf<List<WarehouseDto>>(emptyList())
     var vehicles by mutableStateOf<List<VehicleDto>>(emptyList())
     var orders by mutableStateOf<List<ClientOrderDto>>(emptyList())
@@ -609,6 +647,14 @@ class MainViewModel : ViewModel() {
             runCatching { repo.mobileApi.getProducts() }
                 .onSuccess { products = it }
                 .onFailure { message = "Ошибка загрузки товаров: ${it.message}" }
+        }
+    }
+
+    fun loadProductHistory(productId: Long) {
+        viewModelScope.launch {
+            runCatching { repo.mobileApi.getProductHistory(productId) }
+                .onSuccess { productHistory = it }
+                .onFailure { message = "Ошибка загрузки истории товара: ${it.message}" }
         }
     }
 
@@ -983,17 +1029,30 @@ private fun TaskScreen(vm: MainViewModel, paddingValues: PaddingValues) {
                         if (task.status == "IN_TRANSIT" && task.routePoints.isNotEmpty()) {
                             Text("Маршрутные точки:", fontWeight = FontWeight.Medium)
                             task.routePoints.sortedBy { it.orderIndex }.forEach { point ->
-                                Row(
+                                Card(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (point.reached) Color(0xFFE8F5E9)
+                                        else MaterialTheme.colorScheme.surfaceVariant
+                                    )
                                 ) {
-                                    Text("${point.orderIndex + 1}. ${point.address ?: "—"}")
-                                    if (point.reached) {
-                                        Text("Пройдена", color = Color(0xFF2E7D32))
-                                    } else {
-                                        Button(onClick = { vm.markRoutePoint(task.id, point.id) }) {
-                                            Text("Отметить")
+                                    Column(modifier = Modifier.padding(8.dp)) {
+                                        Text(
+                                            "${point.orderIndex + 1}. ${point.address ?: "—"}",
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                        if (point.reached) {
+                                            Text(
+                                                "Пройдена" + if (point.actualArrivalTime != null)
+                                                    " (${formatDateTime(point.actualArrivalTime)})" else "",
+                                                color = Color(0xFF2E7D32),
+                                                fontSize = 13.sp
+                                            )
+                                        } else {
+                                            Button(
+                                                onClick = { vm.markRoutePoint(task.id, point.id) },
+                                                modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+                                            ) { Text("Отметить прохождение") }
                                         }
                                     }
                                 }
@@ -1101,18 +1160,127 @@ private fun SuppliersScreen(vm: MainViewModel, paddingValues: PaddingValues) {
 private fun ProductsScreen(vm: MainViewModel, paddingValues: PaddingValues) {
     LaunchedEffect(Unit) { vm.loadProducts() }
 
+    if (vm.selectedProduct != null) {
+        ProductDetailScreen(vm, paddingValues)
+    } else {
+        LazyColumn(
+            modifier = Modifier.padding(paddingValues).padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(vertical = 8.dp)
+        ) {
+            items(vm.products) { product ->
+                Card(
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        vm.selectedProduct = product
+                        vm.productHistory = null
+                        vm.loadProductHistory(product.id)
+                    }
+                ) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(product.name ?: "—", fontWeight = FontWeight.Bold)
+                        Text("Артикул: ${product.article ?: "—"}")
+                        Text("Категория: ${product.categoryName ?: "—"}")
+                        Text("На складе: ${product.stockQuantity}, доступно: ${product.availableQuantity}")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProductDetailScreen(vm: MainViewModel, paddingValues: PaddingValues) {
+    val product = vm.selectedProduct ?: return
+    val history = vm.productHistory
+
     LazyColumn(
         modifier = Modifier.padding(paddingValues).padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         contentPadding = PaddingValues(vertical = 8.dp)
     ) {
-        items(vm.products) { product ->
+        item {
+            Button(onClick = { vm.selectedProduct = null }) {
+                Text("← Назад к списку")
+            }
+        }
+
+        item {
             Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(product.name ?: "—", fontWeight = FontWeight.Bold)
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(product.name ?: "—", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                     Text("Артикул: ${product.article ?: "—"}")
                     Text("Категория: ${product.categoryName ?: "—"}")
-                    Text("На складе: ${product.stockQuantity}, доступно: ${product.availableQuantity}")
+                    Text("На складе: ${product.stockQuantity}")
+                    Text("Доступно: ${product.availableQuantity}")
+                }
+            }
+        }
+
+        if (history == null) {
+            item {
+                Text("Загрузка истории...", modifier = Modifier.padding(8.dp))
+            }
+        } else {
+            // Поставки
+            if (history.supplies.isNotEmpty()) {
+                item {
+                    Text("Поставки", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(top = 8.dp))
+                }
+                items(history.supplies) { s ->
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("Дата: ${s.deliveryDate ?: "—"}")
+                            Text("Поставщик: ${s.supplierName ?: "—"}")
+                            Text("Кол-во: ${s.quantity} ${s.unit ?: ""}")
+                            Text("Цена: ${s.purchasePrice ?: "—"} руб.")
+                            Text("Сумма: ${s.totalPrice ?: "—"} руб.")
+                        }
+                    }
+                }
+            }
+
+            // Заказы
+            if (history.orders.isNotEmpty()) {
+                item {
+                    Text("Заказы клиентов", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(top = 8.dp))
+                }
+                items(history.orders) { o ->
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("Заказ: ${o.orderNumber ?: "—"}")
+                            Text("Дата: ${o.orderDate ?: "—"}")
+                            Text("Кол-во: ${o.quantity}, цена: ${o.price ?: "—"} руб.")
+                            Text("Сумма: ${o.totalPrice ?: "—"} руб.")
+                            Text("Статус: ${o.status ?: "—"}")
+                        }
+                    }
+                }
+            }
+
+            // Акты списания
+            if (history.writeOffs.isNotEmpty()) {
+                item {
+                    Text("Акты списания", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(top = 8.dp))
+                }
+                items(history.writeOffs) { w ->
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("Акт: ${w.actNumber ?: "—"}")
+                            Text("Дата: ${w.actDate ?: "—"}")
+                            Text("Кол-во: ${w.quantity}")
+                            Text("Причина: ${w.reason ?: "—"}")
+                            Text("Статус: ${w.status ?: "—"}")
+                        }
+                    }
+                }
+            }
+
+            if (history.supplies.isEmpty() && history.orders.isEmpty() && history.writeOffs.isEmpty()) {
+                item {
+                    Text("История по данному товару отсутствует", modifier = Modifier.padding(8.dp))
                 }
             }
         }

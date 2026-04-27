@@ -9,6 +9,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Collections;
@@ -61,6 +62,42 @@ public class Employee implements UserDetails {
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
 
+    /**
+     * Специализация сотрудника
+     * Например: "Логистика", "Бухгалтерский учёт", "Складская логистика"
+     * Пустая строка означает, что специализация не указана
+     */
+    @Column(length = 200, nullable = false)
+    private String specialization = "";
+
+    /**
+     * Квалификация сотрудника
+     * Например: "Высшая категория", "1-й разряд"
+     * Пустая строка означает, что квалификация не указана
+     */
+    @Column(length = 200, nullable = false)
+    private String qualification = "";
+
+    /**
+     * Заработная плата сотрудника (руб.)
+     */
+    @Column
+    private BigDecimal salary;
+
+    /**
+     * Имя файла приказа о приёме на работу
+     * Хранится в каталоге, указанном в свойстве contract.upload.path
+     */
+    @Column(length = 500)
+    private String hiringOrderFile;
+
+    /**
+     * Имя файла приказа об увольнении
+     * Хранится в каталоге, указанном в свойстве contract.upload.path
+     */
+    @Column(length = 500)
+    private String dismissalOrderFile;
+
     // ========== КОНСТРУКТОРЫ ==========
 
     public Employee(String lastName, String firstName, String patronymicName, String username, String password) {
@@ -70,6 +107,8 @@ public class Employee implements UserDetails {
         this.username = username;
         this.password = password;
         this.dateOfRegistration = LocalDate.now();
+        this.specialization = "";
+        this.qualification = "";
     }
 
     // ========== МЕТОДЫ Spring Security UserDetails ==========

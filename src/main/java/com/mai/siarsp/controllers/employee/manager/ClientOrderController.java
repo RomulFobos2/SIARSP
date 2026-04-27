@@ -10,9 +10,15 @@ import com.mai.siarsp.repo.ProductRepository;
 import com.mai.siarsp.repo.RequestForDeliveryRepository;
 import com.mai.siarsp.service.employee.ClientOrderService;
 import com.mai.siarsp.service.employee.DeliveryTaskService;
+import com.mai.siarsp.service.general.AcceptanceActDocumentService;
 import com.mai.siarsp.service.general.ContractService;
+import com.mai.siarsp.service.general.ReportDocumentService;
+import com.mai.siarsp.service.general.TTNDocumentService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -94,13 +100,17 @@ public class ClientOrderController {
                                     @RequestParam("productId") List<Long> productIds,
                                     @RequestParam("quantity") List<Integer> quantities,
                                     @RequestParam("price") List<BigDecimal> prices,
+                                    @RequestParam(value = "originalPrice", required = false) List<BigDecimal> originalPrices,
+                                    @RequestParam(value = "discountPercent", required = false) List<Integer> discountPercents,
                                     @RequestParam("contractFile") MultipartFile contractFile,
                                     @AuthenticationPrincipal Employee currentEmployee,
                                     RedirectAttributes redirectAttributes) {
         List<ClientOrderService.OrderItemRequest> items = new ArrayList<>();
         for (int i = 0; i < productIds.size(); i++) {
+            BigDecimal origPrice = (originalPrices != null && i < originalPrices.size()) ? originalPrices.get(i) : null;
+            Integer discount = (discountPercents != null && i < discountPercents.size()) ? discountPercents.get(i) : null;
             items.add(new ClientOrderService.OrderItemRequest(
-                    productIds.get(i), quantities.get(i), prices.get(i)));
+                    productIds.get(i), quantities.get(i), prices.get(i), origPrice, discount));
         }
 
         java.time.LocalDate date = java.time.LocalDate.parse(deliveryDate);
@@ -137,6 +147,8 @@ public class ClientOrderController {
             item.put("productName", op.getProduct().getName());
             item.put("quantity", op.getQuantity());
             item.put("price", op.getPrice());
+            item.put("originalPrice", op.getOriginalPrice());
+            item.put("discountPercent", op.getDiscountPercent());
             orderProducts.add(item);
         }
 
@@ -153,12 +165,16 @@ public class ClientOrderController {
                                   @RequestParam("productId") List<Long> productIds,
                                   @RequestParam("quantity") List<Integer> quantities,
                                   @RequestParam("price") List<BigDecimal> prices,
+                                  @RequestParam(value = "originalPrice", required = false) List<BigDecimal> originalPrices,
+                                  @RequestParam(value = "discountPercent", required = false) List<Integer> discountPercents,
                                   @RequestParam(value = "contractFile", required = false) MultipartFile contractFile,
                                   RedirectAttributes redirectAttributes) {
         List<ClientOrderService.OrderItemRequest> items = new ArrayList<>();
         for (int i = 0; i < productIds.size(); i++) {
+            BigDecimal origPrice = (originalPrices != null && i < originalPrices.size()) ? originalPrices.get(i) : null;
+            Integer discount = (discountPercents != null && i < discountPercents.size()) ? discountPercents.get(i) : null;
             items.add(new ClientOrderService.OrderItemRequest(
-                    productIds.get(i), quantities.get(i), prices.get(i)));
+                    productIds.get(i), quantities.get(i), prices.get(i), origPrice, discount));
         }
 
         java.time.LocalDate date = java.time.LocalDate.parse(deliveryDate);
@@ -229,6 +245,7 @@ public class ClientOrderController {
         model.addAttribute("ttn", optOrder.get().getDeliveryTask().getTtn());
         model.addAttribute("canEdit", false);
         model.addAttribute("backUrl", "/employee/manager/clientOrders/detailsClientOrder/" + orderId);
+        model.addAttribute("downloadUrl", "/employee/manager/clientOrders/downloadTTN/" + orderId);
         return "employee/warehouseManager/documents/detailsTTN";
     }
 
@@ -247,7 +264,46 @@ public class ClientOrderController {
         model.addAttribute("act", optAct.get());
         model.addAttribute("canEdit", false);
         model.addAttribute("backUrl", "/employee/manager/clientOrders/detailsClientOrder/" + orderId);
+        model.addAttribute("downloadUrl", "/employee/manager/clientOrders/downloadAcceptanceAct/" + orderId);
         return "employee/warehouseManager/documents/detailsAcceptanceAct";
+    }
+
+    // ========== СКАЧИВАНИЕ ДОКУМЕНТОВ ==========
+
+    @Transactional(readOnly = true)
+    @GetMapping("/downloadTTN/{orderId}")
+    public ResponseEntity<byte[]> downloadTTN(@PathVariable Long orderId) throws IOException {
+        Optional<ClientOrder> optOrder = clientOrderService.getOrderById(orderId);
+        if (optOrder.isEmpty() || optOrder.get().getDeliveryTask() == null
+                || optOrder.get().getDeliveryTask().getTtn() == null) {
+            return ResponseEntity.notFound().build();
+        }
+        ReportDocumentService.ReportFile file = TTNDocumentService.generateDocument(
+                optOrder.get().getDeliveryTask().getTtn());
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
+        headers.setContentDisposition(ContentDisposition.attachment().filename(file.fileName()).build());
+        return ResponseEntity.ok().headers(headers).body(file.content());
+    }
+
+    @Transactional(readOnly = true)
+    @GetMapping("/downloadAcceptanceAct/{orderId}")
+    public ResponseEntity<byte[]> downloadAcceptanceAct(@PathVariable Long orderId) throws IOException {
+        Optional<ClientOrder> optOrder = clientOrderService.getOrderById(orderId);
+        if (optOrder.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        Optional<AcceptanceAct> optAct = deliveryTaskService.getAcceptanceActByOrder(orderId);
+        if (optAct.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        ReportDocumentService.ReportFile file = AcceptanceActDocumentService.generateDocument(optAct.get());
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
+        headers.setContentDisposition(ContentDisposition.attachment().filename(file.fileName()).build());
+        return ResponseEntity.ok().headers(headers).body(file.content());
     }
 
     /**

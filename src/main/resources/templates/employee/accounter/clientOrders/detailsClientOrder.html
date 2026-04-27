@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Заказ | СИАРСП</title>
+    <title>Поставка | СИАРСП</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="/css/bootstrap.min.css" rel="stylesheet">
@@ -15,11 +15,14 @@
     <div class="row justify-content-center">
         <div class="col-12 col-lg-10">
 
+            <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+            <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
             <!-- Заголовок -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h1 class="page-title">
-                        Заказ <span th:text="${order.orderNumber}"></span>
+                        Поставка <span th:text="${order.orderNumber}"></span>
                     </h1>
                     <span class="badge fs-6"
                           th:text="${order.status.displayName}"
@@ -39,12 +42,15 @@
                 <div class="col-md-6">
                     <div class="card border-0 bg-light">
                         <div class="card-body">
-                            <h6 class="card-title fw-bold">Информация о заказе</h6>
+                            <h6 class="card-title fw-bold">Информация о поставке</h6>
                             <p class="mb-1"><strong>Номер:</strong> <span th:text="${order.orderNumber}"></span></p>
                             <p class="mb-1"><strong>Дата создания:</strong>
                                 <span th:text="${#temporals.format(order.orderDate, 'dd.MM.yyyy HH:mm')}"></span></p>
                             <p class="mb-1"><strong>Дата доставки:</strong>
                                 <span th:text="${#temporals.format(order.deliveryDate, 'dd.MM.yyyy')}"></span></p>
+                            <p class="mb-1" th:if="${order.actualDeliveryDate != null}">
+                                <strong>Фактическая доставка:</strong>
+                                <span th:text="${#temporals.format(order.actualDeliveryDate, 'dd.MM.yyyy')}"></span></p>
                             <p class="mb-0"><strong>Ответственный:</strong>
                                 <span th:text="${order.responsibleEmployee.fullName}"></span></p>
                         </div>
@@ -58,15 +64,18 @@
                                 <span th:text="${order.client.organizationName}"></span></p>
                             <p class="mb-1"><strong>Тип:</strong>
                                 <span th:text="${order.client.organizationType}"></span></p>
-                            <p class="mb-0"><strong>Адрес доставки:</strong>
+                            <p class="mb-1"><strong>Адрес доставки:</strong>
                                 <span th:text="${order.client.deliveryAddress}"></span></p>
+                            <p class="mb-0" th:if="${order.client.contactPerson != null}">
+                                <strong>Контакт:</strong>
+                                <span th:text="${order.client.contactPerson}"></span></p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Позиции заказа -->
-            <h5 class="fw-bold mb-3">Позиции заказа</h5>
+            <!-- Позиции поставки -->
+            <h5 class="fw-bold mb-3">Позиции поставки</h5>
             <div class="table-responsive mb-4">
                 <table class="table table-modern">
                     <thead>
@@ -112,10 +121,13 @@
             </div>
 
             <!-- Документы -->
-            <div th:if="${order.deliveryTask != null and (order.deliveryTask.ttn != null or order.acceptanceAct != null)}" class="mb-4">
+            <div th:if="${order.contractFile != null or (order.deliveryTask != null and (order.deliveryTask.ttn != null or order.acceptanceAct != null))}" class="mb-4">
                 <h5 class="fw-bold mb-3">Документы</h5>
-                <div class="d-flex gap-2">
-                    <a th:if="${order.deliveryTask.ttn != null}"
+                <div class="d-flex gap-2 flex-wrap">
+                    <a th:if="${order.contractFile != null}"
+                       th:href="'/employee/accounter/clientOrders/downloadContract/' + ${order.id}"
+                       class="btn btn-outline-primary">Скачать контракт</a>
+                    <a th:if="${order.deliveryTask != null and order.deliveryTask.ttn != null}"
                        th:href="'/employee/accounter/clientOrders/detailsTTN/' + ${order.id}"
                        class="btn btn-outline-secondary">Просмотр ТТН</a>
                     <a th:if="${order.acceptanceAct != null}"

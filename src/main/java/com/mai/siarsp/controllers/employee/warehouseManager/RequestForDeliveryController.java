@@ -66,6 +66,8 @@ public class RequestForDeliveryController {
         model.addAttribute("allProducts", productService.getAllProducts());
         model.addAttribute("allWarehouses", warehouseService.getAllWarehouses());
         model.addAttribute("deficitData", clientOrderService.getProductDeficit());
+        model.addAttribute("warehouseCapacityData", warehouseService.getWarehouseCapacityData());
+        model.addAttribute("productVolumeData", warehouseService.getProductVolumeData());
         return "employee/warehouseManager/requestsForDelivery/addRequestForDelivery";
     }
 
@@ -119,6 +121,8 @@ public class RequestForDeliveryController {
         model.addAttribute("allSuppliers", supplierService.getAllSuppliers());
         model.addAttribute("allProducts", productService.getAllProducts());
         model.addAttribute("allWarehouses", warehouseService.getAllWarehouses());
+        model.addAttribute("warehouseCapacityData", warehouseService.getWarehouseCapacityData());
+        model.addAttribute("productVolumeData", warehouseService.getProductVolumeData());
         return "employee/warehouseManager/requestsForDelivery/editRequestForDelivery";
     }
 

@@ -12,4 +12,6 @@ public interface RequestedProductRepository extends JpaRepository<RequestedProdu
     boolean existsByRequestAndProduct(RequestForDelivery request, Product product);
 
     Optional<RequestedProduct> findByRequestAndProduct(RequestForDelivery request, Product product);
+
+    long countByProductId(Long productId);
 }

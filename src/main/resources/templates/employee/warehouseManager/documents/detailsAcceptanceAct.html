@@ -41,8 +41,8 @@
                 <div class="col-md-6">
                     <div class="card border-0 bg-light">
                         <div class="card-body">
-                            <h6 class="card-title fw-bold">Заказ</h6>
-                            <p class="mb-1"><strong>Номер заказа:</strong> <span th:text="${order.orderNumber}"></span></p>
+                            <h6 class="card-title fw-bold">Поставка</h6>
+                            <p class="mb-1"><strong>Номер поставки:</strong> <span th:text="${order.orderNumber}"></span></p>
                             <p class="mb-1"><strong>Клиент:</strong> <span th:text="${act.client.organizationName}"></span></p>
                             <p class="mb-0"><strong>Передал:</strong>
                                 <span th:text="${act.deliveredBy.fullName}"></span></p>
@@ -60,10 +60,11 @@
 
             <div class="d-flex gap-2 mb-4">
                 <a th:if="${canEdit}" th:href="${editUrl}" class="btn btn-outline-primary">Редактировать</a>
+                <a th:if="${downloadUrl}" th:href="${downloadUrl}" class="btn btn-outline-success">Скачать акт</a>
             </div>
 
             <div class="link-section">
-                <a th:href="${backUrl}">&larr; К заказу</a>
+                <a th:href="${backUrl}">&larr; К поставке</a>
             </div>
         </div>
     </div>

@@ -1,0 +1,69 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Роли | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="admin-page">
+<header th:insert="~{blocks/header :: header}"></header>
+
+<div class="container my-5">
+    <!-- Action Buttons -->
+    <div class="profile-card mb-4">
+        <div class="profile-actions">
+            <a th:href="'/'"
+               class="btn btn-secondary btn-profile">
+                ← Главная
+            </a>
+            <a th:href="'/employee/admin/roles/addRole'"
+               class="btn btn-success btn-profile">
+                + Добавить роль
+            </a>
+        </div>
+    </div>
+
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+    <!-- Roles Table -->
+    <div class="table-container">
+        <h2 class="h3 mb-4 fw-bold">Список ролей</h2>
+
+        <div class="table-responsive">
+            <table class="table table-modern">
+                <thead>
+                <tr>
+                    <th>№</th>
+                    <th>Техническое имя</th>
+                    <th>Описание</th>
+                    <th>Действия</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="role, index : ${allRoles}">
+                    <td th:text="${index.index+1}"></td>
+                    <td th:text="${role.getName()}"></td>
+                    <td th:text="${role.getDescription()}"></td>
+                    <td>
+                        <a th:href="'/employee/admin/roles/editRole/' + ${role.getId()}"
+                           class="btn btn-sm btn-outline-primary me-1">Редактировать</a>
+                        <a th:href="'/employee/admin/roles/deleteRole/' + ${role.getId()}"
+                           class="btn btn-sm btn-outline-danger"
+                           th:data-rolename="${role.getName()}"
+                           onclick="return confirm('Вы точно хотите удалить роль ' + this.getAttribute('data-rolename') + '?')">Удалить</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>

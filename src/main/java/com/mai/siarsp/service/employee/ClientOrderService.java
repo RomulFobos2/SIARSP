@@ -52,7 +52,11 @@ public class ClientOrderService {
 
     // ========== ЗАПРОСЫ ==========
 
-    public record OrderItemRequest(Long productId, int quantity, BigDecimal price) {}
+    /**
+     * Запрос на добавление позиции в заказ
+     */
+    public record OrderItemRequest(Long productId, int quantity, BigDecimal price,
+                                    BigDecimal originalPrice, Integer discountPercent) {}
 
     @Transactional(readOnly = true)
     public List<ClientOrderDTO> getAllOrders() {
@@ -126,7 +130,8 @@ public class ClientOrderService {
                     return false;
                 }
 
-                OrderedProduct orderedProduct = new OrderedProduct(optProduct.get(), item.quantity(), item.price());
+                OrderedProduct orderedProduct = new OrderedProduct(optProduct.get(), item.quantity(), item.price(),
+                        item.originalPrice(), item.discountPercent());
                 order.addOrderedProduct(orderedProduct);
             }
 
@@ -204,6 +209,8 @@ public class ClientOrderService {
                 if (op != null) {
                     op.setQuantity(item.quantity());
                     op.setPrice(item.price());
+                    op.setOriginalPrice(item.originalPrice());
+                    op.setDiscountPercent(item.discountPercent());
                     op.recalculateTotalPrice();
                 } else {
                     Optional<Product> optProduct = productRepository.findById(pid);
@@ -211,7 +218,8 @@ public class ClientOrderService {
                         log.error("Товар с id={} не найден", pid);
                         return false;
                     }
-                    OrderedProduct newOp = new OrderedProduct(optProduct.get(), item.quantity(), item.price());
+                    OrderedProduct newOp = new OrderedProduct(optProduct.get(), item.quantity(), item.price(),
+                            item.originalPrice(), item.discountPercent());
                     order.addOrderedProduct(newOp);
                 }
             }

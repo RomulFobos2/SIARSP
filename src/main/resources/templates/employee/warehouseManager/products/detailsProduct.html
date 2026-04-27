@@ -101,6 +101,91 @@
             </div>
         </div>
 
+        <!-- Поставки -->
+        <div class="mb-4" th:if="${supplies != null and !supplies.isEmpty()}">
+            <h6 class="form-section-title">Поставки</h6>
+            <div class="table-responsive">
+                <table class="table table-sm table-striped">
+                    <thead>
+                    <tr>
+                        <th>Дата поставки</th>
+                        <th>Поставщик</th>
+                        <th>Кол-во</th>
+                        <th>Ед. изм.</th>
+                        <th>Цена за ед.</th>
+                        <th>Сумма</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="s : ${supplies}">
+                        <td th:text="${s.getDelivery().getDeliveryDate()}"></td>
+                        <td th:text="${s.getDelivery().getSupplier().getName()}"></td>
+                        <td th:text="${s.getQuantity()}"></td>
+                        <td th:text="${s.getUnit()}"></td>
+                        <td th:text="${s.getPurchasePrice()}"></td>
+                        <td th:text="${s.getTotalPrice()}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Заказы клиентов -->
+        <div class="mb-4" th:if="${orderedProducts != null and !orderedProducts.isEmpty()}">
+            <h6 class="form-section-title">Заказы клиентов</h6>
+            <div class="table-responsive">
+                <table class="table table-sm table-striped">
+                    <thead>
+                    <tr>
+                        <th>Номер заказа</th>
+                        <th>Дата заказа</th>
+                        <th>Кол-во</th>
+                        <th>Цена</th>
+                        <th>Сумма</th>
+                        <th>Статус</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="op : ${orderedProducts}">
+                        <td th:text="${op.getClientOrder().getOrderNumber()}"></td>
+                        <td th:text="${op.getClientOrder().getOrderDate().toLocalDate()}"></td>
+                        <td th:text="${op.getQuantity()}"></td>
+                        <td th:text="${op.getPrice()}"></td>
+                        <td th:text="${op.getTotalPrice()}"></td>
+                        <td th:text="${op.getClientOrder().getStatus().getDisplayName()}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Акты списания -->
+        <div class="mb-4" th:if="${writeOffActs != null and !writeOffActs.isEmpty()}">
+            <h6 class="form-section-title">Акты списания</h6>
+            <div class="table-responsive">
+                <table class="table table-sm table-striped">
+                    <thead>
+                    <tr>
+                        <th>Номер акта</th>
+                        <th>Дата</th>
+                        <th>Кол-во</th>
+                        <th>Причина</th>
+                        <th>Статус</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="wa : ${writeOffActs}">
+                        <td th:text="${wa.getActNumber()}"></td>
+                        <td th:text="${wa.getActDate()}"></td>
+                        <td th:text="${wa.getQuantity()}"></td>
+                        <td th:text="${wa.getReason().getDisplayName()}"></td>
+                        <td th:text="${wa.getStatus().getDisplayName()}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <div class="action-buttons mb-4">
             <button th:onclick="'window.location.href=\'/employee/warehouseManager/products/editProduct/' + ${productDTO.getId()} + '\';'" class="btn btn-primary btn-profile">Редактировать</button>
             <button class="btn btn-danger btn-profile"

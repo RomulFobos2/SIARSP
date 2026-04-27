@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Создание заказа | СИАРСП</title>
+    <title>Создание поставки | СИАРСП</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="/css/bootstrap.min.css" rel="stylesheet">
@@ -33,8 +33,8 @@
         <div class="col-12 col-lg-10">
             <div class="profile-card p-4">
 
-                <h1 class="page-title">Создание заказа</h1>
-                <p class="page-subtitle">Оформление нового заказа клиента</p>
+                <h1 class="page-title">Создание поставки</h1>
+                <p class="page-subtitle">Оформление новой поставки клиенту</p>
 
                 <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
@@ -80,7 +80,7 @@
 
                     <!-- Позиции заказа -->
                     <div class="mb-4">
-                        <h6 class="form-section-title">Позиции заказа</h6>
+                        <h6 class="form-section-title">Позиции поставки</h6>
                         <div id="productsContainer">
                             <!-- Динамические строки добавляются JS -->
                         </div>
@@ -96,12 +96,12 @@
                     </div>
 
                     <div class="action-buttons">
-                        <button type="submit" class="btn btn-primary btn-profile">Создать заказ</button>
+                        <button type="submit" class="btn btn-primary btn-profile">Создать поставку</button>
                     </div>
 
                     <div class="divider"><span>или</span></div>
                     <div class="link-section">
-                        <a href="/employee/manager/clientOrders/allClientOrders">&larr; К списку заказов</a>
+                        <a href="/employee/manager/clientOrders/allClientOrders">&larr; К списку поставок</a>
                     </div>
                 </form>
             </div>
@@ -147,15 +147,23 @@
                 '<small class="text-muted available-hint"></small>' +
             '</div>' +
             '<div class="col-md-2">' +
-                '<label class="form-label">Цена *</label>' +
-                '<input type="number" name="price" class="form-control price-input" min="0.01" step="0.01" required oninput="calculateRowTotal(this)">' +
+                '<label class="form-label">Цена без скидки *</label>' +
+                '<input type="number" name="originalPrice" class="form-control original-price-input" min="0.01" step="0.01" required oninput="calculateDiscountedPrice(this)">' +
             '</div>' +
-            '<div class="col-md-2">' +
+            '<div class="col-md-1">' +
+                '<label class="form-label">Скидка %</label>' +
+                '<input type="number" name="discountPercent" class="form-control discount-input" min="0" max="100" value="0" oninput="calculateDiscountedPrice(this)">' +
+            '</div>' +
+            '<div class="col-md-1">' +
+                '<label class="form-label">Цена</label>' +
+                '<input type="number" name="price" class="form-control price-input" step="0.01" readonly required>' +
+            '</div>' +
+            '<div class="col-md-1">' +
                 '<label class="form-label">Сумма</label>' +
                 '<input type="text" class="form-control row-total" readonly value="0.00">' +
             '</div>' +
-            '<div class="col-md-2 d-flex align-items-end">' +
-                '<button type="button" class="btn btn-outline-danger" onclick="removeProductRow(this)">Удалить</button>' +
+            '<div class="col-md-1 d-flex align-items-end">' +
+                '<button type="button" class="btn btn-outline-danger btn-sm" onclick="removeProductRow(this)">Удалить</button>' +
             '</div>';
         container.appendChild(row);
         updateSelectOptions();
@@ -192,6 +200,8 @@
 
                 hint.textContent = '';
 
+                row.querySelector('.original-price-input').value = '';
+                row.querySelector('.discount-input').value = '0';
                 row.querySelector('.price-input').value = '';
                 row.querySelector('.row-total').value = '0.00';
                 updateGrandTotal();
@@ -272,6 +282,17 @@
                 options[j].disabled = (options[j].value !== currentVal && selectedValues.indexOf(options[j].value) !== -1);
             }
         }
+    }
+
+    function calculateDiscountedPrice(input) {
+        var row = input.closest('.product-row');
+        var originalPrice = parseFloat(row.querySelector('.original-price-input').value) || 0;
+        var discount = parseFloat(row.querySelector('.discount-input').value) || 0;
+        if (discount < 0) discount = 0;
+        if (discount > 100) discount = 100;
+        var discounted = originalPrice * (1 - discount / 100);
+        row.querySelector('.price-input').value = discounted.toFixed(2);
+        calculateRowTotal(row.querySelector('.price-input'));
     }
 
     function calculateRowTotal(input) {

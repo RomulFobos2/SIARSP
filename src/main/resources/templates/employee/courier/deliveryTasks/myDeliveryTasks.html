@@ -22,9 +22,9 @@
             <form method="get" action="/employee/courier/deliveryTasks/myDeliveryTasks" class="mb-4">
                 <div class="row g-3 align-items-end">
                     <div class="col-md-5">
-                        <label class="form-label fw-semibold">Поиск по номеру заказа</label>
+                        <label class="form-label fw-semibold">Поиск по номеру поставки</label>
                         <input type="text" name="search" class="form-control"
-                               placeholder="Номер заказа..."
+                               placeholder="Номер поставки..."
                                th:value="${currentSearch}">
                     </div>
                     <div class="col-md-4">
@@ -50,7 +50,7 @@
                     <thead>
                     <tr>
                         <th>#</th>
-                        <th>Заказ</th>
+                        <th>Поставка</th>
                         <th>Автомобиль</th>
                         <th>Статус</th>
                         <th>Планируемое начало</th>

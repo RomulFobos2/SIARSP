@@ -4,14 +4,21 @@ import com.mai.siarsp.dto.EmployeeDTO;
 import com.mai.siarsp.mapper.EmployeeMapper;
 import com.mai.siarsp.models.Employee;
 import com.mai.siarsp.service.employee.EmployeeService;
+import com.mai.siarsp.service.general.ContractService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
@@ -54,10 +61,16 @@ public class EmployeeController {
                               @RequestParam String inputPatronymicName, @RequestParam String inputUsername,
                               @RequestParam String inputPassword,
                               @RequestParam String inputRole,
+                              @RequestParam(required = false) String inputSpecialization,
+                              @RequestParam(required = false) String inputQualification,
+                              @RequestParam(required = false) BigDecimal inputSalary,
+                              @RequestParam(required = false) MultipartFile hiringOrderFile,
                               Model model) {
         Employee employee = new Employee(inputLastName, inputFirstName, inputPatronymicName, inputUsername, inputPassword);
-        if (!employeeService.saveEmployee(employee, inputRole)) {
+        if (!employeeService.saveEmployee(employee, inputRole, inputSpecialization, inputQualification,
+                inputSalary, hiringOrderFile)) {
             model.addAttribute("usernameError", "Ошибка при сохранении.");
+            model.addAttribute("allRoles", employeeService.getRoleRepository().findByNameStartingWith("ROLE_EMPLOYEE"));
             return "employee/admin/employees/addEmployee";
         } else {
             return "redirect:/employee/admin/employees/detailsEmployee/" + employee.getId();
@@ -93,8 +106,12 @@ public class EmployeeController {
                                @RequestParam String inputLastName, @RequestParam String inputFirstName,
                                @RequestParam String inputPatronymicName, @RequestParam String inputUsername,
                                @RequestParam String inputRole,
+                               @RequestParam(required = false) String inputSpecialization,
+                               @RequestParam(required = false) String inputQualification,
+                               @RequestParam(required = false) BigDecimal inputSalary,
                                Model model, RedirectAttributes redirectAttributes) {
-        if (!employeeService.editEmployee(id, inputLastName, inputFirstName, inputPatronymicName, inputUsername, inputRole)) {
+        if (!employeeService.editEmployee(id, inputLastName, inputFirstName, inputPatronymicName, inputUsername,
+                inputRole, inputSpecialization, inputQualification, inputSalary)) {
             redirectAttributes.addFlashAttribute("usernameError", "Ошибка при сохранении изменений.");
             return "redirect:/employee/admin/employees/editEmployee/" + id;
         } else {
@@ -112,9 +129,11 @@ public class EmployeeController {
         }
     }
 
-    @GetMapping("/employee/admin/employees/deactivateEmployee/{id}")
-    public String deactivateEmployee(@PathVariable long id, RedirectAttributes redirectAttributes) {
-        if (employeeService.accountEmployeeLocked(id)) {
+    @PostMapping("/employee/admin/employees/deactivateEmployee/{id}")
+    public String deactivateEmployee(@PathVariable long id,
+                                     @RequestParam(required = false) MultipartFile dismissalOrderFile,
+                                     RedirectAttributes redirectAttributes) {
+        if (employeeService.accountEmployeeLocked(id, dismissalOrderFile)) {
             redirectAttributes.addFlashAttribute("successMessage", "Аккаунт сотрудника деактивирован.");
         } else {
             redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при деактивации аккаунта.");
@@ -141,6 +160,46 @@ public class EmployeeController {
         } else {
             return "redirect:/employee/admin/employees/allEmployees";
         }
+    }
+
+    // ========== СКАЧИВАНИЕ ПРИКАЗОВ ==========
+
+    @GetMapping("/employee/admin/employees/downloadHiringOrder/{id}")
+    public ResponseEntity<Resource> downloadHiringOrder(@PathVariable long id) throws IOException {
+        if (!employeeService.getEmployeeRepository().existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        Employee employee = employeeService.getEmployeeRepository().findById(id).get();
+        if (employee.getHiringOrderFile() == null || employee.getHiringOrderFile().isBlank()) {
+            return ResponseEntity.notFound().build();
+        }
+        Resource resource = ContractService.getContractData(employee.getHiringOrderFile());
+        String originalFilename = employee.getHiringOrderFile().contains("_")
+                ? employee.getHiringOrderFile().substring(employee.getHiringOrderFile().indexOf("_") + 1)
+                : employee.getHiringOrderFile();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentDisposition(ContentDisposition.attachment().filename(originalFilename).build());
+        headers.set(HttpHeaders.CONTENT_TYPE, "application/pdf");
+        return ResponseEntity.ok().headers(headers).body(resource);
+    }
+
+    @GetMapping("/employee/admin/employees/downloadDismissalOrder/{id}")
+    public ResponseEntity<Resource> downloadDismissalOrder(@PathVariable long id) throws IOException {
+        if (!employeeService.getEmployeeRepository().existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        Employee employee = employeeService.getEmployeeRepository().findById(id).get();
+        if (employee.getDismissalOrderFile() == null || employee.getDismissalOrderFile().isBlank()) {
+            return ResponseEntity.notFound().build();
+        }
+        Resource resource = ContractService.getContractData(employee.getDismissalOrderFile());
+        String originalFilename = employee.getDismissalOrderFile().contains("_")
+                ? employee.getDismissalOrderFile().substring(employee.getDismissalOrderFile().indexOf("_") + 1)
+                : employee.getDismissalOrderFile();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentDisposition(ContentDisposition.attachment().filename(originalFilename).build());
+        headers.set(HttpHeaders.CONTENT_TYPE, "application/pdf");
+        return ResponseEntity.ok().headers(headers).body(resource);
     }
 
 }

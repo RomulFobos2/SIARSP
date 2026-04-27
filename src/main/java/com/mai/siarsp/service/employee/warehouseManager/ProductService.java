@@ -7,10 +7,7 @@ import com.mai.siarsp.models.Product;
 import com.mai.siarsp.models.ProductAttribute;
 import com.mai.siarsp.models.ProductAttributeValue;
 import com.mai.siarsp.models.ProductCategory;
-import com.mai.siarsp.repo.ProductAttributeRepository;
-import com.mai.siarsp.repo.ProductAttributeValueRepository;
-import com.mai.siarsp.repo.ProductCategoryRepository;
-import com.mai.siarsp.repo.ProductRepository;
+import com.mai.siarsp.repo.*;
 import com.mai.siarsp.service.general.ImageService;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -34,15 +31,30 @@ public class ProductService {
     private final ProductCategoryRepository productCategoryRepository;
     private final ProductAttributeRepository productAttributeRepository;
     private final ProductAttributeValueRepository productAttributeValueRepository;
+    private final OrderedProductRepository orderedProductRepository;
+    private final RequestedProductRepository requestedProductRepository;
+    private final ZoneProductRepository zoneProductRepository;
+    private final SupplyRepository supplyRepository;
+    private final WriteOffActRepository writeOffActRepository;
 
     public ProductService(ProductRepository productRepository,
                           ProductCategoryRepository productCategoryRepository,
                           ProductAttributeRepository productAttributeRepository,
-                          ProductAttributeValueRepository productAttributeValueRepository) {
+                          ProductAttributeValueRepository productAttributeValueRepository,
+                          OrderedProductRepository orderedProductRepository,
+                          RequestedProductRepository requestedProductRepository,
+                          ZoneProductRepository zoneProductRepository,
+                          SupplyRepository supplyRepository,
+                          WriteOffActRepository writeOffActRepository) {
         this.productRepository = productRepository;
         this.productCategoryRepository = productCategoryRepository;
         this.productAttributeRepository = productAttributeRepository;
         this.productAttributeValueRepository = productAttributeValueRepository;
+        this.orderedProductRepository = orderedProductRepository;
+        this.requestedProductRepository = requestedProductRepository;
+        this.zoneProductRepository = zoneProductRepository;
+        this.supplyRepository = supplyRepository;
+        this.writeOffActRepository = writeOffActRepository;
     }
 
     public boolean checkArticle(String article, Long id) {
@@ -156,6 +168,28 @@ public class ProductService {
 
         if (productOptional.isEmpty()) {
             log.error("Товар с id = {} не найден.", id);
+            return false;
+        }
+
+        // Проверка зависимостей
+        if (orderedProductRepository.countByProductId(id) > 0) {
+            log.error("Невозможно удалить товар id={}: используется в заказах клиентов.", id);
+            return false;
+        }
+        if (requestedProductRepository.countByProductId(id) > 0) {
+            log.error("Невозможно удалить товар id={}: используется в заявках на поставку.", id);
+            return false;
+        }
+        if (zoneProductRepository.countByProductId(id) > 0) {
+            log.error("Невозможно удалить товар id={}: размещён на складе.", id);
+            return false;
+        }
+        if (supplyRepository.countByProductId(id) > 0) {
+            log.error("Невозможно удалить товар id={}: присутствует в поставках.", id);
+            return false;
+        }
+        if (writeOffActRepository.countByProductId(id) > 0) {
+            log.error("Невозможно удалить товар id={}: упоминается в актах списания.", id);
             return false;
         }
 

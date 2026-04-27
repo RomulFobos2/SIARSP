@@ -41,6 +41,7 @@
                     <th>№</th>
                     <th>ФИО</th>
                     <th>Роль</th>
+                    <th>Специализация</th>
                     <th>Логин</th>
                     <th>Дата регистрации</th>
                     <th>Статус</th>
@@ -54,6 +55,7 @@
                            th:href="'/employee/admin/employees/detailsEmployee/' + ${employee.getId()}"></a>
                     </td>
                     <td th:text="${employee.getRoleDescription()}"></td>
+                    <td th:text="${employee.getSpecialization()}"></td>
                     <td th:text="${employee.getUsername()}"></td>
                     <td th:text="${#temporals.format(employee.getDateOfRegistration(), 'dd.MM.yyyy')}"></td>
                     <td>

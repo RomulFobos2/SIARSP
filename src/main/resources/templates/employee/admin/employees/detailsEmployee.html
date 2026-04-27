@@ -42,6 +42,16 @@
                            id="inputPatronymicName" placeholder="Отчество"
                            th:value="${employeeDTO.getPatronymicName()}" disabled>
                 </div>
+                <div th:if="${employeeDTO.getSpecialization() != null and !employeeDTO.getSpecialization().isEmpty()}" class="col-md-6">
+                    <input type="text" class="form-control info-display"
+                           placeholder="Специализация"
+                           th:value="${employeeDTO.getSpecialization()}" disabled>
+                </div>
+                <div th:if="${employeeDTO.getQualification() != null and !employeeDTO.getQualification().isEmpty()}" class="col-md-6">
+                    <input type="text" class="form-control info-display"
+                           placeholder="Квалификация"
+                           th:value="${employeeDTO.getQualification()}" disabled>
+                </div>
             </div>
         </div>
 
@@ -69,6 +79,35 @@
             </div>
         </div>
 
+        <div th:if="${employeeDTO.getSalary() != null}" class="mb-4">
+            <h6 class="form-section-title">Данные о работе</h6>
+
+            <div class="mb-3">
+                <input type="text" class="form-control info-display"
+                       placeholder="Заработная плата (руб.)"
+                       th:value="${employeeDTO.getSalary() + ' руб.'}" disabled>
+            </div>
+        </div>
+
+        <div th:if="${employeeDTO.getHiringOrderFile() != null or employeeDTO.getDismissalOrderFile() != null}" class="mb-4">
+            <h6 class="form-section-title">Документы</h6>
+
+            <div class="row g-3">
+                <div th:if="${employeeDTO.getHiringOrderFile() != null and !employeeDTO.getHiringOrderFile().isEmpty()}" class="col-md-6">
+                    <a th:href="'/employee/admin/employees/downloadHiringOrder/' + ${employeeDTO.getId()}"
+                       class="btn btn-outline-primary w-100">
+                        <i class="bi bi-file-earmark-pdf"></i> Приказ о приёме на работу
+                    </a>
+                </div>
+                <div th:if="${employeeDTO.getDismissalOrderFile() != null and !employeeDTO.getDismissalOrderFile().isEmpty()}" class="col-md-6">
+                    <a th:href="'/employee/admin/employees/downloadDismissalOrder/' + ${employeeDTO.getId()}"
+                       class="btn btn-outline-danger w-100">
+                        <i class="bi bi-file-earmark-pdf"></i> Приказ об увольнении
+                    </a>
+                </div>
+            </div>
+        </div>
+
         <!-- Action Buttons -->
         <div class="action-buttons mb-4">
             <button th:onclick="'window.location.href=\'/employee/admin/employees/editEmployee/' + ${employeeDTO.getId()} + '\';'"
@@ -81,9 +120,7 @@
             </button>
             <button th:if="${employeeDTO.isActive()}"
                     class="btn btn-secondary btn-profile"
-                    th:data-username="${employeeDTO.getUsername()}"
-                    th:data-userid="${employeeDTO.getId()}"
-                    onclick="confirmDeactivate(this)">
+                    data-bs-toggle="modal" data-bs-target="#deactivateModal">
                 Деактивировать
             </button>
             <button th:unless="${employeeDTO.isActive()}"
@@ -146,6 +183,34 @@
                             id="saveNewPasswordBtn" disabled>
                         Сохранить новый пароль
                     </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для деактивации с загрузкой приказа об увольнении -->
+<div class="modal fade" id="deactivateModal" tabindex="-1"
+     aria-labelledby="deactivateModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deactivateModalLabel">Деактивация сотрудника</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы собираетесь деактивировать аккаунт сотрудника
+                    <strong th:text="${employeeDTO.getUsername()}"></strong>.
+                    При необходимости прикрепите приказ об увольнении.</p>
+                <form id="deactivateForm"
+                      th:action="'/employee/admin/employees/deactivateEmployee/' + ${employeeDTO.getId()}"
+                      method="post" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="dismissalOrderFile" class="form-label fw-semibold">Приказ об увольнении (PDF)</label>
+                        <input type="file" class="form-control" name="dismissalOrderFile"
+                               id="dismissalOrderFile" accept=".pdf">
+                    </div>
+                    <button type="submit" class="btn btn-secondary w-100">Деактивировать</button>
                 </form>
             </div>
         </div>
@@ -215,15 +280,6 @@
                 });
         });
     });
-
-    function confirmDeactivate(button) {
-        const username = button.getAttribute('data-username');
-        const userId = button.getAttribute('data-userid');
-
-        if (confirm("Вы точно хотите деактивировать аккаунт пользователя " + username + "?")) {
-            window.location.href = '/employee/admin/employees/deactivateEmployee/' + userId;
-        }
-    }
 
     function confirmActivate(button) {
         const username = button.getAttribute('data-username');
