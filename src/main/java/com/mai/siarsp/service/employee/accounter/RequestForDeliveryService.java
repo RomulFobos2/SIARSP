@@ -24,6 +24,7 @@ import java.util.*;
  * отправлять заявки напрямую директору на согласование (минуя PENDING_ACCOUNTANT),
  * а также согласовывать/отклонять заявки в статусе PENDING_ACCOUNTANT.
  */
+
 @Service("accounterRequestForDeliveryService")
 @Getter
 @Slf4j

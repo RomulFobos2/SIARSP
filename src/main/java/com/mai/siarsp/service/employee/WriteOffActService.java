@@ -25,13 +25,9 @@ import java.util.Optional;
 import java.util.Random;
 
 /**
- * Сервис управления актами списания товаров
- *
- * Бизнес-процесс:
- * 1. Заведующий складом создаёт акт → статус PENDING_DIRECTOR, уведомление директору
- * 2. Директор утверждает → статус APPROVED, товар списывается, уведомления
- * 3. Директор отклоняет → статус REJECTED, уведомление заведующему
+ * Сервис списания: проверяет основания, формирует акт и корректно отражает изменения по остаткам.
  */
+
 @Service
 @Slf4j
 public class WriteOffActService {
@@ -57,43 +53,23 @@ public class WriteOffActService {
         this.notificationService = notificationService;
     }
 
-    /**
-     * Получает все акты списания (новейшие первыми)
-     */
     @Transactional(readOnly = true)
     public List<WriteOffActDTO> getAllActs() {
         List<WriteOffAct> acts = writeOffActRepository.findAllByOrderByActDateDesc();
         return WriteOffActMapper.INSTANCE.toDTOList(acts);
     }
 
-    /**
-     * Получает акт по идентификатору
-     */
     @Transactional(readOnly = true)
     public Optional<WriteOffAct> getActById(Long id) {
         return writeOffActRepository.findById(id);
     }
 
-    /**
-     * Получает акты по статусу
-     */
     @Transactional(readOnly = true)
     public List<WriteOffActDTO> getActsByStatus(WriteOffActStatus status) {
         List<WriteOffAct> acts = writeOffActRepository.findByStatusOrderByActDateDesc(status);
         return WriteOffActMapper.INSTANCE.toDTOList(acts);
     }
 
-    /**
-     * Создаёт акт списания и отправляет на подпись директору
-     *
-     * @param productId    идентификатор товара
-     * @param quantity     количество для списания
-     * @param reason       причина списания
-     * @param comment      комментарий
-     * @param responsible  ответственный сотрудник (заведующий складом)
-     * @param warehouseId  идентификатор склада, с которого производится списание
-     * @return true при успешном создании
-     */
     @Transactional
     public boolean createAct(Long productId, int quantity, WriteOffReason reason,
                              String comment, Employee responsible, Long warehouseId) {
@@ -156,12 +132,6 @@ public class WriteOffActService {
         }
     }
 
-    /**
-     * Утверждает акт списания — списывает товар со склада
-     *
-     * @param actId идентификатор акта
-     * @return true при успешном утверждении
-     */
     @Transactional
     public boolean approveAct(Long actId) {
         try {
@@ -241,13 +211,6 @@ public class WriteOffActService {
         }
     }
 
-    /**
-     * Отклоняет акт списания
-     *
-     * @param actId           идентификатор акта
-     * @param directorComment комментарий директора (причина отклонения)
-     * @return true при успешном отклонении
-     */
     @Transactional
     public boolean rejectAct(Long actId, String directorComment) {
         try {
@@ -283,9 +246,6 @@ public class WriteOffActService {
         }
     }
 
-    /**
-     * Генерирует уникальный номер акта в формате АС-YYYYMMDD-NNNN
-     */
     private String generateActNumber() {
         String datePart = LocalDate.now().format(DATE_FMT);
         String actNumber;

@@ -25,14 +25,9 @@ import java.util.*;
 import static com.mai.siarsp.enumeration.RequestStatus.*;
 
 /**
- * Сервис для управления заявками на поставку со стороны заведующего складом
- *
- * Предоставляет операции:
- * - Получение списка всех заявок
- * - Создание, редактирование, удаление заявки (только DRAFT / REJECTED_BY_*)
- * - Отправка на согласование директору (DRAFT → PENDING_DIRECTOR)
- * - Повторная отправка после отклонения (REJECTED_BY_* → PENDING_DIRECTOR + комментарий)
+ * Сервис обработки заявок на поставку в контуре роли. Отвечает за статусы, позиции и движение заявки по процессу.
  */
+
 @Service("warehouseManagerRequestForDeliveryService")
 @Getter
 @Slf4j

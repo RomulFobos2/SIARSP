@@ -14,8 +14,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Сервис для работы со складами в контексте заявок на поставку.
+ * Базовый сервис по складам: CRUD-операции и общие проверки, которые переиспользуют остальные модули.
  */
+
 @Service("warehouseManagerWarehouseService")
 @Slf4j
 public class WarehouseService {

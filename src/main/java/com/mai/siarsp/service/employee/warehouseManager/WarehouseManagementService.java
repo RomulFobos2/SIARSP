@@ -13,9 +13,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Сервис расширенного управления складом: аналитика, поиск товаров, проверка размещения.
- * Делегирует операции размещения StoragePlacementService.
+ * Операционный сервис управления складом: изменения структуры, мониторинг загрузки и поддержка актуального состояния.
  */
+
 @Service("warehouseManagementService")
 @Slf4j
 public class WarehouseManagementService {
@@ -41,9 +41,6 @@ public class WarehouseManagementService {
 
     // ========== РАЗМЕЩЕНИЕ ==========
 
-    /**
-     * Автоматически размещает товар в оптимальную зону.
-     */
     @Transactional
     public PlacementInfo placeProductOptimal(Long productId, int quantity) {
         Optional<Product> opt = productRepository.findById(productId);
@@ -56,9 +53,6 @@ public class WarehouseManagementService {
         return placementService.placeOptimal(product, quantity);
     }
 
-    /**
-     * Размещает товар в конкретную зону.
-     */
     @Transactional
     public PlacementInfo placeProductInZone(Long productId, Long zoneId, int quantity) {
         Optional<Product> optP = productRepository.findById(productId);
@@ -81,9 +75,6 @@ public class WarehouseManagementService {
 
     // ========== ПОИСК ТОВАРА ==========
 
-    /**
-     * Возвращает список мест хранения товара на всех складах.
-     */
     @Transactional(readOnly = true)
     public List<ProductLocation> findProductLocations(Long productId) {
         Optional<Product> opt = productRepository.findById(productId);
@@ -103,9 +94,6 @@ public class WarehouseManagementService {
 
     // ========== АНАЛИТИКА ==========
 
-    /**
-     * Возвращает расширенную статистику по складу.
-     */
     @Transactional(readOnly = true)
     public Optional<DetailedWarehouseStatistics> getDetailedStatistics(Long warehouseId) {
         return warehouseRepository.findById(warehouseId).map(wh -> {
@@ -164,9 +152,6 @@ public class WarehouseManagementService {
         });
     }
 
-    /**
-     * Возвращает зоны с заполненностью ниже указанного порога, отсортированные по заполненности.
-     */
     @Transactional(readOnly = true)
     public List<ZoneUtilization> getUnderutilizedZones(Long warehouseId, double maxOccupancyPercent) {
         return warehouseRepository.findById(warehouseId)
@@ -201,9 +186,6 @@ public class WarehouseManagementService {
 
     // ========== ПЕРЕМЕЩЕНИЕ ТОВАРА ==========
 
-    /**
-     * Перемещает товар из одной зоны в другую.
-     */
     @Transactional
     public MoveInfo moveProduct(Long productId, Long fromZoneId, Long toZoneId, int quantity) {
         Optional<Product> optP = productRepository.findById(productId);
@@ -223,9 +205,6 @@ public class WarehouseManagementService {
 
     // ========== ПРОВЕРКА ВОЗМОЖНОСТИ РАЗМЕЩЕНИЯ ==========
 
-    /**
-     * Возвращает список доступных зон для размещения товара, отсортированных по заполненности.
-     */
     @Transactional(readOnly = true)
     public List<AvailableZone> checkPlacementPossibility(Long productId, int quantity) {
         Optional<Product> opt = productRepository.findById(productId);
@@ -277,9 +256,6 @@ public class WarehouseManagementService {
 
     // ========== AJAX: ЗОНЫ СКЛАДА ==========
 
-    /**
-     * Возвращает список зон конкретного склада для AJAX-выбора.
-     */
     @Transactional(readOnly = true)
     public List<ZoneSelectDto> getZonesByWarehouse(Long warehouseId) {
         return warehouseRepository.findById(warehouseId)
@@ -302,10 +278,6 @@ public class WarehouseManagementService {
                 .orElse(List.of());
     }
 
-    /**
-     * Возвращает детальную информацию о зоне для AJAX.
-     * Делегирует WarehouseApiService.
-     */
     @Transactional(readOnly = true)
     public Optional<ZoneInfo> getZoneInfo(Long zoneId) {
         return storageZoneRepository.findById(zoneId).map(zone -> {

@@ -10,16 +10,9 @@ import lombok.ToString;
 import java.time.LocalDateTime;
 
 /**
- * Уведомление для сотрудника
- *
- * Универсальная сущность для системных уведомлений.
- * Уведомления создаются автоматически при различных бизнес-событиях
- * (смена статуса заявки, назначение задачи и т.д.) и отображаются
- * сотруднику в интерфейсе.
- *
- * Связи:
- * - Получатель (Employee) — сотрудник, которому адресовано уведомление
+ * Системное уведомление для сотрудников о важных событиях: новая задача, смена статуса заказа, просрочки и т.д.
  */
+
 @Entity
 @Table(name = "t_notification")
 @Data
@@ -32,38 +25,21 @@ public class Notification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /**
-     * Получатель уведомления
-     */
     @ToString.Exclude
     @ManyToOne
     @JoinColumn(nullable = false)
     private Employee recipient;
 
-    /**
-     * Текст уведомления (до 500 символов)
-     */
     @Column(nullable = false, length = 500)
     private String text;
 
-    /**
-     * Дата и время создания уведомления
-     */
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    /**
-     * Статус уведомления (NEW / READ)
-     */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private NotificationStatus status = NotificationStatus.NEW;
 
-    /**
-     * Видимость уведомления для пользователя.
-     * При "удалении" уведомление скрывается (visible = false),
-     * но остаётся в БД для расследования.
-     */
     @Column(nullable = false)
     private boolean visible = true;
 
