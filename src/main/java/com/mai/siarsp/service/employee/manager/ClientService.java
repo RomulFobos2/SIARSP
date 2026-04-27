@@ -13,6 +13,10 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Сервис клиентской базы: создание карточек, актуализация реквизитов и поиск по рабочим сценариям менеджера.
+ */
+
 @Service
 @Getter
 @Slf4j
@@ -140,12 +144,6 @@ public class ClientService {
         return ClientMapper.INSTANCE.toDTOList(clients);
     }
 
-    /**
-     * Возвращает клиента по ID в виде DTO
-     *
-     * @param id ID клиента
-     * @return ClientDTO или null если не найден
-     */
     @Transactional(readOnly = true)
     public ClientDTO getClientById(Long id) {
         return clientRepository.findById(id)

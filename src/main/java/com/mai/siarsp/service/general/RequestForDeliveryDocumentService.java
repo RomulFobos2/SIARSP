@@ -19,14 +19,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
- * Сервис генерации договора поставки по шаблону DocRequestForDelivery.docx
- *
- * Открывает шаблон Word-документа, заменяет плейсхолдеры данными из заявки
- * на поставку (RequestForDelivery) и возвращает готовый документ в виде байтового массива.
- *
- * Плейсхолдеры в шаблоне обозначены английскими словами.
- * Строки таблицы товаров размножаются по количеству позиций заявки.
+ * Подготовка документов по заявкам на поставку: печатные формы, выгрузки и сопроводительные файлы.
  */
+
 @Service
 @Slf4j
 public class RequestForDeliveryDocumentService {
@@ -43,13 +38,6 @@ public class RequestForDeliveryDocumentService {
         templatePath = templatePathValue;
     }
 
-    /**
-     * Генерирует договор поставки на основе шаблона и данных заявки
-     *
-     * @param request заявка на поставку (статус APPROVED)
-     * @return ReportFile с именем файла и содержимым документа
-     * @throws IOException при ошибке чтения шаблона или записи документа
-     */
     public static ReportDocumentService.ReportFile generateContract(RequestForDelivery request) throws IOException {
         String templateFile = templatePath + "/DocRequestForDelivery.docx";
 
@@ -76,9 +64,6 @@ public class RequestForDeliveryDocumentService {
         }
     }
 
-    /**
-     * Обрабатывает таблицу: заменяет плейсхолдеры и размножает строки товаров
-     */
     private static void processTable(XWPFTable table, Supplier supplier,
                                       RequestForDelivery request, List<RequestedProduct> products) {
         // Найти строку-шаблон с плейсхолдером "Number"
@@ -127,9 +112,6 @@ public class RequestForDeliveryDocumentService {
         }
     }
 
-    /**
-     * Заменяет плейсхолдеры товарной строки данными из RequestedProduct
-     */
     private static void replaceProductPlaceholders(XWPFParagraph paragraph, RequestedProduct rp, int number) {
         String fullText = getFullText(paragraph);
         if (fullText.isEmpty()) return;
@@ -144,9 +126,6 @@ public class RequestForDeliveryDocumentService {
         setFullText(paragraph, fullText);
     }
 
-    /**
-     * Заменяет общие плейсхолдеры (поставщик, даты, реквизиты, итоги)
-     */
     private static void replacePlaceholdersInParagraph(XWPFParagraph paragraph, Supplier supplier,
                                                         RequestForDelivery request) {
         String fullText = getFullText(paragraph);
@@ -230,9 +209,6 @@ public class RequestForDeliveryDocumentService {
         }
     }
 
-    /**
-     * Собирает полный текст параграфа из всех Run-ов
-     */
     private static String getFullText(XWPFParagraph paragraph) {
         StringBuilder sb = new StringBuilder();
         for (XWPFRun run : paragraph.getRuns()) {
@@ -244,10 +220,6 @@ public class RequestForDeliveryDocumentService {
         return sb.toString();
     }
 
-    /**
-     * Записывает текст в параграф: весь текст идёт в первый Run, остальные очищаются.
-     * Сохраняет форматирование первого Run.
-     */
     private static void setFullText(XWPFParagraph paragraph, String newText) {
         List<XWPFRun> runs = paragraph.getRuns();
         if (runs.isEmpty()) return;
@@ -261,9 +233,6 @@ public class RequestForDeliveryDocumentService {
         }
     }
 
-    /**
-     * Получает полный текст строки таблицы (для поиска плейсхолдеров)
-     */
     private static String getRowText(XWPFTableRow row) {
         StringBuilder sb = new StringBuilder();
         for (XWPFTableCell cell : row.getTableCells()) {

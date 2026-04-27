@@ -25,16 +25,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
- * Сервис управления заказами клиентов
- *
- * Бизнес-процесс:
- * 1. Директор создаёт заказ → статус NEW
- * 2. Директор подтверждает → CONFIRMED, уведомление заведующему складом
- * 3. Заведующий резервирует товар → RESERVED, product.reservedQuantity↑
- * 4. Заведующий собирает заказ → IN_PROGRESS
- * 5. Заведующий завершает сборку → READY, уведомление директору
- * 6. Отмена (из NEW/CONFIRMED/RESERVED) → CANCELLED, откат резерва если нужно
+ * Сервис жизненного цикла клиентского заказа: создание, смена статусов, контроль комплектности и подготовка к отгрузке.
  */
+
 @Service
 @Slf4j
 public class ClientOrderService {
@@ -65,45 +58,30 @@ public class ClientOrderService {
     public record OrderItemRequest(Long productId, int quantity, BigDecimal price,
                                     BigDecimal originalPrice, Integer discountPercent) {}
 
-    /**
-     * Получает все заказы (новейшие первыми)
-     */
     @Transactional(readOnly = true)
     public List<ClientOrderDTO> getAllOrders() {
         List<ClientOrder> orders = clientOrderRepository.findAllByOrderByOrderDateDesc();
         return ClientOrderMapper.INSTANCE.toDTOList(orders);
     }
 
-    /**
-     * Получает заказы по статусу
-     */
     @Transactional(readOnly = true)
     public List<ClientOrderDTO> getOrdersByStatus(ClientOrderStatus status) {
         List<ClientOrder> orders = clientOrderRepository.findByStatusOrderByOrderDateDesc(status);
         return ClientOrderMapper.INSTANCE.toDTOList(orders);
     }
 
-    /**
-     * Получает заказы по нескольким статусам
-     */
     @Transactional(readOnly = true)
     public List<ClientOrderDTO> getOrdersByStatuses(List<ClientOrderStatus> statuses) {
         List<ClientOrder> orders = clientOrderRepository.findByStatusInOrderByOrderDateDesc(statuses);
         return ClientOrderMapper.INSTANCE.toDTOList(orders);
     }
 
-    /**
-     * Получает заказы клиента
-     */
     @Transactional(readOnly = true)
     public List<ClientOrderDTO> getOrdersByClient(Long clientId) {
         List<ClientOrder> orders = clientOrderRepository.findByClientIdOrderByOrderDateDesc(clientId);
         return ClientOrderMapper.INSTANCE.toDTOList(orders);
     }
 
-    /**
-     * Получает заказ по идентификатору
-     */
     @Transactional(readOnly = true)
     public Optional<ClientOrder> getOrderById(Long id) {
         return clientOrderRepository.findByIdWithDetails(id);
@@ -111,16 +89,6 @@ public class ClientOrderService {
 
     // ========== СОЗДАНИЕ И РЕДАКТИРОВАНИЕ ==========
 
-    /**
-     * Создаёт новый заказ клиента
-     *
-     * @param clientId    идентификатор клиента
-     * @param deliveryDate планируемая дата доставки
-     * @param comment     комментарий
-     * @param items       позиции заказа (товар, количество, цена)
-     * @param responsible ответственный сотрудник (директор)
-     * @return true при успешном создании
-     */
     @Transactional
     public boolean createOrder(Long clientId, LocalDate deliveryDate, String comment,
                                List<OrderItemRequest> items, Employee responsible,
@@ -182,9 +150,6 @@ public class ClientOrderService {
         }
     }
 
-    /**
-     * Редактирует заказ (только в статусе NEW)
-     */
     @Transactional
     public boolean updateOrder(Long orderId, LocalDate deliveryDate, String comment,
                                List<OrderItemRequest> items, MultipartFile contractFile) {
@@ -278,10 +243,6 @@ public class ClientOrderService {
 
     // ========== СМЕНА СТАТУСОВ ==========
 
-    /**
-     * Подтверждает заказ (NEW → CONFIRMED)
-     * Уведомление заведующему складом
-     */
     @Transactional
     public boolean confirmOrder(Long orderId) {
         try {
@@ -321,10 +282,6 @@ public class ClientOrderService {
         }
     }
 
-    /**
-     * Резервирует товар по заказу (CONFIRMED → RESERVED)
-     * Атомарная операция: сначала проверяет ВСЕ позиции, потом резервирует
-     */
     @Transactional
     public boolean reserveProducts(Long orderId) {
         try {
@@ -376,9 +333,6 @@ public class ClientOrderService {
         }
     }
 
-    /**
-     * Начинает сборку заказа (RESERVED → IN_PROGRESS)
-     */
     @Transactional
     public boolean startAssembly(Long orderId) {
         try {
@@ -408,10 +362,6 @@ public class ClientOrderService {
         }
     }
 
-    /**
-     * Завершает сборку заказа (IN_PROGRESS → READY)
-     * Уведомление директору
-     */
     @Transactional
     public boolean completeAssembly(Long orderId) {
         try {
@@ -446,10 +396,6 @@ public class ClientOrderService {
         }
     }
 
-    /**
-     * Отменяет заказ (из NEW, CONFIRMED или RESERVED)
-     * Если заказ был RESERVED — откатывает резервирование
-     */
     @Transactional
     public boolean cancelOrder(Long orderId) {
         try {
@@ -502,13 +448,6 @@ public class ClientOrderService {
 
     // ========== АНАЛИТИКА ==========
 
-    /**
-     * Возвращает дефицит товаров по активным заказам (NEW, CONFIRMED)
-     * Дефицит = суммарная потребность по заказам - доступное количество на складе
-     *
-     * Используется на странице создания заявки на поставку
-     * для информирования заведующего складом о нехватке товаров
-     */
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getProductDeficit() {
         List<ClientOrderStatus> activeStatuses = List.of(
@@ -555,9 +494,6 @@ public class ClientOrderService {
 
     // ========== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ==========
 
-    /**
-     * Генерирует уникальный номер заказа в формате ЗК-YYYYMMDD-NNNN
-     */
     private String generateOrderNumber() {
         String datePart = LocalDate.now().format(DATE_FMT);
         String orderNumber;

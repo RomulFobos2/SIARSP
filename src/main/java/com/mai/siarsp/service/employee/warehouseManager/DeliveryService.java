@@ -24,19 +24,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Сервис приёмки поставок товара от поставщиков.
- *
- * Реализует бизнес-процесс оформления поставки:
- * 1. Заведующий складом выбирает согласованную заявку (APPROVED)
- * 2. Указывает фактически полученное количество по каждой позиции
- * 3. При расхождениях (недопоставка, брак) заполняет причину дефицита
- * 4. Система создаёт поставку (Delivery) с позициями (Supply)
- * 5. Оприходует товар на склад (Product.stockQuantity, quantityForStock)
- * 6. Устанавливает статус заявки (RECEIVED / PARTIALLY_RECEIVED)
- * 7. Отправляет уведомления директору и бухгалтеру
- *
- * Доступ: ROLE_EMPLOYEE_WAREHOUSE_MANAGER
+ * Складской сервис доставки: координация этапа отгрузки и передача заказа в логистический контур.
  */
+
 @Service("warehouseManagerDeliveryService")
 @Getter
 @Slf4j
@@ -59,66 +49,27 @@ public class DeliveryService {
         this.notificationService = notificationService;
     }
 
-    /**
-     * Получает список всех поставок, отсортированных по дате (новые сначала).
-     *
-     * @return список DTO поставок
-     */
     @Transactional(readOnly = true)
     public List<DeliveryDTO> getAllDeliveries() {
         List<Delivery> deliveries = deliveryRepository.findAllByOrderByDeliveryDateDesc();
         return DeliveryMapper.INSTANCE.toDTOList(deliveries);
     }
 
-    /**
-     * Получает поставку по идентификатору.
-     *
-     * @param id идентификатор поставки
-     * @return Optional с поставкой или empty
-     */
     @Transactional(readOnly = true)
     public Optional<Delivery> getDeliveryById(Long id) {
         return deliveryRepository.findById(id);
     }
 
-    /**
-     * Получает список согласованных заявок, доступных для оформления поставки.
-     *
-     * @return список заявок со статусом APPROVED
-     */
     @Transactional(readOnly = true)
     public List<RequestForDelivery> getApprovedRequests() {
         return requestForDeliveryRepository.findByStatusOrderByRequestDateDesc(RequestStatus.APPROVED);
     }
 
-    /**
-     * Получает заявку по идентификатору.
-     *
-     * @param id идентификатор заявки
-     * @return Optional с заявкой или empty
-     */
     @Transactional(readOnly = true)
     public Optional<RequestForDelivery> getRequestById(Long id) {
         return requestForDeliveryRepository.findById(id);
     }
 
-    /**
-     * Создаёт поставку на основе согласованной заявки.
-     *
-     * Бизнес-процесс:
-     * 1. Валидация: заявка должна быть в статусе APPROVED
-     * 2. Валидация: количество каждой позиции не превышает заказанное
-     * 3. Валидация: при наличии дефицита обязательна причина
-     * 4. Создание Delivery и Supply для каждой позиции
-     * 5. Оприходование товара: Product.stockQuantity += quantity, Product.quantityForStock += quantity
-     * 6. Установка статуса заявки: RECEIVED (все полностью) или PARTIALLY_RECEIVED (есть дефицит)
-     * 7. Отправка уведомлений директору и бухгалтеру
-     *
-     * @param requestId    идентификатор заявки (должна быть APPROVED)
-     * @param supplyInputs список позиций поставки с фактическими данными
-     * @param deliveryDate дата приёмки
-     * @return true если поставка создана успешно, false при ошибке
-     */
     @Transactional
     public boolean createDeliveryFromRequest(Long requestId, List<SupplyInputDTO> supplyInputs,
                                               LocalDate deliveryDate) {

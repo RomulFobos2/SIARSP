@@ -16,15 +16,9 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Сервис для управления транспортными средствами (Vehicle)
- *
- * Предоставляет CRUD-операции для работы с автомобилями предприятия:
- * - Проверка уникальности гос. номера
- * - Создание нового ТС (статус AVAILABLE автоматически)
- * - Редактирование данных ТС (включая смену статуса)
- * - Удаление ТС (с защитой при наличии задач на доставку)
- * - Получение списка всех ТС
+ * Сервис транспорта: учет машин и их статуса готовности к выполнению задач на доставку.
  */
+
 @Service
 @Getter
 @Slf4j
@@ -36,13 +30,6 @@ public class VehicleService {
         this.vehicleRepository = vehicleRepository;
     }
 
-    /**
-     * Проверяет, существует ли ТС с указанным гос. номером
-     *
-     * @param registrationNumber гос. номер для проверки
-     * @param id ID текущего ТС (null при создании, не null при редактировании — для исключения из проверки)
-     * @return true если такой гос. номер уже занят
-     */
     public boolean checkRegistrationNumber(String registrationNumber, Long id) {
         if (registrationNumber == null || registrationNumber.isBlank()) {
             return false;
@@ -54,13 +41,6 @@ public class VehicleService {
         }
     }
 
-    /**
-     * Сохраняет новое транспортное средство
-     * Статус устанавливается автоматически через конструктор Vehicle (AVAILABLE)
-     *
-     * @param vehicle объект ТС для сохранения
-     * @return true при успешном сохранении, false при ошибке
-     */
     @Transactional
     public boolean saveVehicle(Vehicle vehicle) {
         log.info("Начинаем сохранение ТС с гос. номером = {}...", vehicle.getRegistrationNumber());
@@ -82,21 +62,6 @@ public class VehicleService {
         return true;
     }
 
-    /**
-     * Редактирует существующее транспортное средство
-     *
-     * @param id ID редактируемого ТС
-     * @param inputRegistrationNumber новый гос. номер
-     * @param inputBrand новая марка
-     * @param inputModel новая модель
-     * @param inputYear новый год выпуска (может быть null)
-     * @param inputVin новый VIN-код (может быть null)
-     * @param inputLoadCapacity новая грузоподъёмность
-     * @param inputVolumeCapacity новая объёмная вместимость
-     * @param inputType новый тип ТС
-     * @param inputStatus новый статус ТС
-     * @return true при успешном сохранении, false при ошибке
-     */
     @Transactional
     public boolean editVehicle(Long id, String inputRegistrationNumber, String inputBrand, String inputModel,
                                Integer inputYear, String inputVin, Integer inputCurrentMileage,
@@ -140,13 +105,6 @@ public class VehicleService {
         return true;
     }
 
-    /**
-     * Удаляет транспортное средство
-     * Удаление невозможно, если у ТС есть связанные задачи на доставку (DeliveryTask)
-     *
-     * @param id ID удаляемого ТС
-     * @return true при успешном удалении, false при ошибке или наличии связей
-     */
     @Transactional
     public boolean deleteVehicle(Long id) {
         Optional<Vehicle> vehicleOptional = vehicleRepository.findById(id);
@@ -178,22 +136,11 @@ public class VehicleService {
         return true;
     }
 
-    /**
-     * Возвращает список всех транспортных средств в виде DTO
-     *
-     * @return список VehicleDTO
-     */
     public List<VehicleDTO> getAllVehicles() {
         List<Vehicle> vehicles = vehicleRepository.findAll();
         return VehicleMapper.INSTANCE.toDTOList(vehicles);
     }
 
-    /**
-     * Возвращает ТС по ID в виде DTO
-     *
-     * @param id ID транспортного средства
-     * @return VehicleDTO или null если не найдено
-     */
     @Transactional(readOnly = true)
     public VehicleDTO getVehicleById(Long id) {
         return vehicleRepository.findById(id)

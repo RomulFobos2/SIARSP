@@ -13,9 +13,9 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Фасадный сервис для REST API управления складом.
- * Принимает Long ID, разрешает сущности, делегирует StoragePlacementService.
+ * Публичный API-слой склада: собирает данные из внутренних сервисов в ответы для внешних сценариев.
  */
+
 @Service("warehouseApiService")
 @Slf4j
 public class WarehouseApiService {
@@ -42,9 +42,6 @@ public class WarehouseApiService {
         this.zoneProductRepository = zoneProductRepository;
     }
 
-    /**
-     * Автоматически размещает товар в оптимальную зону.
-     */
     @Transactional
     public PlacementInfo placeProductOptimal(Long productId, int quantity) {
         Optional<Product> opt = productRepository.findById(productId);
@@ -56,9 +53,6 @@ public class WarehouseApiService {
         return placementService.placeOptimal(product, quantity);
     }
 
-    /**
-     * Размещает товар в конкретную зону.
-     */
     @Transactional
     public PlacementInfo placeProductInSpecificZone(Long productId, Long zoneId, int quantity) {
         Optional<Product> optP = productRepository.findById(productId);
@@ -79,9 +73,6 @@ public class WarehouseApiService {
         return placementService.placeInZone(product, zone, quantity);
     }
 
-    /**
-     * Убирает товар из зоны хранения.
-     */
     @Transactional
     public RemovalInfo removeProduct(Long productId, Long zoneId, int quantity) {
         Optional<Product> optP = productRepository.findById(productId);
@@ -92,9 +83,6 @@ public class WarehouseApiService {
         return placementService.removeFromZone(optP.get(), optZ.get(), quantity);
     }
 
-    /**
-     * Перемещает товар между зонами хранения.
-     */
     @Transactional
     public MoveInfo moveProduct(Long productId, Long fromZoneId, Long toZoneId, int quantity) {
         Optional<Product> optP = productRepository.findById(productId);
@@ -113,9 +101,6 @@ public class WarehouseApiService {
         return placementService.moveProduct(product, optFrom.get(), to, quantity);
     }
 
-    /**
-     * Проверяет возможность размещения без изменения данных.
-     */
     @Transactional(readOnly = true)
     public PlacementCheck checkPlacementPossibility(Long productId, int quantity) {
         Optional<Product> optP = productRepository.findById(productId);
@@ -150,9 +135,6 @@ public class WarehouseApiService {
         return new PlacementCheck(true, null, maxPossible, bestOrientation);
     }
 
-    /**
-     * Возвращает все места хранения товара.
-     */
     @Transactional(readOnly = true)
     public List<ProductLocation> findProductLocations(Long productId) {
         Optional<Product> optP = productRepository.findById(productId);
@@ -171,9 +153,6 @@ public class WarehouseApiService {
                 .toList();
     }
 
-    /**
-     * Возвращает детальную информацию о зоне хранения.
-     */
     @Transactional(readOnly = true)
     public Optional<ZoneInfo> getZoneInfo(Long zoneId) {
         return storageZoneRepository.findById(zoneId).map(zone -> {
@@ -206,9 +185,6 @@ public class WarehouseApiService {
         });
     }
 
-    /**
-     * Возвращает статистику по складу.
-     */
     @Transactional(readOnly = true)
     public Optional<WarehouseStatistics> getWarehouseStatistics(Long warehouseId) {
         return warehouseRepository.findById(warehouseId).map(wh -> {
@@ -230,9 +206,6 @@ public class WarehouseApiService {
         });
     }
 
-    /**
-     * Возвращает русское название ориентации размещения.
-     */
     public static String orientationLabel(BoxOrientation o) {
         if (o == null) return "";
         return switch (o) {
