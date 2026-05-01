@@ -25,4 +25,8 @@ public interface ProductCategoryRepository extends JpaRepository<ProductCategory
     boolean existsByGlobalProductCategory(GlobalProductCategory globalProductCategory);
 
     Optional<ProductCategory> findByGlobalProductCategoryAndName(GlobalProductCategory globalProductCategory, String name);
+
+    boolean existsByName(String name);
+
+    boolean existsByNameAndIdNot(String name, Long id);
 }
