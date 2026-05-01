@@ -25,11 +25,6 @@
 
     <div th:if="${requestError}" class="alert alert-danger" th:text="${requestError}"></div>
 
-    <div class="alert alert-info">
-        <i class="bi bi-info-circle me-2"></i>
-        <strong>Внимание:</strong> Заявка, созданная директором, автоматически получает статус «Согласовано» и сразу доступна для приёмки начальником склада.
-    </div>
-
     <!-- Блок дефицита товаров по заказам -->
     <div th:if="${!deficitData.isEmpty()}" class="card border-warning mb-4">
         <div class="card-header bg-warning bg-opacity-25 d-flex justify-content-between align-items-center">
