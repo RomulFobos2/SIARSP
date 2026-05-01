@@ -36,11 +36,15 @@ public class GlobalProductCategoryService {
         if (name == null || name.isBlank()) {
             return false;
         }
-        if (id != null) {
-            return globalProductCategoryRepository.existsByNameAndIdNot(name, id);
-        } else {
-            return globalProductCategoryRepository.existsByName(name);
+        // Проверка внутри глобальных категорий (учитываем id при редактировании)
+        boolean takenInGlobal = (id != null)
+                ? globalProductCategoryRepository.existsByNameAndIdNot(name, id)
+                : globalProductCategoryRepository.existsByName(name);
+        if (takenInGlobal) {
+            return true;
         }
+        // Кросс-проверка: имя не должно совпадать ни с одной категорией товаров
+        return productCategoryRepository.existsByName(name);
     }
 
     @Transactional
@@ -48,7 +52,7 @@ public class GlobalProductCategoryService {
         log.info("Начинаем сохранение глобальной категории с названием = {}...", category.getName());
 
         if (checkName(category.getName(), null)) {
-            log.error("Глобальная категория с названием = {} уже существует.", category.getName());
+            log.error("Имя '{}' уже занято — оно используется глобальной или товарной категорией.", category.getName());
             return false;
         }
 
@@ -74,7 +78,7 @@ public class GlobalProductCategoryService {
         }
 
         if (checkName(inputName, id)) {
-            log.error("Глобальная категория с названием = {} уже существует.", inputName);
+            log.error("Имя '{}' уже занято — оно используется глобальной или товарной категорией.", inputName);
             return false;
         }
 

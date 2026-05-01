@@ -1,0 +1,76 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Акты приёма-передачи | СИАРСП</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+<header th:insert="~{blocks/header :: header}"></header>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+
+            <h1 class="page-title mb-4">Акты приёма-передачи</h1>
+
+            <!-- Табы фильтра -->
+            <ul class="nav nav-tabs mb-4">
+                <li class="nav-item">
+                    <a class="nav-link" th:classappend="${currentStatus == 'all'} ? 'active' : ''"
+                       th:href="@{/employee/warehouseManager/acceptanceActs/allAcceptanceActs(status='all')}">Все</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:classappend="${currentStatus == 'signed'} ? 'active' : ''"
+                       th:href="@{/employee/warehouseManager/acceptanceActs/allAcceptanceActs(status='signed')}">Подписан</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:classappend="${currentStatus == 'unsigned'} ? 'active' : ''"
+                       th:href="@{/employee/warehouseManager/acceptanceActs/allAcceptanceActs(status='unsigned')}">Не подписан</a>
+                </li>
+            </ul>
+
+            <div th:if="${acts.isEmpty()}" class="alert alert-info">Актов не найдено.</div>
+
+            <div th:unless="${acts.isEmpty()}" class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                    <tr>
+                        <th>№ акта</th>
+                        <th>Дата</th>
+                        <th>№ заказа</th>
+                        <th>Клиент</th>
+                        <th>Водитель</th>
+                        <th>Статус</th>
+                        <th class="text-end">Действия</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="act : ${acts}">
+                        <td th:text="${act.actNumber}"></td>
+                        <td th:text="${#temporals.format(act.actDate, 'dd.MM.yyyy')}"></td>
+                        <td th:text="${act.clientOrder.orderNumber}"></td>
+                        <td th:text="${act.client.organizationName}"></td>
+                        <td th:text="${act.deliveredBy.fullName}"></td>
+                        <td>
+                            <span th:if="${act.signed}" class="badge bg-success">Подписан</span>
+                            <span th:unless="${act.signed}" class="badge bg-secondary">Не подписан</span>
+                        </td>
+                        <td class="text-end">
+                            <a th:href="'/employee/warehouseManager/acceptanceActs/detailsAcceptanceAct/' + ${act.id}"
+                               class="btn btn-sm btn-outline-primary">Детали</a>
+                            <a th:href="'/employee/warehouseManager/acceptanceActs/downloadAcceptanceAct/' + ${act.id}"
+                               class="btn btn-sm btn-outline-success">Скачать</a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:insert="~{blocks/footer :: footer}"></div>
+</body>
+</html>

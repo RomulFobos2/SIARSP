@@ -114,7 +114,7 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.exists) {
-                            nameErrorDiv.textContent = 'Категория с таким названием уже существует в выбранной глобальной категории';
+                            nameErrorDiv.textContent = 'Имя занято — оно уже используется глобальной или товарной категорией';
                             nameErrorDiv.style.display = 'block';
                             nameInput.classList.add('is-invalid');
                             isNameValid = false;

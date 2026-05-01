@@ -239,12 +239,21 @@
                         </ul>
                     </li>
 
-                    <!-- ========== Dropdown: Документация (MANAGER, WAREHOUSE_MANAGER, ACCOUNTER) ========== -->
+                    <!-- ========== Dropdown: Документация (ADMIN, MANAGER, WAREHOUSE_MANAGER, ACCOUNTER) ========== -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_ADMIN')">
+                        <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Документация
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/admin/acceptanceActs/allAcceptanceActs">Акты приёма-передачи</a></li>
+                        </ul>
+                    </li>
                     <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_EMPLOYEE_MANAGER')">
                         <a class="nav-link dropdown-toggle px-3" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             Документация
                         </a>
                         <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/manager/acceptanceActs/allAcceptanceActs">Акты приёма-передачи</a></li>
                             <li><a class="dropdown-item" href="/employee/manager/writeOffActs/allWriteOffActs">Акты списания</a></li>
                             <li><a class="dropdown-item" href="/employee/manager/reports">Формирование отчётов</a></li>
                         </ul>
@@ -254,6 +263,7 @@
                             Документация
                         </a>
                         <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/warehouseManager/acceptanceActs/allAcceptanceActs">Акты приёма-передачи</a></li>
                             <li><a class="dropdown-item" href="/employee/warehouseManager/writeOffActs/allWriteOffActs">Акты списания</a></li>
                             <li><a class="dropdown-item" href="/employee/warehouseManager/reports">Формирование отчётов</a></li>
                         </ul>
@@ -263,6 +273,7 @@
                             Документация
                         </a>
                         <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/employee/accounter/acceptanceActs/allAcceptanceActs">Акты приёма-передачи</a></li>
                             <li><a class="dropdown-item" href="/employee/accounter/writeOffActs/allWriteOffActs">Акты списания</a></li>
                             <li><a class="dropdown-item" href="/employee/accounter/reports">Формирование отчётов</a></li>
                         </ul>
