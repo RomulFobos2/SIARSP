@@ -1,5 +1,6 @@
 package com.mai.siarsp.controllers.employee.admin;
 
+import java.nio.charset.StandardCharsets;
 import com.mai.siarsp.dto.ClientOrderDTO;
 import com.mai.siarsp.enumeration.ClientOrderStatus;
 import com.mai.siarsp.mapper.ClientOrderMapper;
@@ -300,7 +301,7 @@ public class ClientOrderController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType(
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
-        headers.setContentDisposition(ContentDisposition.attachment().filename(file.fileName()).build());
+        headers.setContentDisposition(ContentDisposition.attachment().filename(file.fileName(), StandardCharsets.UTF_8).build());
         return ResponseEntity.ok().headers(headers).body(file.content());
     }
 
@@ -319,7 +320,7 @@ public class ClientOrderController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType(
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
-        headers.setContentDisposition(ContentDisposition.attachment().filename(file.fileName()).build());
+        headers.setContentDisposition(ContentDisposition.attachment().filename(file.fileName(), StandardCharsets.UTF_8).build());
         return ResponseEntity.ok().headers(headers).body(file.content());
     }
 

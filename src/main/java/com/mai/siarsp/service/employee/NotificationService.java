@@ -13,8 +13,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Сервис оповещений. Рассылает сотрудникам события, чтобы процессы не «зависали» между этапами.
@@ -40,19 +42,48 @@ public class NotificationService {
         log.info("Создано уведомление для сотрудника '{}': {}", recipient.getFullName(), text);
     }
 
+    /** Управленческие роли — события, направленные им, дублируются админу-владельцу ИП. */
+    private static final String ROLE_ADMIN = "ROLE_EMPLOYEE_ADMIN";
+    private static final Set<String> MANAGEMENT_ROLES = Set.of(
+            "ROLE_EMPLOYEE_MANAGER",
+            "ROLE_EMPLOYEE_WAREHOUSE_MANAGER",
+            "ROLE_EMPLOYEE_ACCOUNTER"
+    );
+
     @Transactional
     public void notifyByRole(String roleName, String text) {
-        List<Employee> employees = employeeRepository.findAllByRoleName(roleName);
-        for (Employee employee : employees) {
-            createNotification(employee, text);
+        Set<Long> notified = new HashSet<>();
+        sendToRole(roleName, text, notified);
+        if (MANAGEMENT_ROLES.contains(roleName)) {
+            sendToRole(ROLE_ADMIN, text, notified);
         }
-        log.info("Отправлено уведомление {} сотрудникам с ролью '{}'.", employees.size(), roleName);
+        log.info("Отправлено уведомление {} сотрудникам по запросу роли '{}' (с учётом дублирования администратору).",
+                notified.size(), roleName);
     }
 
     @Transactional
     public void notifyByRoles(List<String> roleNames, String text) {
+        Set<Long> notified = new HashSet<>();
+        boolean anyManagement = false;
         for (String roleName : roleNames) {
-            notifyByRole(roleName, text);
+            sendToRole(roleName, text, notified);
+            if (MANAGEMENT_ROLES.contains(roleName)) {
+                anyManagement = true;
+            }
+        }
+        if (anyManagement) {
+            sendToRole(ROLE_ADMIN, text, notified);
+        }
+        log.info("Отправлено уведомление {} сотрудникам по ролям {} (с учётом дублирования администратору).",
+                notified.size(), roleNames);
+    }
+
+    private void sendToRole(String roleName, String text, Set<Long> notified) {
+        List<Employee> employees = employeeRepository.findAllByRoleName(roleName);
+        for (Employee employee : employees) {
+            if (notified.add(employee.getId())) {
+                createNotification(employee, text);
+            }
         }
     }
 

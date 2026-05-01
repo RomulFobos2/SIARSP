@@ -1,5 +1,6 @@
 package com.mai.siarsp.controllers.employee.admin;
 
+import java.nio.charset.StandardCharsets;
 import com.mai.siarsp.models.AcceptanceAct;
 import com.mai.siarsp.service.employee.AcceptanceActService;
 import com.mai.siarsp.service.general.AcceptanceActDocumentService;
@@ -76,7 +77,7 @@ public class AcceptanceActController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType(
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
-        headers.setContentDisposition(ContentDisposition.attachment().filename(file.fileName()).build());
+        headers.setContentDisposition(ContentDisposition.attachment().filename(file.fileName(), StandardCharsets.UTF_8).build());
         return ResponseEntity.ok().headers(headers).body(file.content());
     }
 }

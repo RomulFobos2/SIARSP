@@ -1,5 +1,6 @@
 package com.mai.siarsp.controllers.employee.accounter;
 
+import java.nio.charset.StandardCharsets;
 import com.mai.siarsp.dto.RequestForDeliveryDTO;
 import com.mai.siarsp.enumeration.RequestStatus;
 import com.mai.siarsp.models.RequestForDelivery;
@@ -223,7 +224,7 @@ public class RequestForDeliveryController {
         ReportDocumentService.ReportFile file = RequestForDeliveryDocumentService.generateContract(request);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
-        headers.setContentDisposition(ContentDisposition.attachment().filename(file.fileName()).build());
+        headers.setContentDisposition(ContentDisposition.attachment().filename(file.fileName(), StandardCharsets.UTF_8).build());
         return ResponseEntity.ok().headers(headers).body(file.content());
     }
 }

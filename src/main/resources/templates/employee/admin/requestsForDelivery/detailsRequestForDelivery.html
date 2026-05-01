@@ -114,7 +114,13 @@
         </div>
 
         <!-- Кнопки действий -->
-        <div class="mt-4 d-flex gap-2">
+        <div class="mt-4 d-flex gap-2 flex-wrap">
+            <form th:if="${requestDTO.getStatus().name() == 'DRAFT' || requestDTO.getStatus().name() == 'REJECTED_BY_DIRECTOR'}"
+                  method="post"
+                  th:action="@{'/employee/admin/requestsForDelivery/submitToDirector/' + ${requestDTO.getId()}}"
+                  class="d-inline">
+                <button type="submit" class="btn btn-primary">Отправить директору на согласование</button>
+            </form>
             <button th:if="${requestDTO.getStatus().name() == 'PENDING_DIRECTOR'}"
                     type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveModal">
                 Согласовать
