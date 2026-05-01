@@ -131,12 +131,20 @@
                         type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">
                     Отменить поставку
                 </button>
+
+                <!-- Полное удаление администратором: NEW, CONFIRMED, RESERVED, CANCELLED -->
+                <button th:if="${order.status.name() == 'NEW' or order.status.name() == 'CONFIRMED'
+                            or order.status.name() == 'RESERVED' or order.status.name() == 'CANCELLED'}"
+                        type="button" class="btn btn-outline-danger"
+                        data-bs-toggle="modal" data-bs-target="#deleteModal">
+                    Удалить
+                </button>
             </div>
 
             <!-- Задача на доставку -->
             <div th:if="${order.deliveryTask != null}" class="mb-4">
                 <h5 class="fw-bold mb-3">Задача на доставку</h5>
-                <a th:href="'/employee/manager/deliveryTasks/detailsDeliveryTask/' + ${order.deliveryTask.id}"
+                <a th:href="'/employee/admin/deliveryTasks/detailsDeliveryTask/' + ${order.deliveryTask.id}"
                    class="btn btn-outline-primary">Перейти к задаче на доставку</a>
             </div>
 
@@ -182,6 +190,32 @@
                 <form th:action="'/employee/admin/clientOrders/cancelClientOrder/' + ${order.id}"
                       method="post" class="d-inline">
                     <button type="submit" class="btn btn-danger">Да, отменить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Удаление заказа администратором -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Удаление заказа</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Удалить заказ <strong th:text="${order.orderNumber}"></strong>?
+                    Действие <strong>необратимо</strong> — будет удалена запись и файл договора.</p>
+                <p th:if="${order.status.name() == 'RESERVED'}" class="text-warning">
+                    Резервирование товара будет снято.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <form th:action="'/employee/admin/clientOrders/deleteClientOrder/' + ${order.id}"
+                      method="post" class="d-inline">
+                    <button type="submit" class="btn btn-danger">Да, удалить</button>
                 </form>
             </div>
         </div>

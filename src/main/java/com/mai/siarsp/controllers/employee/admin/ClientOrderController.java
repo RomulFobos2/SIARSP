@@ -204,6 +204,17 @@ public class ClientOrderController {
         return "redirect:/employee/admin/clientOrders/detailsClientOrder/" + id;
     }
 
+    @PostMapping("/deleteClientOrder/{id}")
+    public String deleteClientOrder(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        if (!clientOrderService.deleteOrderByAdmin(id)) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Удаление невозможно: заказ уже в работе или отгружен.");
+            return "redirect:/employee/admin/clientOrders/detailsClientOrder/" + id;
+        }
+        redirectAttributes.addFlashAttribute("successMessage", "Заказ удалён.");
+        return "redirect:/employee/admin/clientOrders/allClientOrders";
+    }
+
     @PostMapping("/cancelClientOrder/{id}")
     public String cancelClientOrder(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         if (!clientOrderService.cancelOrder(id)) {

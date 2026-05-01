@@ -79,7 +79,7 @@
                     <td th:text="${delivery.getTotalCost()} + ' руб.'"></td>
                     <td>
                         <a th:if="${delivery.getRequestId() != null}"
-                           th:href="'/employee/warehouseManager/requestsForDelivery/detailsRequestForDelivery/' + ${delivery.getRequestId()}"
+                           th:href="'/employee/admin/requestsForDelivery/detailsRequestForDelivery/' + ${delivery.getRequestId()}"
                            th:text="'№' + ${delivery.getRequestId()}" class="text-decoration-none"></a>
                         <span th:unless="${delivery.getRequestId() != null}" class="text-muted">—</span>
                     </td>

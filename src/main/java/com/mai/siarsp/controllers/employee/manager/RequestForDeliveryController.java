@@ -73,7 +73,7 @@ public class RequestForDeliveryController {
                                         @RequestParam List<BigDecimal> purchasePrices,
                                         @RequestParam(required = false) List<String> units,
                                         RedirectAttributes redirectAttributes) {
-        if (!requestForDeliveryService.createRequestByDirector(
+        if (!requestForDeliveryService.createApprovedRequest(
                 supplierId, warehouseId, deliveryCost, productIds, quantities, purchasePrices, units)) {
             redirectAttributes.addFlashAttribute("requestError", "Ошибка при создании заявки.");
             return "redirect:/employee/manager/requestsForDelivery/addRequestForDelivery";

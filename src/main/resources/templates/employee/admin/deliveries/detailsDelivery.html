@@ -36,7 +36,7 @@
             </div>
             <div class="col-md-3" th:if="${requestDTO != null}">
                 <strong>Заявка:</strong>
-                <a th:href="'/employee/warehouseManager/requestsForDelivery/detailsRequestForDelivery/' + ${requestDTO.getId()}"
+                <a th:href="'/employee/admin/requestsForDelivery/detailsRequestForDelivery/' + ${requestDTO.getId()}"
                    class="text-decoration-none">
                     №<span th:text="${requestDTO.getId()}"></span>
                     (<span th:text="${requestDTO.getStatus().getDisplayName()}"></span>)
@@ -74,7 +74,7 @@
                     <td th:text="${stat.index + 1}"></td>
                     <td th:text="${supply.getProductArticle()}"></td>
                     <td>
-                        <a th:href="'/employee/warehouseManager/products/detailsProduct/' + ${supply.getProductId()}"
+                        <a th:href="'/employee/admin/products/detailsProduct/' + ${supply.getProductId()}"
                            th:text="${supply.getProductName()}" class="text-decoration-none"></a>
                     </td>
                     <td th:text="${supply.getUnit() != null ? supply.getUnit() : '—'}"></td>
