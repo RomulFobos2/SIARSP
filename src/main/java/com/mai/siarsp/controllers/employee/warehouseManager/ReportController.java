@@ -1,5 +1,6 @@
 package com.mai.siarsp.controllers.employee.warehouseManager;
 
+import java.nio.charset.StandardCharsets;
 import com.mai.siarsp.service.general.ReportDocumentService;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -70,7 +71,7 @@ public class ReportController {
     private ResponseEntity<byte[]> buildResponse(ReportDocumentService.ReportFile reportFile) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
-        headers.setContentDisposition(ContentDisposition.attachment().filename(reportFile.fileName()).build());
+        headers.setContentDisposition(ContentDisposition.attachment().filename(reportFile.fileName(), StandardCharsets.UTF_8).build());
         return ResponseEntity.ok().headers(headers).body(reportFile.content());
     }
 

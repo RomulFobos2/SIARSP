@@ -1,5 +1,6 @@
 package com.mai.siarsp.controllers.employee.admin;
 
+import java.nio.charset.StandardCharsets;
 import com.mai.siarsp.dto.RequestForDeliveryDTO;
 import com.mai.siarsp.enumeration.RequestStatus;
 import com.mai.siarsp.models.RequestForDelivery;
@@ -32,14 +33,18 @@ import java.util.List;
 /**
  * Контроллер заявок на закупку товара для администратора (ADMIN).
  *
- * Администратор имеет полный доступ: просмотр всех заявок, создание (статус APPROVED),
- * согласование/отклонение, скачивание договора.
+ * Администратор имеет полный доступ: просмотр всех заявок, создание черновика (DRAFT),
+ * отправка директору (DRAFT/REJECTED_BY_DIRECTOR → PENDING_DIRECTOR),
+ * согласование/отклонение (PENDING_DIRECTOR → APPROVED/REJECTED_BY_DIRECTOR),
+ * редактирование/удаление, скачивание договора.
  */
 @Controller("adminRequestForDeliveryController")
 @Slf4j
 public class RequestForDeliveryController {
 
     private final RequestForDeliveryService requestForDeliveryService;
+    private final com.mai.siarsp.service.employee.warehouseManager.RequestForDeliveryService warehouseManagerRequestService;
+    private final com.mai.siarsp.service.employee.accounter.RequestForDeliveryService accounterRequestService;
     private final SupplierService supplierService;
     private final ProductService productService;
     private final WarehouseService warehouseService;
@@ -47,11 +52,15 @@ public class RequestForDeliveryController {
 
     public RequestForDeliveryController(
             @Qualifier("managerRequestForDeliveryService") RequestForDeliveryService requestForDeliveryService,
+            @Qualifier("warehouseManagerRequestForDeliveryService") com.mai.siarsp.service.employee.warehouseManager.RequestForDeliveryService warehouseManagerRequestService,
+            @Qualifier("accounterRequestForDeliveryService") com.mai.siarsp.service.employee.accounter.RequestForDeliveryService accounterRequestService,
             SupplierService supplierService,
             @Qualifier("warehouseManagerProductService") ProductService productService,
             @Qualifier("warehouseManagerWarehouseService") WarehouseService warehouseService,
             ClientOrderService clientOrderService) {
         this.requestForDeliveryService = requestForDeliveryService;
+        this.warehouseManagerRequestService = warehouseManagerRequestService;
+        this.accounterRequestService = accounterRequestService;
         this.supplierService = supplierService;
         this.productService = productService;
         this.warehouseService = warehouseService;
@@ -114,13 +123,25 @@ public class RequestForDeliveryController {
                                         @RequestParam List<BigDecimal> purchasePrices,
                                         @RequestParam(required = false) List<String> units,
                                         RedirectAttributes redirectAttributes) {
-        if (!requestForDeliveryService.createApprovedRequest(
+        if (!warehouseManagerRequestService.createRequest(
                 supplierId, warehouseId, deliveryCost, productIds, quantities, purchasePrices, units)) {
             redirectAttributes.addFlashAttribute("requestError", "Ошибка при создании заявки.");
             return "redirect:/employee/admin/requestsForDelivery/addRequestForDelivery";
         }
-        redirectAttributes.addFlashAttribute("requestSuccess", "Заявка создана и автоматически согласована.");
+        redirectAttributes.addFlashAttribute("requestSuccess",
+                "Заявка создана как черновик. Отправьте её директору на согласование, когда будет готова.");
         return "redirect:/employee/admin/requestsForDelivery/allRequestsForDelivery";
+    }
+
+    @PostMapping("/employee/admin/requestsForDelivery/submitToDirector/{id}")
+    public String submitToDirector(@PathVariable("id") long id, RedirectAttributes redirectAttributes) {
+        if (!accounterRequestService.submitToDirector(id)) {
+            redirectAttributes.addFlashAttribute("requestError",
+                    "Не удалось отправить заявку директору. Проверьте, что она в статусе «Черновик» или «Отклонена директором».");
+            return "redirect:/employee/admin/requestsForDelivery/detailsRequestForDelivery/" + id;
+        }
+        redirectAttributes.addFlashAttribute("requestSuccess", "Заявка отправлена директору на согласование.");
+        return "redirect:/employee/admin/requestsForDelivery/detailsRequestForDelivery/" + id;
     }
 
     @Transactional
@@ -216,7 +237,7 @@ public class RequestForDeliveryController {
         ReportDocumentService.ReportFile file = RequestForDeliveryDocumentService.generateContract(request);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
-        headers.setContentDisposition(ContentDisposition.attachment().filename(file.fileName()).build());
+        headers.setContentDisposition(ContentDisposition.attachment().filename(file.fileName(), StandardCharsets.UTF_8).build());
         return ResponseEntity.ok().headers(headers).body(file.content());
     }
 }

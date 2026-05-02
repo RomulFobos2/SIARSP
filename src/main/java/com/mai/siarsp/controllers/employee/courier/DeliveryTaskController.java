@@ -1,5 +1,6 @@
 package com.mai.siarsp.controllers.employee.courier;
 
+import java.nio.charset.StandardCharsets;
 import com.mai.siarsp.dto.DeliveryTaskDTO;
 import com.mai.siarsp.enumeration.DeliveryTaskStatus;
 import com.mai.siarsp.models.AcceptanceAct;
@@ -210,7 +211,7 @@ public class DeliveryTaskController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType(
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
-        headers.setContentDisposition(ContentDisposition.attachment().filename(file.fileName()).build());
+        headers.setContentDisposition(ContentDisposition.attachment().filename(file.fileName(), StandardCharsets.UTF_8).build());
         return ResponseEntity.ok().headers(headers).body(file.content());
     }
 
@@ -230,7 +231,7 @@ public class DeliveryTaskController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType(
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
-        headers.setContentDisposition(ContentDisposition.attachment().filename(file.fileName()).build());
+        headers.setContentDisposition(ContentDisposition.attachment().filename(file.fileName(), StandardCharsets.UTF_8).build());
         return ResponseEntity.ok().headers(headers).body(file.content());
     }
 }

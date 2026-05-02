@@ -44,6 +44,8 @@ public class SecurityConfigEmployee {
                         .requestMatchers("/api/mobile/**").hasAnyRole("EMPLOYEE_ADMIN", "EMPLOYEE_MANAGER", "EMPLOYEE_WAREHOUSE_MANAGER", "EMPLOYEE_WAREHOUSE_WORKER", "EMPLOYEE_COURIER", "EMPLOYEE_ACCOUNTER")
                         .requestMatchers("/employee/warehouseManager/warehouse-management/find-product")
                         .hasAnyRole("EMPLOYEE_ADMIN", "EMPLOYEE_MANAGER", "EMPLOYEE_WAREHOUSE_MANAGER", "EMPLOYEE_WAREHOUSE_WORKER", "EMPLOYEE_COURIER", "EMPLOYEE_ACCOUNTER")
+                        .requestMatchers("/employee/warehouseManager/warehouse-management/place-product")
+                        .hasAnyRole("EMPLOYEE_ADMIN", "EMPLOYEE_WAREHOUSE_MANAGER")
                         .requestMatchers("/employee/admin/**").hasRole("EMPLOYEE_ADMIN")
                         .requestMatchers("/employee/manager/**").hasRole("EMPLOYEE_MANAGER")
                         .requestMatchers("/employee/warehouseManager/**").hasRole("EMPLOYEE_WAREHOUSE_MANAGER")

@@ -1,5 +1,6 @@
 package com.mai.siarsp.controllers.employee.admin;
 
+import java.nio.charset.StandardCharsets;
 import com.mai.siarsp.dto.EmployeeDTO;
 import com.mai.siarsp.mapper.EmployeeMapper;
 import com.mai.siarsp.models.Employee;
@@ -178,7 +179,7 @@ public class EmployeeController {
                 ? employee.getHiringOrderFile().substring(employee.getHiringOrderFile().indexOf("_") + 1)
                 : employee.getHiringOrderFile();
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentDisposition(ContentDisposition.attachment().filename(originalFilename).build());
+        headers.setContentDisposition(ContentDisposition.attachment().filename(originalFilename, StandardCharsets.UTF_8).build());
         headers.set(HttpHeaders.CONTENT_TYPE, "application/pdf");
         return ResponseEntity.ok().headers(headers).body(resource);
     }
@@ -197,7 +198,7 @@ public class EmployeeController {
                 ? employee.getDismissalOrderFile().substring(employee.getDismissalOrderFile().indexOf("_") + 1)
                 : employee.getDismissalOrderFile();
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentDisposition(ContentDisposition.attachment().filename(originalFilename).build());
+        headers.setContentDisposition(ContentDisposition.attachment().filename(originalFilename, StandardCharsets.UTF_8).build());
         headers.set(HttpHeaders.CONTENT_TYPE, "application/pdf");
         return ResponseEntity.ok().headers(headers).body(resource);
     }
