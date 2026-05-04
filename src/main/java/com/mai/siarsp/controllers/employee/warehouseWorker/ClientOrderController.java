@@ -10,6 +10,8 @@ import com.mai.siarsp.service.employee.ClientOrderService;
 import com.mai.siarsp.service.general.ContractService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -155,8 +158,12 @@ public class ClientOrderController {
             String downloadName = contractFileName.contains("_")
                     ? contractFileName.substring(contractFileName.indexOf("_") + 1)
                     : contractFileName;
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentDisposition(ContentDisposition.attachment()
+                    .filename(downloadName, StandardCharsets.UTF_8)
+                    .build());
             return ResponseEntity.ok()
-                    .header("Content-Disposition", "attachment; filename=\"" + downloadName + "\"")
+                    .headers(headers)
                     .body(resource);
         } catch (IOException e) {
             log.error("Ошибка скачивания контракта: {}", e.getMessage());
