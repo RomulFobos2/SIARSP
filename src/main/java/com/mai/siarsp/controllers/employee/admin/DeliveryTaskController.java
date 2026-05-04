@@ -99,8 +99,12 @@ public class DeliveryTaskController {
             String downloadName = contractFileName.contains("_")
                     ? contractFileName.substring(contractFileName.indexOf("_") + 1)
                     : contractFileName;
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentDisposition(ContentDisposition.attachment()
+                    .filename(downloadName, StandardCharsets.UTF_8)
+                    .build());
             return ResponseEntity.ok()
-                    .header("Content-Disposition", "attachment; filename=\"" + downloadName + "\"")
+                    .headers(headers)
                     .body(resource);
         } catch (IOException e) {
             log.error("Ошибка скачивания контракта: {}", e.getMessage());
