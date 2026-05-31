@@ -158,6 +158,7 @@ public class ClientOrderController {
             item.put("price", op.getPrice());
             item.put("originalPrice", op.getOriginalPrice());
             item.put("discountPercent", op.getDiscountPercent());
+            item.put("markupPercent", op.getMarkupPercent());
             orderProducts.add(item);
         }
 
