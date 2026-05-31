@@ -55,6 +55,14 @@ public class OrderedProduct {
     private Integer discountPercent;
 
     /**
+     * Добавочная стоимость (наценка) в процентах.
+     * Увеличивает цену товара: итоговая цена = originalPrice × (1 + markupPercent / 100) × (1 - discountPercent / 100)
+     * Может быть null, если наценка не применялась
+     */
+    @Column
+    private Integer markupPercent;
+
+    /**
      * Товар, который заказан
      * Ссылка на справочник товаров
      * Содержит информацию о наименовании, категории, атрибутах
@@ -88,12 +96,13 @@ public class OrderedProduct {
      * @param discountPercent размер скидки в процентах (0-100)
      */
     public OrderedProduct(Product product, int quantity, BigDecimal price,
-                          BigDecimal originalPrice, Integer discountPercent) {
+                          BigDecimal originalPrice, Integer discountPercent, Integer markupPercent) {
         this.product = product;
         this.quantity = quantity;
         this.price = price;
         this.originalPrice = originalPrice;
         this.discountPercent = discountPercent;
+        this.markupPercent = markupPercent;
         this.totalPrice = price.multiply(BigDecimal.valueOf(quantity));
     }
 

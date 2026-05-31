@@ -8,19 +8,18 @@
     <link href="/css/style.css" rel="stylesheet">
     <style>
         #productsContainer .product-row {
-            margin-bottom: 2.25rem !important;
-        }
-
-        #productsContainer .product-row .quantity-col {
-            position: relative;
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            background: #f8f9fa;
         }
 
         #productsContainer .product-row .available-hint {
-            position: absolute;
-            top: 100%;
-            left: 0;
+            display: block;
             margin-top: 0.25rem;
             white-space: nowrap;
+            font-size: 0.85em;
         }
     </style>
     <script src="/js/bootstrap.bundle.min.js"></script>
@@ -146,43 +145,51 @@
         rowIndex++;
         var container = document.getElementById('productsContainer');
         var row = document.createElement('div');
-        row.className = 'row g-2 mb-3 product-row align-items-end';
+        row.className = 'product-row';
         row.setAttribute('data-row-index', rowIndex);
         row.innerHTML =
-            '<div class="col-md-4">' +
-                '<label class="form-label">Товар *</label>' +
-                '<select name="productId" class="form-select product-select" required onchange="onProductChange(this)">' +
-                    '<option value="">-- Выберите --</option>' +
-                    buildProductOptions(data.productId) +
-                '</select>' +
+            '<div class="row g-2 mb-2 align-items-start">' +
+                '<div class="col-md-8">' +
+                    '<label class="form-label">Товар *</label>' +
+                    '<select name="productId" class="form-select product-select" required onchange="onProductChange(this)">' +
+                        '<option value="">-- Выберите --</option>' +
+                        buildProductOptions(data.productId) +
+                    '</select>' +
+                '</div>' +
+                '<div class="col-md-2 quantity-col">' +
+                    '<label class="form-label">Кол-во *</label>' +
+                    '<input type="number" name="quantity" class="form-control quantity-input" min="1" required oninput="calculateRowTotal(this)" value="' + toJsNumber(data.quantity) + '">' +
+                    '<small class="text-muted available-hint"></small>' +
+                '</div>' +
+                '<div class="col-md-2">' +
+                    '<label class="form-label d-block">&nbsp;</label>' +
+                    '<button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeProductRow(this)">Удалить</button>' +
+                '</div>' +
             '</div>' +
-            '<div class="col-md-2 quantity-col">' +
-                '<label class="form-label">Кол-во *</label>' +
-                '<input type="number" name="quantity" class="form-control quantity-input" min="1" required oninput="calculateRowTotal(this)" value="' + toJsNumber(data.quantity) + '">' +
-                '<small class="text-muted available-hint"></small>' +
-            '</div>' +
-            '<div class="col-md-2">' +
-                '<label class="form-label">Цена без скидки *</label>' +
-                '<input type="number" name="originalPrice" class="form-control original-price-input" min="0.01" step="0.01" required oninput="calculateDiscountedPrice(this)" value="' + toJsNumber(data.originalPrice || data.price) + '">' +
-            '</div>' +
-            '<div class="col-md-1">' +
-                '<label class="form-label">Скидка %</label>' +
-                '<input type="number" name="discountPercent" class="form-control discount-input" min="0" max="100" oninput="calculateDiscountedPrice(this)" value="' + (toJsNumber(data.discountPercent) || 0) + '">' +
-            '</div>' +
-            '<div class="col-md-1">' +
-                '<label class="form-label">Цена</label>' +
-                '<input type="number" name="price" class="form-control price-input" step="0.01" readonly required value="' + toJsNumber(data.price) + '">' +
-            '</div>' +
-            '<div class="col-md-1">' +
-                '<label class="form-label">Сумма</label>' +
-                '<input type="text" class="form-control row-total" readonly value="' + (toJsNumber(data.quantity) * toJsNumber(data.price)).toFixed(2) + '">' +
-            '</div>' +
-            '<div class="col-md-1 d-flex align-items-end">' +
-                '<button type="button" class="btn btn-outline-danger btn-sm" onclick="removeProductRow(this)">Удалить</button>' +
+            '<div class="row g-2 align-items-end">' +
+                '<div class="col-md-3">' +
+                    '<label class="form-label">Цена без скидки *</label>' +
+                    '<input type="number" name="originalPrice" class="form-control original-price-input" min="0.01" step="0.01" required oninput="calculateDiscountedPrice(this)" value="' + toJsNumber(data.originalPrice || data.price) + '">' +
+                '</div>' +
+                '<div class="col-md-2">' +
+                    '<label class="form-label">Наценка %</label>' +
+                    '<input type="number" name="markupPercent" class="form-control markup-input" min="0" max="999" oninput="calculateDiscountedPrice(this)" value="' + (toJsNumber(data.markupPercent) || 0) + '">' +
+                '</div>' +
+                '<div class="col-md-2">' +
+                    '<label class="form-label">Скидка %</label>' +
+                    '<input type="number" name="discountPercent" class="form-control discount-input" min="0" max="100" oninput="calculateDiscountedPrice(this)" value="' + (toJsNumber(data.discountPercent) || 0) + '">' +
+                '</div>' +
+                '<div class="col-md-2">' +
+                    '<label class="form-label">Итог. цена</label>' +
+                    '<input type="number" name="price" class="form-control price-input" step="0.01" readonly required value="' + toJsNumber(data.price) + '">' +
+                '</div>' +
+                '<div class="col-md-3">' +
+                    '<label class="form-label">Сумма</label>' +
+                    '<input type="text" class="form-control row-total" readonly value="' + (toJsNumber(data.quantity) * toJsNumber(data.price)).toFixed(2) + '">' +
+                '</div>' +
             '</div>';
         container.appendChild(row);
 
-        // Обновить подсказку
         var select = row.querySelector('.product-select');
         onProductChange(select);
         updateGrandTotal();
@@ -192,39 +199,48 @@
         rowIndex++;
         var container = document.getElementById('productsContainer');
         var row = document.createElement('div');
-        row.className = 'row g-2 mb-3 product-row align-items-end';
+        row.className = 'product-row';
         row.setAttribute('data-row-index', rowIndex);
         row.innerHTML =
-            '<div class="col-md-4">' +
-                '<label class="form-label">Товар *</label>' +
-                '<select name="productId" class="form-select product-select" required onchange="onProductChange(this)">' +
-                    '<option value="">-- Выберите --</option>' +
-                    buildProductOptions(null) +
-                '</select>' +
+            '<div class="row g-2 mb-2 align-items-start">' +
+                '<div class="col-md-8">' +
+                    '<label class="form-label">Товар *</label>' +
+                    '<select name="productId" class="form-select product-select" required onchange="onProductChange(this)">' +
+                        '<option value="">-- Выберите --</option>' +
+                        buildProductOptions(null) +
+                    '</select>' +
+                '</div>' +
+                '<div class="col-md-2 quantity-col">' +
+                    '<label class="form-label">Кол-во *</label>' +
+                    '<input type="number" name="quantity" class="form-control quantity-input" min="1" required oninput="calculateRowTotal(this)">' +
+                    '<small class="text-muted available-hint"></small>' +
+                '</div>' +
+                '<div class="col-md-2">' +
+                    '<label class="form-label d-block">&nbsp;</label>' +
+                    '<button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeProductRow(this)">Удалить</button>' +
+                '</div>' +
             '</div>' +
-            '<div class="col-md-2 quantity-col">' +
-                '<label class="form-label">Кол-во *</label>' +
-                '<input type="number" name="quantity" class="form-control quantity-input" min="1" required oninput="calculateRowTotal(this)">' +
-                '<small class="text-muted available-hint"></small>' +
-            '</div>' +
-            '<div class="col-md-2">' +
-                '<label class="form-label">Цена без скидки *</label>' +
-                '<input type="number" name="originalPrice" class="form-control original-price-input" min="0.01" step="0.01" required oninput="calculateDiscountedPrice(this)">' +
-            '</div>' +
-            '<div class="col-md-1">' +
-                '<label class="form-label">Скидка %</label>' +
-                '<input type="number" name="discountPercent" class="form-control discount-input" min="0" max="100" value="0" oninput="calculateDiscountedPrice(this)">' +
-            '</div>' +
-            '<div class="col-md-1">' +
-                '<label class="form-label">Цена</label>' +
-                '<input type="number" name="price" class="form-control price-input" step="0.01" readonly required>' +
-            '</div>' +
-            '<div class="col-md-1">' +
-                '<label class="form-label">Сумма</label>' +
-                '<input type="text" class="form-control row-total" readonly value="0.00">' +
-            '</div>' +
-            '<div class="col-md-1 d-flex align-items-end">' +
-                '<button type="button" class="btn btn-outline-danger btn-sm" onclick="removeProductRow(this)">Удалить</button>' +
+            '<div class="row g-2 align-items-end">' +
+                '<div class="col-md-3">' +
+                    '<label class="form-label">Цена без скидки *</label>' +
+                    '<input type="number" name="originalPrice" class="form-control original-price-input" min="0.01" step="0.01" required oninput="calculateDiscountedPrice(this)">' +
+                '</div>' +
+                '<div class="col-md-2">' +
+                    '<label class="form-label">Наценка %</label>' +
+                    '<input type="number" name="markupPercent" class="form-control markup-input" min="0" max="999" value="0" oninput="calculateDiscountedPrice(this)">' +
+                '</div>' +
+                '<div class="col-md-2">' +
+                    '<label class="form-label">Скидка %</label>' +
+                    '<input type="number" name="discountPercent" class="form-control discount-input" min="0" max="100" value="0" oninput="calculateDiscountedPrice(this)">' +
+                '</div>' +
+                '<div class="col-md-2">' +
+                    '<label class="form-label">Итог. цена</label>' +
+                    '<input type="number" name="price" class="form-control price-input" step="0.01" readonly required>' +
+                '</div>' +
+                '<div class="col-md-3">' +
+                    '<label class="form-label">Сумма</label>' +
+                    '<input type="text" class="form-control row-total" readonly value="0.00">' +
+                '</div>' +
             '</div>';
         container.appendChild(row);
         updateSelectOptions();
@@ -272,6 +288,7 @@
                 hint.textContent = '';
 
                 row.querySelector('.original-price-input').value = '';
+                row.querySelector('.markup-input').value = '0';
                 row.querySelector('.discount-input').value = '0';
                 row.querySelector('.price-input').value = '';
                 row.querySelector('.row-total').value = '0.00';
@@ -358,11 +375,14 @@
     function calculateDiscountedPrice(input) {
         var row = input.closest('.product-row');
         var originalPrice = parseFloat(row.querySelector('.original-price-input').value) || 0;
+        var markup = parseFloat(row.querySelector('.markup-input').value) || 0;
         var discount = parseFloat(row.querySelector('.discount-input').value) || 0;
+        if (markup < 0) markup = 0;
         if (discount < 0) discount = 0;
         if (discount > 100) discount = 100;
-        var discounted = originalPrice * (1 - discount / 100);
-        row.querySelector('.price-input').value = discounted.toFixed(2);
+        var withMarkup = originalPrice * (1 + markup / 100);
+        var finalPrice = withMarkup * (1 - discount / 100);
+        row.querySelector('.price-input').value = finalPrice.toFixed(2);
         calculateRowTotal(row.querySelector('.price-input'));
     }
 

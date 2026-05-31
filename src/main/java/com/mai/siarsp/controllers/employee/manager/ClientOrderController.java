@@ -103,6 +103,7 @@ public class ClientOrderController {
                                     @RequestParam("price") List<BigDecimal> prices,
                                     @RequestParam(value = "originalPrice", required = false) List<BigDecimal> originalPrices,
                                     @RequestParam(value = "discountPercent", required = false) List<Integer> discountPercents,
+                                    @RequestParam(value = "markupPercent", required = false) List<Integer> markupPercents,
                                     @RequestParam("contractFile") MultipartFile contractFile,
                                     @AuthenticationPrincipal Employee currentEmployee,
                                     RedirectAttributes redirectAttributes) {
@@ -110,8 +111,9 @@ public class ClientOrderController {
         for (int i = 0; i < productIds.size(); i++) {
             BigDecimal origPrice = (originalPrices != null && i < originalPrices.size()) ? originalPrices.get(i) : null;
             Integer discount = (discountPercents != null && i < discountPercents.size()) ? discountPercents.get(i) : null;
+            Integer markup = (markupPercents != null && i < markupPercents.size()) ? markupPercents.get(i) : null;
             items.add(new ClientOrderService.OrderItemRequest(
-                    productIds.get(i), quantities.get(i), prices.get(i), origPrice, discount));
+                    productIds.get(i), quantities.get(i), prices.get(i), origPrice, discount, markup));
         }
 
         java.time.LocalDate date = java.time.LocalDate.parse(deliveryDate);
@@ -150,6 +152,7 @@ public class ClientOrderController {
             item.put("price", op.getPrice());
             item.put("originalPrice", op.getOriginalPrice());
             item.put("discountPercent", op.getDiscountPercent());
+            item.put("markupPercent", op.getMarkupPercent());
             orderProducts.add(item);
         }
 
@@ -168,14 +171,16 @@ public class ClientOrderController {
                                   @RequestParam("price") List<BigDecimal> prices,
                                   @RequestParam(value = "originalPrice", required = false) List<BigDecimal> originalPrices,
                                   @RequestParam(value = "discountPercent", required = false) List<Integer> discountPercents,
+                                  @RequestParam(value = "markupPercent", required = false) List<Integer> markupPercents,
                                   @RequestParam(value = "contractFile", required = false) MultipartFile contractFile,
                                   RedirectAttributes redirectAttributes) {
         List<ClientOrderService.OrderItemRequest> items = new ArrayList<>();
         for (int i = 0; i < productIds.size(); i++) {
             BigDecimal origPrice = (originalPrices != null && i < originalPrices.size()) ? originalPrices.get(i) : null;
             Integer discount = (discountPercents != null && i < discountPercents.size()) ? discountPercents.get(i) : null;
+            Integer markup = (markupPercents != null && i < markupPercents.size()) ? markupPercents.get(i) : null;
             items.add(new ClientOrderService.OrderItemRequest(
-                    productIds.get(i), quantities.get(i), prices.get(i), origPrice, discount));
+                    productIds.get(i), quantities.get(i), prices.get(i), origPrice, discount, markup));
         }
 
         java.time.LocalDate date = java.time.LocalDate.parse(deliveryDate);

@@ -56,7 +56,8 @@ public class ClientOrderService {
      * Запрос на добавление позиции в заказ
      */
     public record OrderItemRequest(Long productId, int quantity, BigDecimal price,
-                                    BigDecimal originalPrice, Integer discountPercent) {}
+                                    BigDecimal originalPrice, Integer discountPercent,
+                                    Integer markupPercent) {}
 
     @Transactional(readOnly = true)
     public List<ClientOrderDTO> getAllOrders() {
@@ -131,7 +132,7 @@ public class ClientOrderService {
                 }
 
                 OrderedProduct orderedProduct = new OrderedProduct(optProduct.get(), item.quantity(), item.price(),
-                        item.originalPrice(), item.discountPercent());
+                        item.originalPrice(), item.discountPercent(), item.markupPercent());
                 order.addOrderedProduct(orderedProduct);
             }
 
@@ -211,6 +212,7 @@ public class ClientOrderService {
                     op.setPrice(item.price());
                     op.setOriginalPrice(item.originalPrice());
                     op.setDiscountPercent(item.discountPercent());
+                    op.setMarkupPercent(item.markupPercent());
                     op.recalculateTotalPrice();
                 } else {
                     Optional<Product> optProduct = productRepository.findById(pid);
@@ -219,7 +221,7 @@ public class ClientOrderService {
                         return false;
                     }
                     OrderedProduct newOp = new OrderedProduct(optProduct.get(), item.quantity(), item.price(),
-                            item.originalPrice(), item.discountPercent());
+                            item.originalPrice(), item.discountPercent(), item.markupPercent());
                     order.addOrderedProduct(newOp);
                 }
             }
