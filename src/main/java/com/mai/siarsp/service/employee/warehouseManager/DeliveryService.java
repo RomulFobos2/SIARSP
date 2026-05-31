@@ -144,6 +144,7 @@ public class DeliveryService {
                 supply.setUnit(requestedProduct.getUnit());
                 supply.setDeficitQuantity(deficit);
                 supply.setDeficitReason(deficit > 0 ? input.getDeficitReason() : null);
+                supply.setMarkupPercent(input.getMarkupPercent());
                 delivery.addSupply(supply);
 
                 // Оприходование на склад
