@@ -131,7 +131,7 @@
         row.className = 'product-row';
         row.setAttribute('data-row-index', rowIndex);
         row.innerHTML =
-            '<div class="row g-2 mb-2 align-items-end">' +
+            '<div class="row g-2 mb-2 align-items-start">' +
                 '<div class="col-md-8">' +
                     '<label class="form-label">Товар *</label>' +
                     '<select name="productId" class="form-select product-select" required onchange="onProductChange(this)">' +
@@ -144,7 +144,8 @@
                     '<input type="number" name="quantity" class="form-control quantity-input" min="1" required oninput="calculateRowTotal(this)">' +
                     '<small class="text-muted available-hint"></small>' +
                 '</div>' +
-                '<div class="col-md-2 d-flex align-items-end">' +
+                '<div class="col-md-2">' +
+                    '<label class="form-label d-block">&nbsp;</label>' +
                     '<button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeProductRow(this)">Удалить</button>' +
                 '</div>' +
             '</div>' +
