@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -90,8 +91,8 @@ import retrofit2.http.Query
 
 // ========== КОНФИГУРАЦИЯ ==========
 
-//private const val BASE_URL = "http://10.0.2.2:8080/"
-private const val BASE_URL = "http://94.19.110.44:18080/"
+private const val DEFAULT_SERVER_IP = "94.19.110.44"
+private const val DEFAULT_SERVER_PORT = "18080"
 
 object AppConfig {
     const val AUTO_LOCATION_SEND_INTERVAL_MS = 60_000L
@@ -400,7 +401,7 @@ class InMemoryCookieJar : CookieJar {
     override fun loadForRequest(url: HttpUrl): List<Cookie> = cookiesByHost[url.host].orEmpty()
 }
 
-class SessionRepository {
+class SessionRepository(private val baseUrl: String) {
     private val cookieJar = InMemoryCookieJar()
 
     private val okHttpClient = OkHttpClient.Builder()
@@ -424,7 +425,7 @@ class SessionRepository {
         .build()
 
     private val retrofit = Retrofit.Builder()
-        .baseUrl(BASE_URL)
+        .baseUrl(baseUrl)
         .client(okHttpClient)
         .addConverterFactory(GsonConverterFactory.create())
         .build()
@@ -436,12 +437,12 @@ class SessionRepository {
         val normalizedUsername = username.trim()
         val body = FormBody.Builder().add("username", normalizedUsername).add("password", password).build()
 
-        val request = Request.Builder().url("${BASE_URL}employee/login").post(body).build()
+        val request = Request.Builder().url("${baseUrl}employee/login").post(body).build()
 
         okHttpClient.newCall(request).execute().use { resp ->
             val redirectLocation = resp.header("Location").orEmpty()
             val hasSessionCookie = cookieJar
-                .loadForRequest(BASE_URL.toHttpUrl())
+                .loadForRequest(baseUrl.toHttpUrl())
                 .any { it.name.equals("JSESSIONID", ignoreCase = true) }
 
             val isLoginRedirect = redirectLocation.contains("/employee/login", ignoreCase = true)
@@ -482,8 +483,10 @@ class SessionRepository {
 // ========== VIEWMODEL ==========
 
 class MainViewModel : ViewModel() {
-    private val repo = SessionRepository()
+    private lateinit var repo: SessionRepository
 
+    var serverIp by mutableStateOf(DEFAULT_SERVER_IP)
+    var serverPort by mutableStateOf(DEFAULT_SERVER_PORT)
     var login by mutableStateOf("")
     var password by mutableStateOf("")
     var isLoggedIn by mutableStateOf(false)
@@ -515,12 +518,14 @@ class MainViewModel : ViewModel() {
 
     fun doLogin() {
         viewModelScope.launch {
+            val baseUrl = "http://${serverIp.trim()}:${serverPort.trim()}/"
+            repo = SessionRepository(baseUrl)
             val usernameForLogin = login.trim()
             runCatching { repo.login(usernameForLogin, password) }
                 .onSuccess {
                     isLoggedIn = it
                     message = if (it) "Вход выполнен" else "Ошибка логина"
-                    Log.i("SIARSP", "Login result: success=$it, user='$usernameForLogin'")
+                    Log.i("SIARSP", "Login result: success=$it, user='$usernameForLogin', server=$baseUrl")
                     if (it) {
                         loadProfile()
                     }
@@ -746,11 +751,40 @@ private fun LoginScreen(vm: MainViewModel) {
             Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("SIARSP Mobile", style = MaterialTheme.typography.headlineSmall)
                 Text("Вход в мобильное приложение.")
+
+                // ---- Адрес сервера ----
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        vm.serverIp,
+                        { vm.serverIp = it },
+                        label = { Text("IP-адрес сервера") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.None,
+                            autoCorrect = false,
+                            keyboardType = KeyboardType.Ascii
+                        )
+                    )
+                    OutlinedTextField(
+                        vm.serverPort,
+                        { vm.serverPort = it },
+                        label = { Text("Порт") },
+                        modifier = Modifier.width(100.dp),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number
+                        )
+                    )
+                }
+
+                // ---- Учётные данные ----
                 OutlinedTextField(
                     vm.login,
                     { vm.login = it },
                     label = { Text("Логин") },
                     modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
                     keyboardOptions = KeyboardOptions(
                         capitalization = KeyboardCapitalization.None,
                         autoCorrect = false,
@@ -764,12 +798,14 @@ private fun LoginScreen(vm: MainViewModel) {
                     label = { Text("Пароль") },
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
                     keyboardOptions = KeyboardOptions(
                         capitalization = KeyboardCapitalization.None,
                         autoCorrect = false,
                         keyboardType = KeyboardType.Password
                     )
                 )
+
                 Button(onClick = { vm.doLogin() }, modifier = Modifier.fillMaxWidth()) { Text("Войти") }
                 Text(vm.message)
             }
