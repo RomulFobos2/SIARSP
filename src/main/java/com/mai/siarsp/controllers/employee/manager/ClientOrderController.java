@@ -170,6 +170,7 @@ public class ClientOrderController {
                                   @RequestParam("price") List<BigDecimal> prices,
                                   @RequestParam(value = "originalPrice", required = false) List<BigDecimal> originalPrices,
                                   @RequestParam(value = "discountPercent", required = false) List<Integer> discountPercents,
+                                  @RequestParam(value = "markupPercent", required = false) List<Integer> markupPercents,
                                   @RequestParam(value = "contractFile", required = false) MultipartFile contractFile,
                                   RedirectAttributes redirectAttributes) {
         List<ClientOrderService.OrderItemRequest> items = new ArrayList<>();
