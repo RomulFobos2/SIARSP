@@ -149,6 +149,10 @@
                 '<input type="number" name="originalPrice" class="form-control original-price-input" min="0.01" step="0.01" required oninput="calculateDiscountedPrice(this)">' +
             '</div>' +
             '<div class="col-md-1">' +
+                '<label class="form-label">Наценка %</label>' +
+                '<input type="number" name="markupPercent" class="form-control markup-input" min="0" max="999" value="0" oninput="calculateDiscountedPrice(this)">' +
+            '</div>' +
+            '<div class="col-md-1">' +
                 '<label class="form-label">Скидка %</label>' +
                 '<input type="number" name="discountPercent" class="form-control discount-input" min="0" max="100" value="0" oninput="calculateDiscountedPrice(this)">' +
             '</div>' +
@@ -281,11 +285,14 @@
     function calculateDiscountedPrice(input) {
         var row = input.closest('.product-row');
         var originalPrice = parseFloat(row.querySelector('.original-price-input').value) || 0;
+        var markup = parseFloat(row.querySelector('.markup-input').value) || 0;
         var discount = parseFloat(row.querySelector('.discount-input').value) || 0;
+        if (markup < 0) markup = 0;
         if (discount < 0) discount = 0;
         if (discount > 100) discount = 100;
-        var discounted = originalPrice * (1 - discount / 100);
-        row.querySelector('.price-input').value = discounted.toFixed(2);
+        var withMarkup = originalPrice * (1 + markup / 100);
+        var finalPrice = withMarkup * (1 - discount / 100);
+        row.querySelector('.price-input').value = finalPrice.toFixed(2);
         calculateRowTotal(row.querySelector('.price-input'));
     }
 
