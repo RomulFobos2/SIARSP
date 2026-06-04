@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import com.mai.siarsp.service.general.ContractService;
+import com.mai.siarsp.service.general.ProductExpirationService;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
@@ -39,15 +40,18 @@ public class ClientOrderService {
     private final ClientRepository clientRepository;
     private final ProductRepository productRepository;
     private final NotificationService notificationService;
+    private final ProductExpirationService productExpirationService;
 
     public ClientOrderService(ClientOrderRepository clientOrderRepository,
                               ClientRepository clientRepository,
                               ProductRepository productRepository,
-                              NotificationService notificationService) {
+                              NotificationService notificationService,
+                              ProductExpirationService productExpirationService) {
         this.clientOrderRepository = clientOrderRepository;
         this.clientRepository = clientRepository;
         this.productRepository = productRepository;
         this.notificationService = notificationService;
+        this.productExpirationService = productExpirationService;
     }
 
     // ========== ЗАПРОСЫ ==========
@@ -266,6 +270,13 @@ public class ClientOrderService {
                 return false;
             }
 
+            List<String> expiringProducts = collectProductsExpiringBefore(order, order.getDeliveryDate());
+            if (!expiringProducts.isEmpty()) {
+                log.error("Заказ №{} нельзя подтвердить: срок годности истечёт до даты доставки у товаров: {}",
+                        order.getOrderNumber(), expiringProducts);
+                return false;
+            }
+
             order.setStatus(ClientOrderStatus.CONFIRMED);
             clientOrderRepository.save(order);
 
@@ -282,6 +293,33 @@ public class ClientOrderService {
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             return false;
         }
+    }
+
+    /**
+     * Возвращает названия товаров заказа, срок годности которых истекает раньше плановой даты доставки.
+     * Используется контроллером для UX-сообщения перед подтверждением и внутри confirmOrder как защита.
+     */
+    @Transactional(readOnly = true)
+    public List<String> findProductsExpiringBeforeDelivery(Long orderId) {
+        return clientOrderRepository.findById(orderId)
+                .map(order -> collectProductsExpiringBefore(order, order.getDeliveryDate()))
+                .orElseGet(List::of);
+    }
+
+    private List<String> collectProductsExpiringBefore(ClientOrder order, LocalDate referenceDate) {
+        if (referenceDate == null) {
+            return List.of();
+        }
+        List<String> result = new ArrayList<>();
+        for (OrderedProduct op : order.getOrderedProducts()) {
+            Product product = op.getProduct();
+            Optional<LocalDate> expiration = productExpirationService.getExpirationDate(product);
+            if (expiration.isPresent() && expiration.get().isBefore(referenceDate)) {
+                result.add(product.getName() + " (" + product.getArticle()
+                        + ", срок до " + expiration.get() + ")");
+            }
+        }
+        return result;
     }
 
     @Transactional

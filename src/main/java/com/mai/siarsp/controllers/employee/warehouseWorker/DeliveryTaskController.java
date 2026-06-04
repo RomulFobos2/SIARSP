@@ -120,6 +120,13 @@ public class DeliveryTaskController {
 
     @PostMapping("/completeLoading/{id}")
     public String completeLoading(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        java.util.List<String> expired = deliveryTaskService.findExpiredProductsForTask(id);
+        if (!expired.isEmpty()) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Невозможно завершить погрузку: следующие товары просрочены: "
+                            + String.join("; ", expired));
+            return "redirect:/employee/warehouseWorker/deliveryTasks/detailsDeliveryTask/" + id;
+        }
         if (!deliveryTaskService.completeLoading(id)) {
             redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при завершении погрузки.");
         } else {

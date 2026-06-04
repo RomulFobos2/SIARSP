@@ -196,6 +196,13 @@ public class ClientOrderController {
 
     @PostMapping("/confirmClientOrder/{id}")
     public String confirmClientOrder(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        java.util.List<String> expiring = clientOrderService.findProductsExpiringBeforeDelivery(id);
+        if (!expiring.isEmpty()) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Невозможно подтвердить: срок годности истекает до даты доставки у товаров: "
+                            + String.join("; ", expiring));
+            return "redirect:/employee/manager/clientOrders/detailsClientOrder/" + id;
+        }
         if (!clientOrderService.confirmOrder(id)) {
             redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при подтверждении заказа.");
         } else {
