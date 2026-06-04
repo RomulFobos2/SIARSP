@@ -34,6 +34,7 @@ import java.util.*;
 public class ClientOrderService {
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyyMMdd");
+    private static final DateTimeFormatter DISPLAY_DATE_FMT = DateTimeFormatter.ofPattern("dd.MM.yyyy");
     private static final Random RANDOM = new Random();
 
     private final ClientOrderRepository clientOrderRepository;
@@ -316,7 +317,7 @@ public class ClientOrderService {
             Optional<LocalDate> expiration = productExpirationService.getExpirationDate(product);
             if (expiration.isPresent() && expiration.get().isBefore(referenceDate)) {
                 result.add(product.getName() + " (" + product.getArticle()
-                        + ", срок до " + expiration.get() + ")");
+                        + ", срок до " + expiration.get().format(DISPLAY_DATE_FMT) + ")");
             }
         }
         return result;

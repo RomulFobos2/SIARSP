@@ -28,6 +28,7 @@ import java.util.Random;
 public class DeliveryTaskService {
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyyMMdd");
+    private static final DateTimeFormatter DISPLAY_DATE_FMT = DateTimeFormatter.ofPattern("dd.MM.yyyy");
     private static final Random RANDOM = new Random();
 
     private static final List<DeliveryTaskStatus> ACTIVE_STATUSES = List.of(
@@ -370,7 +371,7 @@ public class DeliveryTaskService {
             Optional<LocalDate> expiration = productExpirationService.getExpirationDate(product);
             if (expiration.isPresent() && expiration.get().isBefore(today)) {
                 result.add(product.getName() + " (" + product.getArticle()
-                        + ", срок до " + expiration.get() + ")");
+                        + ", срок до " + expiration.get().format(DISPLAY_DATE_FMT) + ")");
             }
         }
         return result;
