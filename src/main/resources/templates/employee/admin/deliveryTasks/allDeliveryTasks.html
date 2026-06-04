@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Задачи на доставку | СИАРСП</title>
+    <title>Задачи на поставку | СИАРСП</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="/css/bootstrap.min.css" rel="stylesheet">
@@ -16,7 +16,7 @@
             <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
             <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
-            <h1 class="page-title mb-4">Задачи на доставку</h1>
+            <h1 class="page-title mb-4">Задачи на поставку</h1>
 
             <!-- Фильтр и поиск -->
             <form method="get" action="/employee/admin/deliveryTasks/allDeliveryTasks" class="mb-4">

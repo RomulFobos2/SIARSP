@@ -19,7 +19,6 @@ public interface SupplyMapper {
     @Mapping(source = "product.name", target = "productName")
     @Mapping(source = "product.article", target = "productArticle")
     @Mapping(source = "supply", target = "totalPrice", qualifiedByName = "totalPrice")
-    @Mapping(source = "supply", target = "finalPricePerUnit", qualifiedByName = "finalPricePerUnit")
     @Mapping(target = "orderedQuantity", ignore = true)
     SupplyDTO toDTO(Supply supply);
 
@@ -28,10 +27,5 @@ public interface SupplyMapper {
     @Named("totalPrice")
     default BigDecimal getTotalPrice(Supply supply) {
         return supply.getTotalPrice();
-    }
-
-    @Named("finalPricePerUnit")
-    default BigDecimal getFinalPricePerUnit(Supply supply) {
-        return supply.getFinalPricePerUnit();
     }
 }

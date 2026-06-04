@@ -88,7 +88,6 @@ public class DeliveryController {
                                 @RequestParam List<Long> productIds,
                                 @RequestParam List<Integer> quantities,
                                 @RequestParam List<BigDecimal> purchasePrices,
-                                @RequestParam(required = false) List<Integer> markupPercents,
                                 @RequestParam(required = false) List<String> deficitReasons,
                                 RedirectAttributes redirectAttributes) {
         List<SupplyInputDTO> supplyInputs = new ArrayList<>();
@@ -97,8 +96,6 @@ public class DeliveryController {
             input.setProductId(productIds.get(i));
             input.setQuantity(quantities.get(i));
             input.setPurchasePrice(purchasePrices.get(i));
-            input.setMarkupPercent(markupPercents != null && i < markupPercents.size()
-                    ? markupPercents.get(i) : 0);
             input.setDeficitReason(deficitReasons != null && i < deficitReasons.size()
                     ? deficitReasons.get(i) : null);
             supplyInputs.add(input);

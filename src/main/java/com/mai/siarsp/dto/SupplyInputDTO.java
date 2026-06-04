@@ -21,5 +21,4 @@ public class SupplyInputDTO {
     private BigDecimal purchasePrice;
     private int deficitQuantity;
     private String deficitReason;
-    private int markupPercent;
 }
