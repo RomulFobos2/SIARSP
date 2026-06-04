@@ -18,6 +18,4 @@ public class SupplyDTO {
     private int deficitQuantity;
     private String deficitReason;
     private int orderedQuantity;
-    private int markupPercent;
-    private java.math.BigDecimal finalPricePerUnit;
 }

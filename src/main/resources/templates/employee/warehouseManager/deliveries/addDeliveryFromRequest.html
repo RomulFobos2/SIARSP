@@ -74,8 +74,6 @@
                         <th>Заказано</th>
                         <th>Принято</th>
                         <th>Цена (руб.)</th>
-                        <th>Наценка (%)</th>
-                        <th>Итоговая цена</th>
                         <th>Недостача</th>
                         <th>Причина недостачи</th>
                     </tr>
@@ -85,8 +83,6 @@
                         <!-- Hidden fields -->
                         <input type="hidden" name="productIds" th:value="${rp.getProduct().getId()}"/>
                         <input type="hidden" name="purchasePrices"
-                               th:value="${rp.getPurchasePrice() != null ? rp.getPurchasePrice() : 0}"/>
-                        <input type="hidden" th:id="'basePrice_' + ${stat.index}"
                                th:value="${rp.getPurchasePrice() != null ? rp.getPurchasePrice() : 0}"/>
 
                         <td th:text="${stat.index + 1}"></td>
@@ -110,17 +106,6 @@
                         </td>
                         <td>
                             <span th:text="${rp.getPurchasePrice() != null ? rp.getPurchasePrice() : '—'}"></span>
-                        </td>
-                        <td>
-                            <input type="number" name="markupPercents" class="form-control form-control-sm"
-                                   th:id="'markup_' + ${stat.index}"
-                                   value="0" min="0" max="999" style="width: 90px;"
-                                   th:oninput="'updatePrice(' + ${stat.index} + ')'"/>
-                        </td>
-                        <td>
-                            <span th:id="'finalPrice_' + ${stat.index}"
-                                  th:text="${rp.getPurchasePrice() != null ? rp.getPurchasePrice() : '—'}"></span>
-                            <span th:if="${rp.getPurchasePrice() != null}"> руб.</span>
                         </td>
                         <td>
                             <span th:id="'deficit_' + ${stat.index}" class="fw-bold">0</span>
@@ -151,13 +136,6 @@
 <div th:insert="~{blocks/footer :: footer}"></div>
 
 <script>
-    function updatePrice(index) {
-        var base = parseFloat(document.getElementById('basePrice_' + index).value) || 0;
-        var markup = parseFloat(document.getElementById('markup_' + index).value) || 0;
-        var final = base * (1 + markup / 100);
-        document.getElementById('finalPrice_' + index).textContent = final.toFixed(2);
-    }
-
     function updateDeficit(index) {
         var ordered = parseInt(document.getElementById('ordered_' + index).value) || 0;
         var actual = parseInt(document.getElementById('quantity_' + index).value) || 0;

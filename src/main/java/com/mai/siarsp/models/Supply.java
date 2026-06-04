@@ -40,13 +40,6 @@ public class Supply {
     @Column(length = 500)
     private String deficitReason;
 
-    /**
-     * Добавочная стоимость (наценка) в процентах.
-     * Итоговая цена за единицу = purchasePrice × (1 + markupPercent / 100).
-     */
-    @Column(nullable = false)
-    private int markupPercent = 0;
-
     @ToString.Exclude
     @ManyToOne
     @JoinColumn(nullable = false)
@@ -67,24 +60,7 @@ public class Supply {
 
     // ========== МЕТОДЫ ==========
 
-    /**
-     * Итоговая цена за единицу с учётом наценки.
-     * Формула: purchasePrice × (1 + markupPercent / 100)
-     */
-    @Transient
-    public BigDecimal getFinalPricePerUnit() {
-        if (markupPercent == 0) {
-            return purchasePrice;
-        }
-        BigDecimal multiplier = BigDecimal.ONE
-                .add(BigDecimal.valueOf(markupPercent).divide(BigDecimal.valueOf(100)));
-        return purchasePrice.multiply(multiplier).setScale(2, java.math.RoundingMode.HALF_UP);
-    }
-
-    /**
-     * Итоговая стоимость позиции с учётом наценки: итоговая цена × количество.
-     */
     public BigDecimal getTotalPrice() {
-        return getFinalPricePerUnit().multiply(BigDecimal.valueOf(quantity));
+        return purchasePrice.multiply(BigDecimal.valueOf(quantity));
     }
 }
