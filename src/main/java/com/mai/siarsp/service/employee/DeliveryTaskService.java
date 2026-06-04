@@ -5,6 +5,7 @@ import com.mai.siarsp.enumeration.*;
 import com.mai.siarsp.mapper.DeliveryTaskMapper;
 import com.mai.siarsp.models.*;
 import com.mai.siarsp.repo.*;
+import com.mai.siarsp.service.general.ProductExpirationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +14,7 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -26,6 +28,7 @@ import java.util.Random;
 public class DeliveryTaskService {
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyyMMdd");
+    private static final DateTimeFormatter DISPLAY_DATE_FMT = DateTimeFormatter.ofPattern("dd.MM.yyyy");
     private static final Random RANDOM = new Random();
 
     private static final List<DeliveryTaskStatus> ACTIVE_STATUSES = List.of(
@@ -44,6 +47,7 @@ public class DeliveryTaskService {
     private final AcceptanceActRepository acceptanceActRepository;
     private final ZoneProductRepository zoneProductRepository;
     private final NotificationService notificationService;
+    private final ProductExpirationService productExpirationService;
 
     public DeliveryTaskService(DeliveryTaskRepository deliveryTaskRepository,
                                ClientOrderRepository clientOrderRepository,
@@ -53,7 +57,8 @@ public class DeliveryTaskService {
                                TTNRepository ttnRepository,
                                AcceptanceActRepository acceptanceActRepository,
                                ZoneProductRepository zoneProductRepository,
-                               NotificationService notificationService) {
+                               NotificationService notificationService,
+                               ProductExpirationService productExpirationService) {
         this.deliveryTaskRepository = deliveryTaskRepository;
         this.clientOrderRepository = clientOrderRepository;
         this.vehicleRepository = vehicleRepository;
@@ -63,6 +68,7 @@ public class DeliveryTaskService {
         this.acceptanceActRepository = acceptanceActRepository;
         this.zoneProductRepository = zoneProductRepository;
         this.notificationService = notificationService;
+        this.productExpirationService = productExpirationService;
     }
 
     // ========== ЗАПРОСЫ ==========
@@ -292,6 +298,13 @@ public class DeliveryTaskService {
                 return false;
             }
 
+            List<String> expiredProducts = collectExpiredProducts(order);
+            if (!expiredProducts.isEmpty()) {
+                log.error("Погрузку по заказу №{} нельзя завершить — есть просроченные товары: {}",
+                        order.getOrderNumber(), expiredProducts);
+                return false;
+            }
+
             // Списание со склада: уменьшить stockQuantity, reservedQuantity и ZoneProduct
             for (OrderedProduct op : order.getOrderedProducts()) {
                 Product product = op.getProduct();
@@ -337,6 +350,31 @@ public class DeliveryTaskService {
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             return false;
         }
+    }
+
+    /**
+     * Возвращает названия товаров, просроченных на сегодняшнюю дату.
+     * Используется контроллером для UX-сообщения перед завершением погрузки и внутри completeLoading как защита.
+     */
+    @Transactional(readOnly = true)
+    public List<String> findExpiredProductsForTask(Long taskId) {
+        return deliveryTaskRepository.findById(taskId)
+                .map(task -> collectExpiredProducts(task.getClientOrder()))
+                .orElseGet(List::of);
+    }
+
+    private List<String> collectExpiredProducts(ClientOrder order) {
+        LocalDate today = LocalDate.now();
+        List<String> result = new ArrayList<>();
+        for (OrderedProduct op : order.getOrderedProducts()) {
+            Product product = op.getProduct();
+            Optional<LocalDate> expiration = productExpirationService.getExpirationDate(product);
+            if (expiration.isPresent() && expiration.get().isBefore(today)) {
+                result.add(product.getName() + " (" + product.getArticle()
+                        + ", срок до " + expiration.get().format(DISPLAY_DATE_FMT) + ")");
+            }
+        }
+        return result;
     }
 
     // ========== ОФОРМЛЕНИЕ ТТН (ACCOUNTER) ==========
