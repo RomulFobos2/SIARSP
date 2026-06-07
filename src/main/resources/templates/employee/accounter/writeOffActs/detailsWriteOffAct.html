@@ -17,6 +17,9 @@
         <div class="profile-actions">
             <a href="/employee/accounter/writeOffActs/allWriteOffActs"
                class="btn btn-secondary btn-profile">← Назад к актам</a>
+            <a th:href="'/employee/accounter/writeOffActs/downloadWriteOffAct/' + ${act.getId()}"
+               class="btn btn-primary btn-profile">
+                <i class="bi bi-download me-1"></i> Скачать акт (DOCX)</a>
         </div>
     </div>
 
