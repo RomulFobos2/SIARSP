@@ -5,6 +5,7 @@ import com.mai.siarsp.models.RequestForDelivery;
 import com.mai.siarsp.models.RequestedProduct;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface RequestedProductRepository extends JpaRepository<RequestedProduct, Long> {
@@ -14,4 +15,6 @@ public interface RequestedProductRepository extends JpaRepository<RequestedProdu
     Optional<RequestedProduct> findByRequestAndProduct(RequestForDelivery request, Product product);
 
     long countByProductId(Long productId);
+
+    List<RequestedProduct> findByProductIdOrderByRequest_RequestDateDesc(Long productId);
 }

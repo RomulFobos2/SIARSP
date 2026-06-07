@@ -130,11 +130,89 @@
             </div>
         </div>
 
+        <!-- Заказы товара (заявки поставщику) -->
+        <div class="mb-4" th:if="${productRequests != null and !productRequests.isEmpty()}">
+            <h6 class="form-section-title">Заказы товара</h6>
+
+            <div class="mb-2">
+                <label class="form-label fw-semibold mb-1 me-2">Закупочная цена:</label>
+                <select id="purchasePriceMode" class="form-select form-select-sm w-auto d-inline-block"
+                        onchange="togglePriceBlock('purchase', this.value)">
+                    <option value="last" selected>По последней поставке</option>
+                    <option value="avg">Средняя по всем поставкам</option>
+                </select>
+            </div>
+
+            <div id="purchase-last" class="alert alert-light border py-2 mb-3">
+                Последняя закупка:
+                <strong th:text="${purchaseSummary.lastPrice() != null ? #numbers.formatDecimal(purchaseSummary.lastPrice(), 1, 2) + ' руб.' : '—'}"></strong>
+                от <span th:text="${purchaseSummary.lastDate() != null ? #temporals.format(purchaseSummary.lastDate(), 'dd.MM.yyyy') : '—'}"></span>
+                у поставщика <em th:text="${purchaseSummary.lastSupplierName() != null ? purchaseSummary.lastSupplierName() : '—'}"></em>.
+            </div>
+
+            <div id="purchase-avg" class="alert alert-light border py-2 mb-3" style="display: none;">
+                Средняя закупочная цена за <span th:text="${purchaseSummary.sampleCount()}"></span> поставок:
+                <strong th:text="${purchaseSummary.avgPrice() != null ? #numbers.formatDecimal(purchaseSummary.avgPrice(), 1, 2) + ' руб.' : '—'}"></strong>.
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-sm table-striped" id="requestsTable">
+                    <thead>
+                    <tr>
+                        <th>№ заявки</th>
+                        <th>Дата</th>
+                        <th>Поставщик</th>
+                        <th>Кол-во</th>
+                        <th>Цена за ед.</th>
+                        <th>Сумма</th>
+                        <th>Статус</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="row : ${productRequests}" class="requests-row">
+                        <td th:text="${row.requestId()}"></td>
+                        <td th:text="${#temporals.format(row.requestDate(), 'dd.MM.yyyy')}"></td>
+                        <td th:text="${row.supplierName()}"></td>
+                        <td th:text="${row.quantity()}"></td>
+                        <td th:text="${row.purchasePrice()}"></td>
+                        <td th:text="${row.totalPrice()}"></td>
+                        <td th:text="${row.statusDisplayName()}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <nav>
+                <ul class="pagination pagination-sm justify-content-center" id="requestsPagination"></ul>
+            </nav>
+        </div>
+
         <!-- Заказы клиентов -->
         <div class="mb-4" th:if="${orderedProducts != null and !orderedProducts.isEmpty()}">
             <h6 class="form-section-title">Заказы клиентов</h6>
+
+            <div class="mb-2">
+                <label class="form-label fw-semibold mb-1 me-2">Цена продажи:</label>
+                <select id="salePriceMode" class="form-select form-select-sm w-auto d-inline-block"
+                        onchange="togglePriceBlock('sale', this.value)">
+                    <option value="last" selected>По последней поставке</option>
+                    <option value="avg">Средняя по всем поставкам</option>
+                </select>
+            </div>
+
+            <div id="sale-last" class="alert alert-light border py-2 mb-3">
+                Последняя продажа:
+                <strong th:text="${saleSummary.lastPrice() != null ? #numbers.formatDecimal(saleSummary.lastPrice(), 1, 2) + ' руб.' : '—'}"></strong>
+                от <span th:text="${saleSummary.lastDate() != null ? #temporals.format(saleSummary.lastDate(), 'dd.MM.yyyy') : '—'}"></span>
+                клиенту <em th:text="${saleSummary.lastClientName() != null ? saleSummary.lastClientName() : '—'}"></em>.
+            </div>
+
+            <div id="sale-avg" class="alert alert-light border py-2 mb-3" style="display: none;">
+                Средняя цена продажи за <span th:text="${saleSummary.sampleCount()}"></span> поставок:
+                <strong th:text="${saleSummary.avgPrice() != null ? #numbers.formatDecimal(saleSummary.avgPrice(), 1, 2) + ' руб.' : '—'}"></strong>.
+            </div>
+
             <div class="table-responsive">
-                <table class="table table-sm table-striped">
+                <table class="table table-sm table-striped" id="ordersTable">
                     <thead>
                     <tr>
                         <th>Номер заказа</th>
@@ -146,9 +224,9 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <tr th:each="op : ${orderedProducts}">
+                    <tr th:each="op : ${orderedProducts}" class="orders-row">
                         <td th:text="${op.getClientOrder().getOrderNumber()}"></td>
-                        <td th:text="${op.getClientOrder().getOrderDate().toLocalDate()}"></td>
+                        <td th:text="${#temporals.format(op.getClientOrder().getOrderDate(), 'dd.MM.yyyy')}"></td>
                         <td th:text="${op.getQuantity()}"></td>
                         <td th:text="${op.getPrice()}"></td>
                         <td th:text="${op.getTotalPrice()}"></td>
@@ -157,6 +235,9 @@
                     </tbody>
                 </table>
             </div>
+            <nav>
+                <ul class="pagination pagination-sm justify-content-center" id="ordersPagination"></ul>
+            </nav>
         </div>
 
         <!-- Акты списания -->
@@ -211,6 +292,51 @@
             window.location.href = '/employee/warehouseManager/products/deleteProduct/' + id;
         }
     }
+</script>
+<script>
+    (function() {
+        var PAGE_SIZE = 5;
+
+        window.togglePriceBlock = function(prefix, mode) {
+            var last = document.getElementById(prefix + '-last');
+            var avg  = document.getElementById(prefix + '-avg');
+            if (last) last.style.display = (mode === 'last') ? '' : 'none';
+            if (avg)  avg.style.display  = (mode === 'avg')  ? '' : 'none';
+        };
+
+        function paginateTable(rowClass, paginationId) {
+            var rows = Array.prototype.slice.call(document.getElementsByClassName(rowClass));
+            var nav = document.getElementById(paginationId);
+            if (!nav || rows.length <= PAGE_SIZE) return;
+            var pages = Math.ceil(rows.length / PAGE_SIZE);
+            var current = 0;
+            function render() {
+                rows.forEach(function(r, i) {
+                    r.style.display = (i >= current * PAGE_SIZE && i < (current + 1) * PAGE_SIZE) ? '' : 'none';
+                });
+                nav.innerHTML = '';
+                for (var p = 0; p < pages; p++) {
+                    var li = document.createElement('li');
+                    li.className = 'page-item' + (p === current ? ' active' : '');
+                    var a = document.createElement('a');
+                    a.className = 'page-link';
+                    a.href = '#';
+                    a.textContent = (p + 1);
+                    (function(pageIdx) {
+                        a.onclick = function(e) { e.preventDefault(); current = pageIdx; render(); };
+                    })(p);
+                    li.appendChild(a);
+                    nav.appendChild(li);
+                }
+            }
+            render();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            paginateTable('requests-row', 'requestsPagination');
+            paginateTable('orders-row',   'ordersPagination');
+        });
+    })();
 </script>
 </body>
 </html>

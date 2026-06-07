@@ -10,6 +10,7 @@ import com.mai.siarsp.repo.OrderedProductRepository;
 import com.mai.siarsp.repo.SupplyRepository;
 import com.mai.siarsp.repo.WriteOffActRepository;
 import com.mai.siarsp.service.employee.manager.ProductService;
+import com.mai.siarsp.service.general.ProductPriceAggregateService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -33,15 +34,18 @@ public class ProductController {
     private final SupplyRepository supplyRepository;
     private final OrderedProductRepository orderedProductRepository;
     private final WriteOffActRepository writeOffActRepository;
+    private final ProductPriceAggregateService priceAggregateService;
 
     public ProductController(ProductService productService,
                              SupplyRepository supplyRepository,
                              OrderedProductRepository orderedProductRepository,
-                             WriteOffActRepository writeOffActRepository) {
+                             WriteOffActRepository writeOffActRepository,
+                             ProductPriceAggregateService priceAggregateService) {
         this.productService = productService;
         this.supplyRepository = supplyRepository;
         this.orderedProductRepository = orderedProductRepository;
         this.writeOffActRepository = writeOffActRepository;
+        this.priceAggregateService = priceAggregateService;
     }
 
     @GetMapping("/employee/manager/products/check-article")
@@ -113,6 +117,9 @@ public class ProductController {
         model.addAttribute("supplies", supplyRepository.findByProductIdOrderByDelivery_DeliveryDateDesc(id));
         model.addAttribute("orderedProducts", orderedProductRepository.findByProductIdOrderByClientOrder_OrderDateDesc(id));
         model.addAttribute("writeOffActs", writeOffActRepository.findByProductIdOrderByActDateDesc(id));
+        model.addAttribute("purchaseSummary", priceAggregateService.getPurchaseSummary(id));
+        model.addAttribute("saleSummary", priceAggregateService.getSaleSummary(id));
+        model.addAttribute("productRequests", priceAggregateService.getProductRequests(id));
         return "employee/manager/products/detailsProduct";
     }
 
