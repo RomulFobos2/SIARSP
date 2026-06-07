@@ -1,10 +1,8 @@
 package com.mai.siarsp.service.general;
 
 import com.mai.siarsp.models.OrderedProduct;
-import com.mai.siarsp.models.RequestedProduct;
 import com.mai.siarsp.models.Supply;
 import com.mai.siarsp.repo.OrderedProductRepository;
-import com.mai.siarsp.repo.RequestedProductRepository;
 import com.mai.siarsp.repo.SupplyRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,14 +24,11 @@ public class ProductPriceAggregateService {
 
     private final SupplyRepository supplyRepository;
     private final OrderedProductRepository orderedProductRepository;
-    private final RequestedProductRepository requestedProductRepository;
 
     public ProductPriceAggregateService(SupplyRepository supplyRepository,
-                                        OrderedProductRepository orderedProductRepository,
-                                        RequestedProductRepository requestedProductRepository) {
+                                        OrderedProductRepository orderedProductRepository) {
         this.supplyRepository = supplyRepository;
         this.orderedProductRepository = orderedProductRepository;
-        this.requestedProductRepository = requestedProductRepository;
     }
 
     // ========== DTO ==========
@@ -44,9 +39,9 @@ public class ProductPriceAggregateService {
     public record SalePriceSummary(BigDecimal lastPrice, LocalDate lastDate, String lastClientName,
                                    BigDecimal avgPrice, int sampleCount) {}
 
-    public record ProductRequestRow(Long requestId, LocalDate requestDate, String supplierName,
-                                    int quantity, BigDecimal purchasePrice, BigDecimal totalPrice,
-                                    String statusDisplayName) {}
+    public record ProductSupplyRow(LocalDate deliveryDate, String supplierName,
+                                   int quantity, String unit,
+                                   BigDecimal purchasePrice, BigDecimal totalPrice) {}
 
     // ========== ЗАКУПОЧНАЯ ЦЕНА ==========
 
@@ -86,26 +81,24 @@ public class ProductPriceAggregateService {
         return new SalePriceSummary(lastPrice, lastDate, client, avg, sales.size());
     }
 
-    // ========== ЗАКАЗЫ ТОВАРА ==========
+    // ========== ЗАКАЗЫ ТОВАРА (источник: фактические партии Supply) ==========
 
     @Transactional(readOnly = true)
-    public List<ProductRequestRow> getProductRequests(Long productId) {
-        List<RequestedProduct> items = requestedProductRepository
-                .findByProductIdOrderByRequest_RequestDateDesc(productId);
-        List<ProductRequestRow> rows = new ArrayList<>(items.size());
-        for (RequestedProduct rp : items) {
-            var req = rp.getRequest();
-            if (req == null) continue;
-            String supplierName = req.getSupplier() != null ? req.getSupplier().getName() : "—";
-            String statusName = req.getStatus() != null ? req.getStatus().getDisplayName() : "—";
-            rows.add(new ProductRequestRow(
-                    req.getId(),
-                    req.getRequestDate(),
-                    supplierName,
-                    rp.getQuantity(),
-                    rp.getPurchasePrice(),
-                    rp.getTotalPrice(),
-                    statusName
+    public List<ProductSupplyRow> getProductSupplies(Long productId) {
+        List<Supply> supplies = supplyRepository
+                .findByProductIdOrderByDelivery_DeliveryDateDesc(productId);
+        List<ProductSupplyRow> rows = new ArrayList<>(supplies.size());
+        for (Supply s : supplies) {
+            LocalDate date = s.getDelivery() != null ? s.getDelivery().getDeliveryDate() : null;
+            String supplier = (s.getDelivery() != null && s.getDelivery().getSupplier() != null)
+                    ? s.getDelivery().getSupplier().getName() : "—";
+            rows.add(new ProductSupplyRow(
+                    date,
+                    supplier,
+                    s.getQuantity(),
+                    s.getUnit(),
+                    s.getPurchasePrice(),
+                    s.getTotalPrice()
             ));
         }
         return rows;

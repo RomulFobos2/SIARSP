@@ -99,8 +99,8 @@
             </div>
         </div>
 
-        <!-- Заказы товара (заявки поставщику) -->
-        <div class="mb-4" th:if="${productRequests != null and !productRequests.isEmpty()}">
+        <!-- Заказы товара (фактические партии Supply) -->
+        <div class="mb-4" th:if="${productSupplies != null and !productSupplies.isEmpty()}">
             <h6 class="form-section-title">Заказы товара</h6>
 
             <div class="mb-2">
@@ -125,33 +125,31 @@
             </div>
 
             <div class="table-responsive">
-                <table class="table table-sm table-striped" id="requestsTable">
+                <table class="table table-sm table-striped" id="suppliesTable">
                     <thead>
                     <tr>
-                        <th>№ заявки</th>
-                        <th>Дата</th>
+                        <th>Дата поставки</th>
                         <th>Поставщик</th>
                         <th>Кол-во</th>
+                        <th>Ед. изм.</th>
                         <th>Цена за ед.</th>
                         <th>Сумма</th>
-                        <th>Статус</th>
                     </tr>
                     </thead>
                     <tbody>
-                    <tr th:each="row : ${productRequests}" class="requests-row">
-                        <td th:text="${row.requestId()}"></td>
-                        <td th:text="${#temporals.format(row.requestDate(), 'dd.MM.yyyy')}"></td>
+                    <tr th:each="row : ${productSupplies}" class="supplies-row">
+                        <td th:text="${row.deliveryDate() != null ? #temporals.format(row.deliveryDate(), 'dd.MM.yyyy') : '—'}"></td>
                         <td th:text="${row.supplierName()}"></td>
                         <td th:text="${row.quantity()}"></td>
+                        <td th:text="${row.unit() != null ? row.unit() : '—'}"></td>
                         <td th:text="${row.purchasePrice()}"></td>
                         <td th:text="${row.totalPrice()}"></td>
-                        <td th:text="${row.statusDisplayName()}"></td>
                     </tr>
                     </tbody>
                 </table>
             </div>
             <nav>
-                <ul class="pagination pagination-sm justify-content-center" id="requestsPagination"></ul>
+                <ul class="pagination pagination-sm justify-content-center" id="suppliesPagination"></ul>
             </nav>
         </div>
 
@@ -284,7 +282,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            paginateTable('requests-row', 'requestsPagination');
+            paginateTable('supplies-row', 'suppliesPagination');
             paginateTable('orders-row',   'ordersPagination');
         });
     })();

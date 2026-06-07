@@ -70,7 +70,7 @@ public class ProductViewController {
         model.addAttribute("writeOffActs", writeOffActRepository.findByProductIdOrderByActDateDesc(id));
         model.addAttribute("purchaseSummary", priceAggregateService.getPurchaseSummary(id));
         model.addAttribute("saleSummary", priceAggregateService.getSaleSummary(id));
-        model.addAttribute("productRequests", priceAggregateService.getProductRequests(id));
+        model.addAttribute("productSupplies", priceAggregateService.getProductSupplies(id));
         return "employee/accounter/products/detailsProduct";
     }
 }
