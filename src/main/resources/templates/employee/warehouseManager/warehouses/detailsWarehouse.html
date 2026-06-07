@@ -45,8 +45,8 @@
         </div>
 
         <!-- Stat-карточки -->
-        <div class="row g-3 mb-4">
-            <div class="col-6 col-md-3">
+        <div class="row row-cols-2 row-cols-md-5 g-3 mb-4">
+            <div class="col">
                 <div class="card text-center border-0 bg-light">
                     <div class="card-body py-3">
                         <div class="h4 mb-1 fw-bold text-primary" th:text="${whStat.shelfCount()}"></div>
@@ -54,7 +54,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-6 col-md-3">
+            <div class="col">
                 <div class="card text-center border-0 bg-light">
                     <div class="card-body py-3">
                         <div class="h4 mb-1 fw-bold text-primary" th:text="${whStat.zoneCount()}"></div>
@@ -62,7 +62,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-6 col-md-3">
+            <div class="col">
                 <div class="card text-center border-0 bg-light">
                     <div class="card-body py-3">
                         <div class="h5 mb-1 fw-bold text-primary"
@@ -71,7 +71,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-6 col-md-3">
+            <div class="col">
                 <div class="card text-center border-0 bg-light">
                     <div class="card-body py-3">
                         <div class="h4 mb-1 fw-bold"
@@ -81,7 +81,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-6 col-md-3">
+            <div class="col">
                 <div class="card text-center border-0 bg-light">
                     <div class="card-body py-3">
                         <div class="h5 mb-1 fw-bold text-primary"
@@ -319,32 +319,32 @@
         chartColors.push('#e9ecef');
 
         document.getElementById('zoneModalBody').innerHTML =
-            '<div class="row g-2 mb-3">' +
-                '<div class="col-6 col-md-3">' +
+            '<div class="row row-cols-2 row-cols-md-5 g-2 mb-3">' +
+                '<div class="col">' +
                     '<div class="card text-center border-0 bg-light h-100"><div class="card-body py-2">' +
                         '<div class="fs-5 fw-bold text-' + occColor + '">' + occ + '%</div>' +
                         '<small class="text-muted">Заполненность</small>' +
                     '</div></div>' +
                 '</div>' +
-                '<div class="col-6 col-md-3">' +
+                '<div class="col">' +
                     '<div class="card text-center border-0 bg-light h-100"><div class="card-body py-2">' +
                         '<div class="fs-5 fw-bold">' + zone.products.length + '</div>' +
                         '<small class="text-muted">Наименований</small>' +
                     '</div></div>' +
                 '</div>' +
-                '<div class="col-6 col-md-3">' +
+                '<div class="col">' +
                     '<div class="card text-center border-0 bg-light h-100"><div class="card-body py-2">' +
                         '<div class="fs-5 fw-bold">' + zone.usedVolume.toFixed(4) + '</div>' +
                         '<small class="text-muted">Занято (м\u00b3)</small>' +
                     '</div></div>' +
                 '</div>' +
-                '<div class="col-6 col-md-3">' +
+                '<div class="col">' +
                     '<div class="card text-center border-0 bg-light h-100"><div class="card-body py-2">' +
                         '<div class="fs-5 fw-bold text-success">' + freeVol.toFixed(4) + '</div>' +
                         '<small class="text-muted">Свободно (м\u00b3)</small>' +
                     '</div></div>' +
                 '</div>' +
-                '<div class="col-6 col-md-3">' +
+                '<div class="col">' +
                     '<div class="card text-center border-0 bg-light h-100"><div class="card-body py-2">' +
                         '<div class="fs-5 fw-bold text-primary">' + (zone.totalCost != null ? Number(zone.totalCost).toFixed(2) + ' ₽' : '—') + '</div>' +
                         '<small class="text-muted">Стоимость</small>' +
