@@ -10,7 +10,13 @@ import com.mai.siarsp.models.ZoneProduct;
 import com.mai.siarsp.repo.ProductRepository;
 import com.mai.siarsp.repo.ZoneProductRepository;
 import com.mai.siarsp.service.employee.WriteOffActService;
+import com.mai.siarsp.service.general.ReportDocumentService;
+import com.mai.siarsp.service.general.WriteOffActDocumentService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +24,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -110,5 +118,21 @@ public class WriteOffActController {
         }
         model.addAttribute("act", optAct.get());
         return "employee/warehouseManager/writeOffActs/detailsWriteOffAct";
+    }
+
+    @Transactional(readOnly = true)
+    @GetMapping("/downloadWriteOffAct/{id}")
+    public ResponseEntity<byte[]> downloadWriteOffAct(@PathVariable Long id) throws IOException {
+        Optional<WriteOffAct> optAct = writeOffActService.getActById(id);
+        if (optAct.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        ReportDocumentService.ReportFile file = WriteOffActDocumentService.generateDocument(optAct.get());
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
+        headers.setContentDisposition(ContentDisposition.attachment()
+                .filename(file.fileName(), StandardCharsets.UTF_8).build());
+        return ResponseEntity.ok().headers(headers).body(file.content());
     }
 }
