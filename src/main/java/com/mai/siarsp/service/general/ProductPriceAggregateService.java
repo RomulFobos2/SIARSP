@@ -1,5 +1,7 @@
 package com.mai.siarsp.service.general;
 
+import com.mai.siarsp.enumeration.ClientOrderStatus;
+import com.mai.siarsp.models.ClientOrder;
 import com.mai.siarsp.models.OrderedProduct;
 import com.mai.siarsp.models.Supply;
 import com.mai.siarsp.repo.OrderedProductRepository;
@@ -61,12 +63,11 @@ public class ProductPriceAggregateService {
         return new PurchasePriceSummary(lastPrice, lastDate, supplier, avg, supplies.size());
     }
 
-    // ========== ПРОДАЖНАЯ ЦЕНА ==========
+    // ========== ПРОДАЖНАЯ ЦЕНА (только доставленные заказы) ==========
 
     @Transactional(readOnly = true)
     public SalePriceSummary getSaleSummary(Long productId) {
-        List<OrderedProduct> sales = orderedProductRepository
-                .findByProductIdOrderByClientOrder_OrderDateDesc(productId);
+        List<OrderedProduct> sales = getDeliveredOrders(productId);
         if (sales.isEmpty()) {
             return new SalePriceSummary(null, null, null, null, 0);
         }
@@ -79,6 +80,21 @@ public class ProductPriceAggregateService {
 
         BigDecimal avg = averagePrice(sales.stream().map(OrderedProduct::getPrice).toList());
         return new SalePriceSummary(lastPrice, lastDate, client, avg, sales.size());
+    }
+
+    /**
+     * Доставленные клиенту заказы по товару, новые первыми.
+     * Используется как для аналитики цены, так и для таблицы «Заказы клиентов».
+     */
+    @Transactional(readOnly = true)
+    public List<OrderedProduct> getDeliveredOrders(Long productId) {
+        return orderedProductRepository.findByProductIdOrderByClientOrder_OrderDateDesc(productId)
+                .stream()
+                .filter(op -> {
+                    ClientOrder order = op.getClientOrder();
+                    return order != null && order.getStatus() == ClientOrderStatus.DELIVERED;
+                })
+                .toList();
     }
 
     // ========== ЗАКАЗЫ ТОВАРА (источник: фактические партии Supply) ==========

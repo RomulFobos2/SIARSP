@@ -114,7 +114,7 @@ public class ProductController {
         Product product = productService.getProductRepository().findById(id).get();
         ProductDTO productDTO = ProductMapper.INSTANCE.toDTO(product);
         model.addAttribute("productDTO", productDTO);
-        model.addAttribute("orderedProducts", orderedProductRepository.findByProductIdOrderByClientOrder_OrderDateDesc(id));
+        model.addAttribute("orderedProducts", priceAggregateService.getDeliveredOrders(id));
         model.addAttribute("writeOffActs", writeOffActRepository.findByProductIdOrderByActDateDesc(id));
         model.addAttribute("purchaseSummary", priceAggregateService.getPurchaseSummary(id));
         model.addAttribute("saleSummary", priceAggregateService.getSaleSummary(id));

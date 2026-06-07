@@ -163,8 +163,8 @@
                 <label class="form-label fw-semibold mb-1 me-2">Цена продажи:</label>
                 <select id="salePriceMode" class="form-select form-select-sm w-auto d-inline-block"
                         onchange="togglePriceBlock('sale', this.value)">
-                    <option value="last" selected>По последней поставке</option>
-                    <option value="avg">Средняя по всем поставкам</option>
+                    <option value="last" selected>По последней продаже</option>
+                    <option value="avg">Средняя по всем продажам</option>
                 </select>
             </div>
 
@@ -176,7 +176,7 @@
             </div>
 
             <div id="sale-avg" class="alert alert-light border py-2 mb-3" style="display: none;">
-                Средняя цена продажи за <span th:text="${saleSummary.sampleCount()}"></span> поставок:
+                Средняя цена продажи за <span th:text="${saleSummary.sampleCount()}"></span> продаж:
                 <strong th:text="${saleSummary.avgPrice() != null ? #numbers.formatDecimal(saleSummary.avgPrice(), 1, 2) + ' руб.' : '—'}"></strong>.
             </div>
 
