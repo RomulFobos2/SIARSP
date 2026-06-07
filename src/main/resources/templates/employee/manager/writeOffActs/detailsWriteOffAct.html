@@ -69,6 +69,10 @@
                             <span class="fw-bold text-danger" th:text="${act.getQuantity()} + ' шт.'"></span>
                         </div>
                         <div class="mb-2">
+                            <strong>Стоимость списанного товара:</strong>
+                            <span th:text="${act.getTotalCost() != null ? #numbers.formatDecimal(act.getTotalCost(), 1, 2) + ' руб.' : '—'}"></span>
+                        </div>
+                        <div class="mb-2">
                             <strong>Текущий остаток на складе:</strong>
                             <span th:text="${act.getProduct().getStockQuantity()} + ' шт.'"></span>
                         </div>

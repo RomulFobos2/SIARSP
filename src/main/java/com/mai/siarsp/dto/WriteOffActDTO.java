@@ -4,6 +4,7 @@ import com.mai.siarsp.enumeration.WriteOffActStatus;
 import com.mai.siarsp.enumeration.WriteOffReason;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Data
@@ -15,6 +16,7 @@ public class WriteOffActDTO {
     private WriteOffActStatus status;
     private String statusDisplayName;
     private int quantity;
+    private BigDecimal totalCost;
     private String comment;
     private String directorComment;
     private Long productId;
