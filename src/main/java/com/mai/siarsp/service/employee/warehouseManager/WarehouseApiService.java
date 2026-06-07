@@ -4,11 +4,13 @@ import com.mai.siarsp.dto.*;
 import com.mai.siarsp.enumeration.BoxOrientation;
 import com.mai.siarsp.models.*;
 import com.mai.siarsp.repo.*;
+import com.mai.siarsp.service.general.ProductCostService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,6 +28,7 @@ public class WarehouseApiService {
     private final WarehouseRepository warehouseRepository;
     private final ShelfRepository shelfRepository;
     private final ZoneProductRepository zoneProductRepository;
+    private final ProductCostService productCostService;
 
     public WarehouseApiService(
             @Qualifier("storagePlacementService") StoragePlacementService placementService,
@@ -33,13 +36,15 @@ public class WarehouseApiService {
             StorageZoneRepository storageZoneRepository,
             WarehouseRepository warehouseRepository,
             ShelfRepository shelfRepository,
-            ZoneProductRepository zoneProductRepository) {
+            ZoneProductRepository zoneProductRepository,
+            ProductCostService productCostService) {
         this.placementService = placementService;
         this.productRepository = productRepository;
         this.storageZoneRepository = storageZoneRepository;
         this.warehouseRepository = warehouseRepository;
         this.shelfRepository = shelfRepository;
         this.zoneProductRepository = zoneProductRepository;
+        this.productCostService = productCostService;
     }
 
     @Transactional
@@ -159,6 +164,10 @@ public class WarehouseApiService {
             double usedVolume = zone.getProducts().stream()
                     .mapToDouble(ZoneProduct::getTotalVolume)
                     .sum();
+            BigDecimal totalCost = zone.getProducts().stream()
+                    .map(zp -> productCostService.calculateStockCost(zp.getProduct().getId(), zp.getQuantity()))
+                    .filter(java.util.Objects::nonNull)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
             List<ZoneInfo.ZoneProductShortInfo> products = zone.getProducts().stream()
                     .map(zp -> new ZoneInfo.ZoneProductShortInfo(
                             zp.getProduct().getId(),
@@ -180,6 +189,7 @@ public class WarehouseApiService {
                     zone.getCapacityVolume(),
                     usedVolume,
                     zone.getOccupancyPercentage(),
+                    totalCost,
                     products
             );
         });

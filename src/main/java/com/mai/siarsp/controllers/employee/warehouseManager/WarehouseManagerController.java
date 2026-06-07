@@ -7,6 +7,7 @@ import com.mai.siarsp.models.Warehouse;
 import com.mai.siarsp.models.ZoneProduct;
 import com.mai.siarsp.repo.WarehouseRepository;
 import com.mai.siarsp.service.employee.warehouseManager.WarehouseCreationService;
+import com.mai.siarsp.service.general.ProductCostService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Controller;
@@ -19,10 +20,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -36,12 +39,15 @@ public class WarehouseManagerController {
 
     private final WarehouseCreationService creationService;
     private final WarehouseRepository warehouseRepository;
+    private final ProductCostService productCostService;
 
     public WarehouseManagerController(
             @Qualifier("warehouseCreationService") WarehouseCreationService creationService,
-            WarehouseRepository warehouseRepository) {
+            WarehouseRepository warehouseRepository,
+            ProductCostService productCostService) {
         this.creationService = creationService;
         this.warehouseRepository = warehouseRepository;
+        this.productCostService = productCostService;
     }
 
     // ========== СПИСОК СКЛАДОВ ==========
@@ -234,7 +240,13 @@ public class WarehouseManagerController {
                 .mapToDouble(ZoneProduct::getTotalVolume)
                 .sum();
         double occupancy = totalCapacity > 0 ? (usedVolume / totalCapacity) * 100.0 : 0.0;
-        return new WarehouseStat(wh, shelfCount, zoneCount, totalCapacity, usedVolume, occupancy);
+        BigDecimal totalCost = wh.getShelves().stream()
+                .flatMap(s -> s.getStorageZones().stream())
+                .flatMap(z -> z.getProducts().stream())
+                .map(zp -> productCostService.calculateStockCost(zp.getProduct().getId(), zp.getQuantity()))
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return new WarehouseStat(wh, shelfCount, zoneCount, totalCapacity, usedVolume, occupancy, totalCost);
     }
 
     private ShelfStat buildShelfStat(Shelf shelf) {
@@ -261,7 +273,8 @@ public class WarehouseManagerController {
             int zoneCount,
             double totalCapacity,
             double usedVolume,
-            double occupancyPercent
+            double occupancyPercent,
+            BigDecimal totalCost
     ) {
     }
 

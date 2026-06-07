@@ -1,5 +1,6 @@
 package com.mai.siarsp.dto;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -17,11 +18,13 @@ public class ZoneInfo {
     private double capacityVolume;
     private double usedVolume;
     private double occupancyPercent;
+    private BigDecimal totalCost;
     private List<ZoneProductShortInfo> products;
 
     public ZoneInfo(Long id, String label, String shelfCode, String warehouseName,
                     double length, double width, double height,
                     double capacityVolume, double usedVolume, double occupancyPercent,
+                    BigDecimal totalCost,
                     List<ZoneProductShortInfo> products) {
         this.id = id;
         this.label = label;
@@ -33,6 +36,7 @@ public class ZoneInfo {
         this.capacityVolume = capacityVolume;
         this.usedVolume = usedVolume;
         this.occupancyPercent = occupancyPercent;
+        this.totalCost = totalCost;
         this.products = products;
     }
 
@@ -46,6 +50,7 @@ public class ZoneInfo {
     public double getCapacityVolume() { return capacityVolume; }
     public double getUsedVolume() { return usedVolume; }
     public double getOccupancyPercent() { return occupancyPercent; }
+    public BigDecimal getTotalCost() { return totalCost; }
     public List<ZoneProductShortInfo> getProducts() { return products; }
 
     /**
