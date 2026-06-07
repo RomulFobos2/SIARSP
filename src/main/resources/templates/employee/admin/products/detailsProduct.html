@@ -99,35 +99,6 @@
             </div>
         </div>
 
-        <!-- Поставки -->
-        <div class="mb-4" th:if="${supplies != null and !supplies.isEmpty()}">
-            <h6 class="form-section-title">Поставки</h6>
-            <div class="table-responsive">
-                <table class="table table-sm table-striped">
-                    <thead>
-                    <tr>
-                        <th>Дата поставки</th>
-                        <th>Поставщик</th>
-                        <th>Кол-во</th>
-                        <th>Ед. изм.</th>
-                        <th>Цена за ед.</th>
-                        <th>Сумма</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr th:each="s : ${supplies}">
-                        <td th:text="${s.getDelivery().getDeliveryDate()}"></td>
-                        <td th:text="${s.getDelivery().getSupplier().getName()}"></td>
-                        <td th:text="${s.getQuantity()}"></td>
-                        <td th:text="${s.getUnit()}"></td>
-                        <td th:text="${s.getPurchasePrice()}"></td>
-                        <td th:text="${s.getTotalPrice()}"></td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
         <!-- Заказы товара (заявки поставщику) -->
         <div class="mb-4" th:if="${productRequests != null and !productRequests.isEmpty()}">
             <h6 class="form-section-title">Заказы товара</h6>
