@@ -15,6 +15,7 @@ import com.mai.siarsp.repo.WarehouseEquipmentRepository;
 import com.mai.siarsp.repo.WriteOffActRepository;
 import com.mai.siarsp.repo.ZoneProductRepository;
 import com.mai.siarsp.service.employee.NotificationService;
+import com.mai.siarsp.service.employee.WriteOffActService;
 import com.mai.siarsp.service.general.ProductExpirationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationRunner;
@@ -44,6 +45,7 @@ public class ScheduleTask {
     private final EmployeeRepository employeeRepository;
     private final NotificationService notificationService;
     private final ProductExpirationService productExpirationService;
+    private final WriteOffActService writeOffActService;
 
     public ScheduleTask(WarehouseEquipmentRepository warehouseEquipmentRepository,
                         ProductRepository productRepository,
@@ -51,7 +53,8 @@ public class ScheduleTask {
                         WriteOffActRepository writeOffActRepository,
                         EmployeeRepository employeeRepository,
                         NotificationService notificationService,
-                        ProductExpirationService productExpirationService) {
+                        ProductExpirationService productExpirationService,
+                        WriteOffActService writeOffActService) {
         this.warehouseEquipmentRepository = warehouseEquipmentRepository;
         this.productRepository = productRepository;
         this.zoneProductRepository = zoneProductRepository;
@@ -59,6 +62,7 @@ public class ScheduleTask {
         this.employeeRepository = employeeRepository;
         this.notificationService = notificationService;
         this.productExpirationService = productExpirationService;
+        this.writeOffActService = writeOffActService;
     }
 
     @Bean
@@ -221,6 +225,7 @@ public class ScheduleTask {
         act.setComment("Автоматическое списание просроченного товара. Срок годности истёк "
                 + expirationDate.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) + ".");
         warehouseOpt.ifPresent(act::setWarehouse);
+        act.setTotalCost(writeOffActService.calculateWriteOffCost(product.getId(), product.getStockQuantity()));
 
         writeOffActRepository.save(act);
 

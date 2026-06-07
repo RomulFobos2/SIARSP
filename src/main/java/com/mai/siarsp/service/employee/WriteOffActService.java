@@ -9,7 +9,9 @@ import com.mai.siarsp.models.Product;
 import com.mai.siarsp.models.Warehouse;
 import com.mai.siarsp.models.WriteOffAct;
 import com.mai.siarsp.models.ZoneProduct;
+import com.mai.siarsp.models.Supply;
 import com.mai.siarsp.repo.ProductRepository;
+import com.mai.siarsp.repo.SupplyRepository;
 import com.mai.siarsp.repo.WarehouseRepository;
 import com.mai.siarsp.repo.WriteOffActRepository;
 import com.mai.siarsp.repo.ZoneProductRepository;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -40,17 +43,34 @@ public class WriteOffActService {
     private final ZoneProductRepository zoneProductRepository;
     private final WarehouseRepository warehouseRepository;
     private final NotificationService notificationService;
+    private final SupplyRepository supplyRepository;
 
     public WriteOffActService(WriteOffActRepository writeOffActRepository,
                               ProductRepository productRepository,
                               ZoneProductRepository zoneProductRepository,
                               WarehouseRepository warehouseRepository,
-                              NotificationService notificationService) {
+                              NotificationService notificationService,
+                              SupplyRepository supplyRepository) {
         this.writeOffActRepository = writeOffActRepository;
         this.productRepository = productRepository;
         this.zoneProductRepository = zoneProductRepository;
         this.warehouseRepository = warehouseRepository;
         this.notificationService = notificationService;
+        this.supplyRepository = supplyRepository;
+    }
+
+    /**
+     * Стоимость списанного товара = количество × последняя закупочная цена из Supply.
+     * Возвращает null, если у товара нет ни одной закупки или цена не задана.
+     * Snapshot фиксируется при создании акта и не пересчитывается потом.
+     */
+    public BigDecimal calculateWriteOffCost(Long productId, int quantity) {
+        if (quantity <= 0) return null;
+        List<Supply> supplies = supplyRepository.findByProductIdOrderByDelivery_DeliveryDateDesc(productId);
+        if (supplies.isEmpty()) return null;
+        BigDecimal lastPrice = supplies.get(0).getPurchasePrice();
+        if (lastPrice == null) return null;
+        return lastPrice.multiply(BigDecimal.valueOf(quantity));
     }
 
     @Transactional(readOnly = true)
@@ -114,6 +134,7 @@ public class WriteOffActService {
             act.setStatus(WriteOffActStatus.PENDING_DIRECTOR);
             act.setComment(comment);
             act.setWarehouse(warehouse);
+            act.setTotalCost(calculateWriteOffCost(productId, quantity));
 
             writeOffActRepository.save(act);
 

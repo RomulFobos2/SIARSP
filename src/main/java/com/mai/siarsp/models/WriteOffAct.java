@@ -8,6 +8,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
@@ -48,6 +49,14 @@ public class WriteOffAct {
 
     @Column(length = 500)
     private String directorComment;
+
+    /**
+     * Стоимость списанного товара на момент создания акта = quantity × последняя закупочная цена.
+     * Хранится как snapshot для аудита: будущие закупки не меняют историю.
+     * null — если у товара нет ни одной закупки.
+     */
+    @Column(precision = 12, scale = 2)
+    private BigDecimal totalCost;
 
     @ToString.Exclude
     @ManyToOne
