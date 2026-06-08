@@ -2,6 +2,8 @@ package com.mai.siarsp.controllers.employee.admin;
 
 import java.nio.charset.StandardCharsets;
 import com.mai.siarsp.dto.ClientOrderDTO;
+import com.mai.siarsp.dto.ApiResponse;
+import com.mai.siarsp.dto.CommercialOfferImportResult;
 import com.mai.siarsp.enumeration.ClientOrderStatus;
 import com.mai.siarsp.mapper.ClientOrderMapper;
 import com.mai.siarsp.models.*;
@@ -13,6 +15,7 @@ import com.mai.siarsp.repo.RequestForDeliveryRepository;
 import com.mai.siarsp.service.employee.ClientOrderService;
 import com.mai.siarsp.service.employee.DeliveryTaskService;
 import com.mai.siarsp.service.general.AcceptanceActDocumentService;
+import com.mai.siarsp.service.general.CommercialOfferImportService;
 import com.mai.siarsp.service.general.ContractService;
 import com.mai.siarsp.service.general.ReportDocumentService;
 import com.mai.siarsp.service.general.TTNDocumentService;
@@ -51,17 +54,35 @@ public class ClientOrderController {
     private final ProductRepository productRepository;
     private final RequestForDeliveryRepository requestForDeliveryRepository;
     private final DeliveryTaskService deliveryTaskService;
+    private final CommercialOfferImportService commercialOfferImportService;
 
     public ClientOrderController(ClientOrderService clientOrderService,
                                  ClientRepository clientRepository,
                                  ProductRepository productRepository,
                                  RequestForDeliveryRepository requestForDeliveryRepository,
-                                 DeliveryTaskService deliveryTaskService) {
+                                 DeliveryTaskService deliveryTaskService,
+                                 CommercialOfferImportService commercialOfferImportService) {
         this.clientOrderService = clientOrderService;
         this.clientRepository = clientRepository;
         this.productRepository = productRepository;
         this.requestForDeliveryRepository = requestForDeliveryRepository;
         this.deliveryTaskService = deliveryTaskService;
+        this.commercialOfferImportService = commercialOfferImportService;
+    }
+
+    @PostMapping("/importProducts")
+    @org.springframework.web.bind.annotation.ResponseBody
+    public ResponseEntity<ApiResponse<CommercialOfferImportResult>> importProducts(
+            @RequestParam("file") MultipartFile file) {
+        try {
+            CommercialOfferImportResult result = commercialOfferImportService.parse(file);
+            return ResponseEntity.ok(ApiResponse.ok(result, "OK"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Ошибка импорта docx (admin): {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(ApiResponse.error("Не удалось разобрать файл."));
+        }
     }
 
     @Transactional(readOnly = true)
