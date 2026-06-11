@@ -60,6 +60,37 @@ public class StoragePlacementService {
     }
 
     /**
+     * Можно ли положить указанную партию (incomingSupply) в зону без смешивания с уже лежащими
+     * там «разными» партиями того же товара.
+     * <p>
+     * Правило: в зоне можно держать несколько партий одного товара только если у них совпадают
+     * productionDate и expirationDate (фактически — идентичны по срокам). Если в зоне уже лежит
+     * партия того же товара с другой productionDate/expirationDate — возвращаем false.
+     */
+    private boolean canPlaceBatchInZone(StorageZone zone, Supply incomingSupply) {
+        if (zone == null || incomingSupply == null || incomingSupply.getProduct() == null) {
+            return false;
+        }
+        for (ZoneProduct existing : zone.getProducts()) {
+            Supply otherSupply = existing.getSupply();
+            if (otherSupply == null || otherSupply.getProduct() == null) continue;
+            if (!otherSupply.getProduct().getId().equals(incomingSupply.getProduct().getId())) continue;
+            if (otherSupply.getId() != null && otherSupply.getId().equals(incomingSupply.getId())) {
+                // Та же партия — можно
+                continue;
+            }
+            boolean sameProdDate = java.util.Objects.equals(
+                    otherSupply.getProductionDate(), incomingSupply.getProductionDate());
+            boolean sameExpDate = java.util.Objects.equals(
+                    otherSupply.getExpirationDate(), incomingSupply.getExpirationDate());
+            if (!sameProdDate || !sameExpDate) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * Размещает конкретную партию (Supply) в зонах оптимально — используется при приёмке.
      * В отличие от {@link #placeOptimal(Product, int)} не пытается найти партию по товару,
      * а оперирует уже известной partyе.
@@ -79,6 +110,8 @@ public class StoragePlacementService {
                 if (!wh.canStoreProduct(product)) continue;
                 for (var shelf : wh.getShelves()) {
                     for (StorageZone zone : shelf.getStorageZones()) {
+                        // Пропускаем зоны, где уже лежит другая партия этого товара
+                        if (!canPlaceBatchInZone(zone, supply)) continue;
                         Double boxL = product.getPackageLength();
                         Double boxW = product.getPackageWidth();
                         Double boxH = product.getPackageHeight();
@@ -98,7 +131,8 @@ public class StoragePlacementService {
                 }
             }
             if (best == null) {
-                return PlacementInfo.failure("Нет подходящей зоны хранения для партии");
+                return PlacementInfo.failure("Нет подходящей зоны хранения для партии " +
+                        "(зоны с другими партиями этого товара пропускаются)");
             }
             ZoneProduct zp = new ZoneProduct(supply, quantity);
             zp.setZone(best.zone());
@@ -129,11 +163,15 @@ public class StoragePlacementService {
             ZoneCandidate best = null;
             double bestOccupancy = Double.MAX_VALUE;
 
+            Supply supplyForPlacement = resolveSupply(product);
             for (Warehouse wh : warehouses) {
                 if (!wh.canStoreProduct(product)) continue;
 
                 for (var shelf : wh.getShelves()) {
                     for (StorageZone zone : shelf.getStorageZones()) {
+                        // Пропускаем зоны, где уже лежит другая партия этого товара
+                        if (supplyForPlacement != null
+                                && !canPlaceBatchInZone(zone, supplyForPlacement)) continue;
                         // Проверка свободного объёма
                         Double boxL = product.getPackageLength();
                         Double boxW = product.getPackageWidth();
@@ -156,7 +194,8 @@ public class StoragePlacementService {
             }
 
             if (best == null) {
-                return PlacementInfo.failure("Нет подходящей зоны хранения для товара");
+                return PlacementInfo.failure("Нет подходящей зоны хранения для товара " +
+                        "(зоны с другими партиями этого товара пропускаются)");
             }
 
             return placeInZone(product, best.zone(), quantity, best.orientation());
@@ -199,6 +238,14 @@ public class StoragePlacementService {
     @Transactional
     public PlacementInfo placeInZone(Product product, StorageZone zone, int quantity, BoxOrientation orientation) {
         try {
+            Supply supply = resolveSupply(product);
+            if (supply == null) {
+                return PlacementInfo.failure("У товара нет принятых партий — невозможно разместить");
+            }
+            if (!canPlaceBatchInZone(zone, supply)) {
+                return PlacementInfo.failure("В зоне уже лежит другая партия этого товара " +
+                        "(с другими датами производства/срока годности). Выберите другую зону.");
+            }
             Optional<ZoneProduct> existing = zoneProductRepository.findByZoneAndProduct(zone, product);
             ZoneProduct zp;
             if (existing.isPresent()) {
@@ -206,10 +253,6 @@ public class StoragePlacementService {
                 zp.setQuantity(zp.getQuantity() + quantity);
                 zp.setOrientation(orientation);
             } else {
-                Supply supply = resolveSupply(product);
-                if (supply == null) {
-                    return PlacementInfo.failure("У товара нет принятых партий — невозможно разместить");
-                }
                 zp = new ZoneProduct(supply, quantity);
                 zp.setZone(zone);
                 zp.setOrientation(orientation);

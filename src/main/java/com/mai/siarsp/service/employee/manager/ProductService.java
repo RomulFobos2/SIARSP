@@ -107,8 +107,6 @@ public class ProductService {
     public Optional<Long> editProduct(Long id,
                                       String inputName,
                                       String inputArticle,
-                                      int inputStockQuantity,
-                                      int inputQuantityForStock,
                                       WarehouseType inputWarehouseType,
                                       Long inputCategoryId,
                                       MultipartFile inputFileField,
@@ -133,8 +131,6 @@ public class ProductService {
         Product product = productOptional.get();
         product.setName(inputName);
         product.setArticle(inputArticle);
-        product.setStockQuantity(inputStockQuantity);
-        product.setQuantityForStock(inputQuantityForStock);
         product.setWarehouseType(inputWarehouseType);
         product.setCategory(categoryOptional.get());
 

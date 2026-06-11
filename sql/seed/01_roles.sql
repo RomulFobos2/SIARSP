@@ -2,7 +2,7 @@
 -- Этот скрипт нужен для ручного наполнения БД без запуска приложения.
 -- Имена ролей ДОЛЖНЫ совпадать с RoleRunner.
 
-INSERT INTO t_role (name, description)
+INSERT IGNORE INTO t_role (name, description)
 VALUES
 ('ROLE_EMPLOYEE_ADMIN', 'Администратор'),
 ('ROLE_EMPLOYEE_MANAGER', 'Руководитель'),

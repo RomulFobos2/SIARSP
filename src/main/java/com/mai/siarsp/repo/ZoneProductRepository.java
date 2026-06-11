@@ -56,8 +56,9 @@ public interface ZoneProductRepository extends JpaRepository<ZoneProduct, Long> 
 
     /**
      * Все ZoneProduct'ы товара отсортированы по сроку годности их партии ASC (FEFO).
+     * Партии без expirationDate уходят в конец.
      */
     @Query("SELECT zp FROM ZoneProduct zp WHERE zp.supply.product.id = :productId " +
-            "ORDER BY COALESCE(zp.supply.expirationDate, DATE '9999-12-31') ASC")
+            "ORDER BY zp.supply.expirationDate ASC NULLS LAST")
     List<ZoneProduct> findByProductIdOrderByExpirationAsc(@Param("productId") Long productId);
 }
