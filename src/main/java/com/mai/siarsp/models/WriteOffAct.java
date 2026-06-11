@@ -73,6 +73,15 @@ public class WriteOffAct {
     @JoinColumn(nullable = true)
     private Warehouse warehouse;
 
+    /**
+     * Партия товара, к которой относится списание. Nullable для совместимости со старыми
+     * актами (до миграции на партионный учёт). Для новых актов рекомендуется всегда задавать.
+     */
+    @ToString.Exclude
+    @ManyToOne
+    @JoinColumn(name = "supply_id")
+    private Supply supply;
+
     // ========== КОНСТРУКТОРЫ ==========
 
     public WriteOffAct(String actNumber, Product product, int quantity,

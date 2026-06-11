@@ -314,10 +314,13 @@ public class ClientOrderService {
         List<String> result = new ArrayList<>();
         for (OrderedProduct op : order.getOrderedProducts()) {
             Product product = op.getProduct();
-            Optional<LocalDate> expiration = productExpirationService.getExpirationDate(product);
-            if (expiration.isPresent() && expiration.get().isBefore(referenceDate)) {
+            // Минимальный срок годности по партиям на складе, не истёкшим к referenceDate.
+            // Если такой не нашёлся — значит к дате доставки все партии будут просрочены.
+            Optional<LocalDate> earliestFresh = productExpirationService
+                    .getEarliestUnexpiredExpiration(product, referenceDate);
+            if (earliestFresh.isEmpty()) {
                 result.add(product.getName() + " (" + product.getArticle()
-                        + ", срок до " + expiration.get().format(DISPLAY_DATE_FMT) + ")");
+                        + ", нет партий с непросроченным сроком к " + referenceDate.format(DISPLAY_DATE_FMT) + ")");
             }
         }
         return result;

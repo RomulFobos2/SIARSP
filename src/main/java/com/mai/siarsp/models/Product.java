@@ -103,4 +103,26 @@ public class Product {
     public int getAvailableQuantity() {
         return stockQuantity - reservedQuantity;
     }
+
+    /**
+     * Срок хранения товара в днях (атрибут «Срок годности», теперь хранится как Integer).
+     * Используется при приёмке партии для вычисления expirationDate = productionDate + shelfLifeDays.
+     * Возвращает null, если атрибут не задан или некорректен.
+     */
+    @Transient
+    public Integer getShelfLifeDays() {
+        return attributeValues.stream()
+                .filter(av -> av.getAttribute() != null
+                        && "Срок годности".equalsIgnoreCase(av.getAttribute().getName())
+                        && av.getValue() != null)
+                .findFirst()
+                .map(av -> {
+                    try {
+                        return Integer.parseInt(av.getValue().trim());
+                    } catch (NumberFormatException e) {
+                        return null;
+                    }
+                })
+                .orElse(null);
+    }
 }

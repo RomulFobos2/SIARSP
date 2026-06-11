@@ -6,10 +6,12 @@ import com.mai.siarsp.dto.RemovalInfo;
 import com.mai.siarsp.enumeration.BoxOrientation;
 import com.mai.siarsp.models.Product;
 import com.mai.siarsp.models.StorageZone;
+import com.mai.siarsp.models.Supply;
 import com.mai.siarsp.models.Warehouse;
 import com.mai.siarsp.models.ZoneProduct;
 import com.mai.siarsp.repo.ProductRepository;
 import com.mai.siarsp.repo.StorageZoneRepository;
+import com.mai.siarsp.repo.SupplyRepository;
 import com.mai.siarsp.repo.WarehouseRepository;
 import com.mai.siarsp.repo.ZoneProductRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -33,15 +35,89 @@ public class StoragePlacementService {
     private final StorageZoneRepository storageZoneRepository;
     private final ZoneProductRepository zoneProductRepository;
     private final ProductRepository productRepository;
+    private final SupplyRepository supplyRepository;
 
     public StoragePlacementService(WarehouseRepository warehouseRepository,
                                    StorageZoneRepository storageZoneRepository,
                                    ZoneProductRepository zoneProductRepository,
-                                   ProductRepository productRepository) {
+                                   ProductRepository productRepository,
+                                   SupplyRepository supplyRepository) {
         this.warehouseRepository = warehouseRepository;
         this.storageZoneRepository = storageZoneRepository;
         this.zoneProductRepository = zoneProductRepository;
         this.productRepository = productRepository;
+        this.supplyRepository = supplyRepository;
+    }
+
+    /**
+     * Возвращает последнюю партию указанного товара (для совместимости со старым UI размещения,
+     * где пользователь оперирует «товаром» без явного выбора партии). Если партий нет — null.
+     */
+    private Supply resolveSupply(Product product) {
+        if (product == null || product.getId() == null) return null;
+        return supplyRepository.findByProductIdOrderByDelivery_DeliveryDateDesc(product.getId())
+                .stream().findFirst().orElse(null);
+    }
+
+    /**
+     * Размещает конкретную партию (Supply) в зонах оптимально — используется при приёмке.
+     * В отличие от {@link #placeOptimal(Product, int)} не пытается найти партию по товару,
+     * а оперирует уже известной partyе.
+     */
+    @Transactional
+    public PlacementInfo placeOptimalForSupply(Supply supply, int quantity) {
+        if (supply == null || supply.getProduct() == null) {
+            return PlacementInfo.failure("Партия не задана");
+        }
+        // Используем имеющийся алгоритм placeOptimal, но создаём ZoneProduct под конкретную партию
+        Product product = supply.getProduct();
+        try {
+            ZoneProduct helper = new ZoneProduct();
+            ZoneCandidate best = null;
+            double bestOccupancy = Double.MAX_VALUE;
+            for (Warehouse wh : warehouseRepository.findAll()) {
+                if (!wh.canStoreProduct(product)) continue;
+                for (var shelf : wh.getShelves()) {
+                    for (StorageZone zone : shelf.getStorageZones()) {
+                        Double boxL = product.getPackageLength();
+                        Double boxW = product.getPackageWidth();
+                        Double boxH = product.getPackageHeight();
+                        if (boxL != null && boxW != null && boxH != null) {
+                            double itemVolume = (boxL * boxW * boxH) / 1_000_000.0;
+                            double newVolume = itemVolume * quantity;
+                            double usedVolume = zone.getProducts().stream()
+                                    .mapToDouble(ZoneProduct::getTotalVolume).sum();
+                            if (usedVolume + newVolume > zone.getCapacityVolume()) continue;
+                        }
+                        BoxOrientation orientation = helper.findBestOrientation(product, zone, quantity);
+                        if (orientation != null && zone.getOccupancyPercentage() < bestOccupancy) {
+                            bestOccupancy = zone.getOccupancyPercentage();
+                            best = new ZoneCandidate(zone, orientation);
+                        }
+                    }
+                }
+            }
+            if (best == null) {
+                return PlacementInfo.failure("Нет подходящей зоны хранения для партии");
+            }
+            ZoneProduct zp = new ZoneProduct(supply, quantity);
+            zp.setZone(best.zone());
+            zp.setOrientation(best.orientation());
+            zoneProductRepository.save(zp);
+            product.setQuantityForStock(Math.max(0, product.getQuantityForStock() - quantity));
+            productRepository.save(product);
+            log.info("✅ Партия #{} ({} ед.) размещена в зоне {} ({})",
+                    supply.getId(), quantity, best.zone().getLabel(), best.orientation());
+            return new PlacementInfo(true, null,
+                    best.zone().getId(), best.zone().getLabel(),
+                    best.zone().getShelf().getCode(),
+                    best.zone().getShelf().getWarehouse().getName(),
+                    best.orientation(), quantity);
+        } catch (Exception e) {
+            log.error("❌ placeOptimalForSupply: {}", e.getMessage(), e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return PlacementInfo.failure("Ошибка размещения партии: " + e.getMessage());
+        }
     }
 
     @Transactional
@@ -130,7 +206,11 @@ public class StoragePlacementService {
                 zp.setQuantity(zp.getQuantity() + quantity);
                 zp.setOrientation(orientation);
             } else {
-                zp = new ZoneProduct(product, quantity);
+                Supply supply = resolveSupply(product);
+                if (supply == null) {
+                    return PlacementInfo.failure("У товара нет принятых партий — невозможно разместить");
+                }
+                zp = new ZoneProduct(supply, quantity);
                 zp.setZone(zone);
                 zp.setOrientation(orientation);
             }

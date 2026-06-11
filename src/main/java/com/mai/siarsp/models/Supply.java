@@ -7,16 +7,20 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 /**
- * Факт поставки от поставщика, который привязан к заявке и документам приемки.
+ * Партия товара от поставщика: фактический приход с конкретной датой производства и срока годности.
+ * <p>
+ * Одна партия идентифицируется парой {@link #productionDate} + {@link #expirationDate} в рамках Product.
+ * Уникального ключа (delivery_id, product_id) больше нет: один Delivery может содержать несколько
+ * партий одного товара (с разными производственными датами).
  */
 
 @Data
 @NoArgsConstructor
 @Entity
-@Table(name = "t_supply",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"delivery_id", "product_id"}))
+@Table(name = "t_supply")
 @EqualsAndHashCode(of = "id")
 public class Supply {
 
@@ -39,6 +43,19 @@ public class Supply {
 
     @Column(length = 500)
     private String deficitReason;
+
+    /**
+     * Дата производства партии. Nullable на уровне БД для совместимости с миграцией,
+     * но обязательное на уровне сервиса при создании новой Supply.
+     */
+    @Column
+    private LocalDate productionDate;
+
+    /**
+     * Срок годности партии = productionDate + Product.shelfLifeDays. Вычисляется в сервисе.
+     */
+    @Column
+    private LocalDate expirationDate;
 
     @ToString.Exclude
     @ManyToOne

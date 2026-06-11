@@ -73,6 +73,8 @@
                         <th>Артикул</th>
                         <th>Заказано</th>
                         <th>Принято</th>
+                        <th>Дата производства</th>
+                        <th>Срок хранения, дней</th>
                         <th>Цена (руб.)</th>
                         <th>Недостача</th>
                         <th>Причина недостачи</th>
@@ -104,6 +106,14 @@
                                    th:oninput="'updateDeficit(' + ${stat.index} + ')'"
                                    required style="width: 100px;"/>
                         </td>
+                        <td>
+                            <input type="date" name="productionDates"
+                                   class="form-control form-control-sm"
+                                   th:id="'productionDate_' + ${stat.index}"
+                                   required style="width: 150px;"/>
+                        </td>
+                        <td class="text-center"
+                            th:text="${rp.getProduct().getShelfLifeDays() != null ? rp.getProduct().getShelfLifeDays() : '—'}"></td>
                         <td>
                             <span th:text="${rp.getPurchasePrice() != null ? rp.getPurchasePrice() : '—'}"></span>
                         </td>

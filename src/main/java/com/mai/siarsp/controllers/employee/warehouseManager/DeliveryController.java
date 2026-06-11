@@ -107,6 +107,7 @@ public class DeliveryController {
                                 @RequestParam List<Long> productIds,
                                 @RequestParam List<Integer> quantities,
                                 @RequestParam List<BigDecimal> purchasePrices,
+                                @RequestParam(required = false) List<LocalDate> productionDates,
                                 @RequestParam(required = false) List<String> deficitReasons,
                                 RedirectAttributes redirectAttributes) {
         // Собрать List<SupplyInputDTO> из параллельных списков
@@ -116,6 +117,8 @@ public class DeliveryController {
             input.setProductId(productIds.get(i));
             input.setQuantity(quantities.get(i));
             input.setPurchasePrice(purchasePrices.get(i));
+            input.setProductionDate(productionDates != null && i < productionDates.size()
+                    ? productionDates.get(i) : null);
             input.setDeficitReason(deficitReasons != null && i < deficitReasons.size()
                     ? deficitReasons.get(i) : null);
             supplyInputs.add(input);
