@@ -59,10 +59,9 @@ public class MobileCourierController {
             return ResponseEntity.badRequest().body(new ApiResponse(false, "Не указан начальный пробег"));
         }
 
-        boolean started = deliveryTaskService.startDelivery(id, request.startMileage());
-        if (!started) {
-            return ResponseEntity.badRequest()
-                    .body(new ApiResponse(false, "Не удалось начать доставку. Проверьте статус задачи и пробег"));
+        String error = deliveryTaskService.startDelivery(id, request.startMileage());
+        if (error != null) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, error));
         }
 
         return ResponseEntity.ok(new ApiResponse(true, "Доставка начата"));

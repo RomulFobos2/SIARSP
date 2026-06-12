@@ -91,8 +91,9 @@ public class DeliveryTaskController {
     public String startDelivery(@PathVariable Long id,
                                 @RequestParam Integer startMileage,
                                 RedirectAttributes redirectAttributes) {
-        if (!deliveryTaskService.startDelivery(id, startMileage)) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при начале доставки.");
+        String error = deliveryTaskService.startDelivery(id, startMileage);
+        if (error != null) {
+            redirectAttributes.addFlashAttribute("errorMessage", error);
         } else {
             redirectAttributes.addFlashAttribute("successMessage", "Доставка начата.");
         }
