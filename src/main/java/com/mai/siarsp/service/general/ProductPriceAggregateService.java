@@ -43,7 +43,8 @@ public class ProductPriceAggregateService {
 
     public record ProductSupplyRow(LocalDate deliveryDate, String supplierName,
                                    int quantity, String unit,
-                                   BigDecimal purchasePrice, BigDecimal totalPrice) {}
+                                   BigDecimal purchasePrice, BigDecimal totalPrice,
+                                   LocalDate expirationDate) {}
 
     // ========== ЗАКУПОЧНАЯ ЦЕНА ==========
 
@@ -114,7 +115,8 @@ public class ProductPriceAggregateService {
                     s.getQuantity(),
                     s.getUnit(),
                     s.getPurchasePrice(),
-                    s.getTotalPrice()
+                    s.getTotalPrice(),
+                    s.getExpirationDate()
             ));
         }
         return rows;

@@ -109,8 +109,8 @@
                 <label class="form-label fw-semibold mb-1 me-2">Закупочная цена:</label>
                 <select id="purchasePriceMode" class="form-select form-select-sm w-auto d-inline-block"
                         onchange="togglePriceBlock('purchase', this.value)">
-                    <option value="last" selected>По последней поставке</option>
-                    <option value="avg">Средняя по всем поставкам</option>
+                    <option value="last" selected>По последнему заказу</option>
+                    <option value="avg">Средняя по всем заказам</option>
                 </select>
             </div>
 
@@ -130,12 +130,13 @@
                 <table class="table table-sm table-striped" id="suppliesTable">
                     <thead>
                     <tr>
-                        <th>Дата поставки</th>
+                        <th>Дата заказа</th>
                         <th>Поставщик</th>
                         <th>Кол-во</th>
                         <th>Ед. изм.</th>
                         <th>Цена за ед.</th>
                         <th>Сумма</th>
+                        <th>Срок годности</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -146,6 +147,7 @@
                         <td th:text="${row.unit() != null ? row.unit() : '—'}"></td>
                         <td th:text="${row.purchasePrice()}"></td>
                         <td th:text="${row.totalPrice()}"></td>
+                        <td th:text="${row.expirationDate() != null ? #temporals.format(row.expirationDate(), 'dd.MM.yyyy') : '—'}"></td>
                     </tr>
                     </tbody>
                 </table>
@@ -157,7 +159,7 @@
 
         <!-- Заказы клиентов -->
         <div class="mb-4" th:if="${orderedProducts != null and !orderedProducts.isEmpty()}">
-            <h6 class="form-section-title">Заказы клиентов</h6>
+            <h6 class="form-section-title">Поставки клиентам</h6>
 
             <div class="mb-2">
                 <label class="form-label fw-semibold mb-1 me-2">Цена продажи:</label>
@@ -184,8 +186,8 @@
                 <table class="table table-sm table-striped" id="ordersTable">
                     <thead>
                     <tr>
-                        <th>Номер заказа</th>
-                        <th>Дата заказа</th>
+                        <th>Номер поставки</th>
+                        <th>Дата поставки</th>
                         <th>Кол-во</th>
                         <th>Цена</th>
                         <th>Сумма</th>
