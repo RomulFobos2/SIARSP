@@ -142,6 +142,7 @@ public class DeliveryService {
                 // Создать партию (Supply)
                 Supply supply = new Supply(product, input.getPurchasePrice(), input.getQuantity());
                 supply.setUnit(requestedProduct.getUnit());
+                supply.setQuantityForStock(input.getQuantity());
                 supply.setDeficitQuantity(deficit);
                 supply.setDeficitReason(deficit > 0 ? input.getDeficitReason() : null);
                 // productionDate из формы; expirationDate = productionDate + Product.shelfLifeDays

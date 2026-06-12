@@ -152,6 +152,15 @@
                 <h4 class="fw-bold mb-1">Размещение товара</h4>
                 <p class="text-muted mb-3" id="selectedProductName">—</p>
 
+                <!-- Выбор партии -->
+                <div class="mb-3" id="supplySection">
+                    <label class="form-label fw-semibold">Партия (дата пр-ва / срок годности)</label>
+                    <select id="supplySelect" class="form-select form-select-sm" onchange="onSupplyChange()">
+                        <option value="">— Загрузка... —</option>
+                    </select>
+                    <div class="form-text text-muted" id="supplyHint"></div>
+                </div>
+
                 <!-- Поле количества -->
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Количество</label>
@@ -179,6 +188,7 @@
                           th:action="@{/employee/warehouseManager/warehouse-management/place-product}">
                         <input type="hidden" name="productId" id="autoProductId">
                         <input type="hidden" name="quantity" id="autoQuantity">
+                        <input type="hidden" name="supplyId" id="autoSupplyId">
                         <button type="submit" class="btn btn-success btn-sm w-100">
                             <i class="bi bi-magic"></i> Разместить автоматически
                         </button>
@@ -219,6 +229,7 @@
                         <input type="hidden" name="productId" id="manualProductId">
                         <input type="hidden" name="quantity" id="manualQuantity">
                         <input type="hidden" name="zoneId" id="manualZoneId">
+                        <input type="hidden" name="supplyId" id="manualSupplyId">
                         <button type="submit" class="btn btn-primary btn-sm w-100"
                                 id="manualPlaceBtn" disabled>
                             <i class="bi bi-box-arrow-in-down"></i> Разместить в выбранную зону
@@ -268,7 +279,48 @@
         document.getElementById('placementPanel').style.display = 'block';
         document.getElementById('selectProductHint').style.display = 'none';
 
+        loadSupplies(id);
         syncQuantity();
+    }
+
+    function loadSupplies(productId) {
+        var sel = document.getElementById('supplySelect');
+        sel.innerHTML = '<option value="">Загрузка...</option>';
+        document.getElementById('supplyHint').textContent = '';
+
+        fetch('/employee/warehouseManager/warehouse-management/product-supplies/' + productId)
+            .then(function(r) { return r.json(); })
+            .then(function(supplies) {
+                if (supplies.length === 0) {
+                    sel.innerHTML = '<option value="">— Нет партий —</option>';
+                    return;
+                }
+                var html = supplies.length > 1 ? '<option value="">— Выберите партию —</option>' : '';
+                supplies.forEach(function(s) {
+                    var label = 'Пр-во: ' + (s.productionDate || '—') + ' / Годен до: ' + (s.expirationDate || '—')
+                        + ' (к размещению: ' + s.quantityForStock + ' шт.)';
+                    html += '<option value="' + s.id + '">' + label + '</option>';
+                });
+                sel.innerHTML = html;
+                if (supplies.length === 1) {
+                    sel.selectedIndex = 0;
+                    onSupplyChange();
+                }
+            })
+            .catch(function() {
+                sel.innerHTML = '<option value="">Ошибка загрузки</option>';
+            });
+    }
+
+    function onSupplyChange() {
+        var supplyId = document.getElementById('supplySelect').value;
+        document.getElementById('autoSupplyId').value = supplyId;
+        document.getElementById('manualSupplyId').value = supplyId;
+        if (supplyId) {
+            document.getElementById('supplyHint').textContent = '✓ Партия выбрана — проверка дат будет выполнена при размещении';
+        } else {
+            document.getElementById('supplyHint').textContent = '';
+        }
     }
 
     function syncQuantity() {

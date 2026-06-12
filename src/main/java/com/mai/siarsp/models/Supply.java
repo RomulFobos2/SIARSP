@@ -38,6 +38,10 @@ public class Supply {
     @Column(nullable = false)
     private int quantity;
 
+    /** Сколько единиц этой партии ещё не размещено на полках. При приёмке = quantity. */
+    @Column(nullable = false)
+    private int quantityForStock = 0;
+
     @Column(nullable = false)
     private int deficitQuantity = 0;
 
