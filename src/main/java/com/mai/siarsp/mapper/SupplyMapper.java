@@ -19,6 +19,8 @@ public interface SupplyMapper {
     @Mapping(source = "product.name", target = "productName")
     @Mapping(source = "product.article", target = "productArticle")
     @Mapping(source = "supply", target = "totalPrice", qualifiedByName = "totalPrice")
+    @Mapping(source = "productionDate", target = "productionDate")
+    @Mapping(source = "expirationDate", target = "expirationDate")
     @Mapping(target = "orderedQuantity", ignore = true)
     SupplyDTO toDTO(Supply supply);
 
