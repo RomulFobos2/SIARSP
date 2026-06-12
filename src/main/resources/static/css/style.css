@@ -430,10 +430,17 @@
 }
 
 .home-image-section {
+    background-image: url('/images/main-fon-site.jpg');
     background-size: cover;
     background-position: center;
     min-height: 70vh;
     position: relative;
+}
+
+@media (max-width: 768px) {
+    .home-image-section {
+        background-image: url('/images/main-fon-mobile.png');
+    }
 }
 
 .home-image-section::before {
