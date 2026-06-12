@@ -125,8 +125,6 @@ public class WarehouseApiService {
                     if (o != null) {
                         bestOrientation = o;
                         // Вычисляем максимальное количество, которое помещается
-                        ZoneProduct tmp = new ZoneProduct(product, Integer.MAX_VALUE);
-                        tmp.setZone(zone);
                         BoxOrientation any = helper.findBestOrientation(product, zone, 1);
                         if (any != null) maxPossible = Math.max(maxPossible, quantity);
                     }

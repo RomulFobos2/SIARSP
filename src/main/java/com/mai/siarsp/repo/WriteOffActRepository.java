@@ -25,4 +25,6 @@ public interface WriteOffActRepository extends JpaRepository<WriteOffAct, Long> 
     long countByProductId(Long productId);
 
     List<WriteOffAct> findByProductIdOrderByActDateDesc(Long productId);
+
+    List<WriteOffAct> findByProductIdAndStatusOrderByActDateDesc(Long productId, WriteOffActStatus status);
 }

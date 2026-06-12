@@ -139,11 +139,18 @@ public class DeliveryService {
                 }
                 Product product = optProduct.get();
 
-                // Создать Supply
+                // Создать партию (Supply)
                 Supply supply = new Supply(product, input.getPurchasePrice(), input.getQuantity());
                 supply.setUnit(requestedProduct.getUnit());
                 supply.setDeficitQuantity(deficit);
                 supply.setDeficitReason(deficit > 0 ? input.getDeficitReason() : null);
+                // productionDate из формы; expirationDate = productionDate + Product.shelfLifeDays
+                java.time.LocalDate prodDate = input.getProductionDate();
+                supply.setProductionDate(prodDate);
+                Integer shelfLife = product.getShelfLifeDays();
+                if (prodDate != null && shelfLife != null) {
+                    supply.setExpirationDate(prodDate.plusDays(shelfLife));
+                }
                 delivery.addSupply(supply);
 
                 // Оприходование на склад

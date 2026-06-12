@@ -91,19 +91,26 @@ public class WriteOffActController {
     @GetMapping("/warehouses-by-product/{productId}")
     @ResponseBody
     public List<Map<String, Object>> getWarehousesByProduct(@PathVariable Long productId) {
-        List<ZoneProduct> zps = zoneProductRepository.findByProduct(
-                productRepository.getReferenceById(productId));
+        Product product = productRepository.getReferenceById(productId);
+        List<ZoneProduct> zps = zoneProductRepository.findByProduct(product);
         Map<Warehouse, Integer> whMap = new LinkedHashMap<>();
         for (ZoneProduct zp : zps) {
             Warehouse wh = zp.getZone().getShelf().getWarehouse();
             whMap.merge(wh, zp.getQuantity(), Integer::sum);
         }
+        // Зарезервированное под клиентские заказы количество вычитается из общего
+        // размещённого товара: списать можно только то, что НЕ обещано клиенту.
+        int placedTotal = whMap.values().stream().mapToInt(Integer::intValue).sum();
+        int reserved = product.getReservedQuantity();
+        int writableTotal = Math.max(0, placedTotal - reserved);
         return whMap.entrySet().stream()
                 .map(e -> {
                     Map<String, Object> m = new HashMap<>();
                     m.put("id", e.getKey().getId());
                     m.put("name", e.getKey().getName());
-                    m.put("availableQuantity", e.getValue());
+                    int onWarehouse = e.getValue();
+                    m.put("placedOnWarehouse", onWarehouse);
+                    m.put("availableQuantity", Math.min(onWarehouse, writableTotal));
                     return m;
                 })
                 .toList();

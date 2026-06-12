@@ -3,7 +3,6 @@ package com.mai.siarsp.dto;
 import com.mai.siarsp.enumeration.WarehouseType;
 import lombok.Data;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @Data
@@ -20,5 +19,9 @@ public class ProductDTO {
     private String categoryName;
     private int availableQuantity;
     private List<ProductAttributeValueDTO> attributeValues;
-    private LocalDate expirationDate;
+    /**
+     * Срок хранения товара в днях (атрибут «Срок годности» теперь хранится как Integer).
+     * Реальная дата годности живёт в Supply.expirationDate каждой партии.
+     */
+    private Integer shelfLifeDays;
 }

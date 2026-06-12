@@ -90,8 +90,6 @@ public class ProductController {
     @PostMapping("/employee/warehouseManager/products/addProduct")
     public String addProduct(@RequestParam String inputName,
                              @RequestParam String inputArticle,
-                             @RequestParam int inputStockQuantity,
-                             @RequestParam int inputQuantityForStock,
                              @RequestParam WarehouseType inputWarehouseType,
                              @RequestParam Long inputCategoryId,
                              @RequestParam MultipartFile inputFileField,
@@ -100,8 +98,9 @@ public class ProductController {
         Product product = new Product();
         product.setName(inputName);
         product.setArticle(inputArticle);
-        product.setStockQuantity(inputStockQuantity);
-        product.setQuantityForStock(inputQuantityForStock);
+        // Остатки заполняются автоматически при приёмке партии (Supply), не вручную
+        product.setStockQuantity(0);
+        product.setQuantityForStock(0);
         product.setWarehouseType(inputWarehouseType);
         product.setReservedQuantity(0);
 
@@ -129,7 +128,7 @@ public class ProductController {
         ProductDTO productDTO = ProductMapper.INSTANCE.toDTO(product);
         model.addAttribute("productDTO", productDTO);
         model.addAttribute("orderedProducts", priceAggregateService.getDeliveredOrders(id));
-        model.addAttribute("writeOffActs", writeOffActRepository.findByProductIdOrderByActDateDesc(id));
+        model.addAttribute("writeOffActs", writeOffActRepository.findByProductIdAndStatusOrderByActDateDesc(id, com.mai.siarsp.enumeration.WriteOffActStatus.APPROVED));
         model.addAttribute("purchaseSummary", priceAggregateService.getPurchaseSummary(id));
         model.addAttribute("saleSummary", priceAggregateService.getSaleSummary(id));
         model.addAttribute("productSupplies", priceAggregateService.getProductSupplies(id));
@@ -158,8 +157,6 @@ public class ProductController {
     public String editProduct(@PathVariable(value = "id") long id,
                               @RequestParam String inputName,
                               @RequestParam String inputArticle,
-                              @RequestParam int inputStockQuantity,
-                              @RequestParam int inputQuantityForStock,
                               @RequestParam WarehouseType inputWarehouseType,
                               @RequestParam Long inputCategoryId,
                               @RequestParam(required = false) MultipartFile inputFileField,
@@ -178,8 +175,8 @@ public class ProductController {
             attributeValues.keySet().removeAll(gabariteAttrIds);
         }
 
-        Optional<Long> editedProductId = productService.editProduct(id, inputName, inputArticle, inputStockQuantity,
-                inputQuantityForStock, inputWarehouseType, inputCategoryId, inputFileField, attributeValues);
+        Optional<Long> editedProductId = productService.editProduct(id, inputName, inputArticle,
+                inputWarehouseType, inputCategoryId, inputFileField, attributeValues);
 
         if (editedProductId.isEmpty()) {
             redirectAttributes.addFlashAttribute("productError", "Ошибка при сохранении изменений товара.");

@@ -133,39 +133,25 @@ public class ScheduleTask {
     @Transactional
     @Scheduled(cron = "0 0 8 * * ?")
     public void checkProductExpiration() {
-        log.info("Запуск проверки сроков годности товаров");
+        log.info("Запуск проверки сроков годности партий");
 
-        List<Product> products = productRepository.findAllWithAttributeValues();
         LocalDate today = LocalDate.now();
-        int notifiedCount = 0;
+        // Партии, у которых есть остатки в зонах и срок уже истёк
+        List<com.mai.siarsp.models.Supply> expired = productExpirationService.findExpiredSuppliesOnStock(today);
         int actsCreated = 0;
-
-        for (Product product : products) {
-            Optional<LocalDate> expirationOpt = productExpirationService.getExpirationDate(product);
-            if (expirationOpt.isEmpty()) {
-                continue;
-            }
-
-            LocalDate expirationDate = expirationOpt.get();
-            long daysLeft = ChronoUnit.DAYS.between(today, expirationDate);
-            String text = buildExpirationNotification(product, expirationDate, daysLeft);
-
-            if (text == null) {
-                continue;
-            }
-
+        for (com.mai.siarsp.models.Supply supply : expired) {
+            Product product = supply.getProduct();
+            LocalDate expirationDate = supply.getExpirationDate();
+            String text = "🚨 Просрочена партия товара «" + product.getName() + "» (артикул "
+                    + product.getArticle() + ", срок до " + expirationDate + "). Будет автоматически списана.";
             notificationService.notifyByRole(MANAGER_ROLE, text);
             notificationService.notifyByRole(ROLE_EMPLOYEE_WAREHOUSE_MANAGER, text);
-            notifiedCount++;
-
-            if (daysLeft < 0 && product.getStockQuantity() > 0) {
-                if (createAutomaticWriteOffAct(product, expirationDate)) {
-                    actsCreated++;
-                }
+            if (createAutomaticWriteOffAct(product, expirationDate, supply)) {
+                actsCreated++;
             }
         }
-
-        log.info("Проверка сроков годности завершена. Уведомлений: {}, автосозданных актов: {}", notifiedCount, actsCreated);
+        log.info("Проверка сроков годности завершена. Просроченных партий: {}, автосозданных актов: {}",
+                expired.size(), actsCreated);
     }
 
     private String buildExpirationNotification(Product product, LocalDate expirationDate, long daysLeft) {
@@ -190,7 +176,9 @@ public class ScheduleTask {
         return null;
     }
 
-    private boolean createAutomaticWriteOffAct(Product product, LocalDate expirationDate) {
+    private boolean createAutomaticWriteOffAct(Product product, LocalDate expirationDate,
+                                                com.mai.siarsp.models.Supply supply) {
+        // Дубль для той же партии не создаём
         boolean pendingExists = writeOffActRepository.existsByProductIdAndReasonAndStatus(
                 product.getId(), WriteOffReason.EXPIRED, WriteOffActStatus.PENDING_DIRECTOR
         );
@@ -200,32 +188,47 @@ public class ScheduleTask {
 
         Optional<Employee> responsibleOpt = findResponsibleForAutoWriteOff();
         if (responsibleOpt.isEmpty()) {
-            log.warn("Не найден сотрудник для автосоздания акта списания просрочки по товару id={}", product.getId());
+            log.warn("Не найден сотрудник для автосоздания акта списания просрочки по партии id={}", supply.getId());
             return false;
         }
 
         Employee responsible = responsibleOpt.get();
-        Optional<Warehouse> warehouseOpt = zoneProductRepository.findByProduct(product).stream()
-                .filter(zp -> zp.getZone() != null && zp.getZone().getShelf() != null && zp.getZone().getShelf().getWarehouse() != null)
-                .min(Comparator.comparing(ZoneProduct::getQuantity).reversed())
-                .map(zp -> zp.getZone().getShelf().getWarehouse());
+        // Берём ZoneProduct'ы конкретной партии — сумма количеств = подлежит списанию,
+        // склад берём от первой найденной зоны.
+        List<ZoneProduct> partyZones = zoneProductRepository.findByProductId(product.getId()).stream()
+                .filter(zp -> zp.getSupply() != null && zp.getSupply().equals(supply))
+                .toList();
+        int qtyToWriteOff = partyZones.stream().mapToInt(ZoneProduct::getQuantity).sum();
+        if (qtyToWriteOff <= 0) {
+            return false;
+        }
+        Optional<Warehouse> warehouseOpt = partyZones.stream()
+                .filter(zp -> zp.getZone() != null && zp.getZone().getShelf() != null
+                        && zp.getZone().getShelf().getWarehouse() != null)
+                .map(zp -> zp.getZone().getShelf().getWarehouse())
+                .findFirst();
 
         String actNumber = "AUTO-WR-" + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE)
-                + "-" + product.getId();
+                + "-" + product.getId() + "-S" + supply.getId();
 
         WriteOffAct act = new WriteOffAct(
                 actNumber,
                 product,
-                product.getStockQuantity(),
+                qtyToWriteOff,
                 WriteOffReason.EXPIRED,
                 responsible
         );
 
         act.setStatus(WriteOffActStatus.PENDING_DIRECTOR);
-        act.setComment("Автоматическое списание просроченного товара. Срок годности истёк "
+        act.setComment("Автоматическое списание просроченной партии. Срок годности истёк "
                 + expirationDate.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) + ".");
         warehouseOpt.ifPresent(act::setWarehouse);
-        act.setTotalCost(writeOffActService.calculateWriteOffCost(product.getId(), product.getStockQuantity()));
+        act.setSupply(supply);
+        // Стоимость по фактической закупочной цене этой партии
+        java.math.BigDecimal price = supply.getPurchasePrice();
+        if (price != null) {
+            act.setTotalCost(price.multiply(java.math.BigDecimal.valueOf(qtyToWriteOff)));
+        }
 
         writeOffActRepository.save(act);
 

@@ -12,14 +12,18 @@ import java.util.Comparator;
 import java.util.Map;
 
 /**
- * Связка «товар-зона/место хранения», которая отражает фактическое размещение и остатки в адресном хранении.
+ * Связка «партия-зона»: фактическое размещение конкретной партии (Supply) в зоне.
+ * <p>
+ * Раньше ссылалась на Product напрямую (одна запись на товар в зоне). Теперь ссылается на Supply,
+ * благодаря чему в одной зоне могут лежать разные партии одного товара (с разными сроками годности),
+ * а при отгрузке возможно списание FEFO.
  */
 
 @Data
 @NoArgsConstructor
 @Entity
 @Table(name = "t_zoneProduct",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"zone_id", "product_id"}))
+        uniqueConstraints = @UniqueConstraint(columnNames = {"zone_id", "supply_id"}))
 @EqualsAndHashCode(of = "id")
 public class ZoneProduct {
 
@@ -40,20 +44,35 @@ public class ZoneProduct {
     @JoinColumn(nullable = false)
     private StorageZone zone;
 
+    /**
+     * Партия товара, размещённая в зоне. Nullable на уровне БД для совместимости с миграцией,
+     * но всегда задаётся при создании новой ZoneProduct.
+     */
     @ManyToOne
-    @JoinColumn(nullable = false)
-    private Product product;
+    @JoinColumn(name = "supply_id")
+    private Supply supply;
 
     // ========== КОНСТРУКТОРЫ ==========
 
-    public ZoneProduct(Product product, int quantity) {
-        this.product = product;
+    public ZoneProduct(Supply supply, int quantity) {
+        this.supply = supply;
         this.quantity = quantity;
     }
 
     // ========== МЕТОДЫ ==========
 
+    /**
+     * Товар, частью партии которого является эта ячейка хранения.
+     * Совместимость со старым кодом, который обращался к ZoneProduct.getProduct().
+     */
+    @Transient
+    public Product getProduct() {
+        return supply != null ? supply.getProduct() : null;
+    }
+
     public double getVolumePerUnit() {
+        Product product = getProduct();
+        if (product == null) return 0.0;
         Double length = product.getPackageLength();
         Double width = product.getPackageWidth();
         Double height = product.getPackageHeight();
@@ -70,6 +89,8 @@ public class ZoneProduct {
     }
 
     public boolean canFitPhysically() {
+        Product product = getProduct();
+        if (product == null) return false;
         BoxOrientation bestOrientation = findBestOrientation(product, zone, quantity);
 
         if (bestOrientation != null) {

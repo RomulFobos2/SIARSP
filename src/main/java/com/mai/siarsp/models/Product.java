@@ -99,8 +99,43 @@ public class Product {
                 .orElse(null);
     }
 
+    /**
+     * Сколько единиц товара физически размещено в зонах (не в буфере «к размещению»).
+     * Производное значение: stockQuantity − quantityForStock.
+     */
+    @Transient
+    public int getPlacedQuantity() {
+        return Math.max(0, stockQuantity - quantityForStock);
+    }
+
+    /**
+     * Сколько единиц доступно для резерва/продажи.
+     * Учитывает: только размещённый в зонах товар (не буфер) минус уже зарезервированный.
+     */
     @Transient
     public int getAvailableQuantity() {
-        return stockQuantity - reservedQuantity;
+        return Math.max(0, stockQuantity - quantityForStock - reservedQuantity);
+    }
+
+    /**
+     * Срок хранения товара в днях (атрибут «Срок годности», теперь хранится как Integer).
+     * Используется при приёмке партии для вычисления expirationDate = productionDate + shelfLifeDays.
+     * Возвращает null, если атрибут не задан или некорректен.
+     */
+    @Transient
+    public Integer getShelfLifeDays() {
+        return attributeValues.stream()
+                .filter(av -> av.getAttribute() != null
+                        && "Срок годности".equalsIgnoreCase(av.getAttribute().getName())
+                        && av.getValue() != null)
+                .findFirst()
+                .map(av -> {
+                    try {
+                        return Integer.parseInt(av.getValue().trim());
+                    } catch (NumberFormatException e) {
+                        return null;
+                    }
+                })
+                .orElse(null);
     }
 }

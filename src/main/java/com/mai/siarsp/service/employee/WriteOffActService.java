@@ -128,6 +128,16 @@ public class WriteOffActService {
                 return false;
             }
 
+            // Защита от списания товара, который уже обещан клиентам (резерв).
+            // Доступно для списания = размещено в зонах − зарезервировано под заказы.
+            int writableTotal = Math.max(0, product.getPlacedQuantity() - product.getReservedQuantity());
+            if (quantity > writableTotal) {
+                log.error("Количество списания ({}) превышает доступное ({}) для товара '{}' "
+                                + "с учётом резерва ({}). Сначала отмените или отгрузите соответствующие заказы.",
+                        quantity, writableTotal, product.getName(), product.getReservedQuantity());
+                return false;
+            }
+
             String actNumber = generateActNumber();
 
             WriteOffAct act = new WriteOffAct(actNumber, product, quantity, reason, responsible);
@@ -188,6 +198,13 @@ public class WriteOffActService {
                 int remaining = act.getQuantity();
                 List<ZoneProduct> zoneProducts = zoneProductRepository
                         .findByProductAndWarehouseId(product, act.getWarehouse().getId());
+                // Если у акта указана партия — списываем только ZoneProduct'ы этой партии
+                if (act.getSupply() != null) {
+                    zoneProducts = zoneProducts.stream()
+                            .filter(zp -> zp.getSupply() != null
+                                    && zp.getSupply().equals(act.getSupply()))
+                            .toList();
+                }
                 for (ZoneProduct zp : zoneProducts) {
                     if (remaining <= 0) break;
                     int zpQty = zp.getQuantity();

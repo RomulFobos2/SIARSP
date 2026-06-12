@@ -226,7 +226,7 @@
                     <tbody>
                     <tr th:each="wa : ${writeOffActs}">
                         <td th:text="${wa.getActNumber()}"></td>
-                        <td th:text="${wa.getActDate()}"></td>
+                        <td th:text="${#temporals.format(wa.getActDate(), 'dd.MM.yyyy')}"></td>
                         <td th:text="${wa.getQuantity()}"></td>
                         <td th:text="${wa.getReason().getDisplayName()}"></td>
                         <td th:text="${wa.getStatus().getDisplayName()}"></td>

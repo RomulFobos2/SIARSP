@@ -312,8 +312,9 @@ public class DeliveryTaskService {
                 product.setReservedQuantity(Math.max(0, product.getReservedQuantity() - op.getQuantity()));
                 productRepository.save(product);
 
-                // Списание из зон хранения
-                List<ZoneProduct> zoneProducts = zoneProductRepository.findByProduct(product);
+                // FEFO-списание из зон хранения: сначала партии с ближайшим сроком годности
+                List<ZoneProduct> zoneProducts = zoneProductRepository
+                        .findByProductIdOrderByExpirationAsc(product.getId());
                 int remaining = op.getQuantity();
                 for (ZoneProduct zp : zoneProducts) {
                     if (remaining <= 0) break;
@@ -363,15 +364,28 @@ public class DeliveryTaskService {
                 .orElseGet(List::of);
     }
 
+    /**
+     * Возвращает товары, для которых не хватает непросроченных партий на складе для отгрузки.
+     * Проверяет суммарное количество в ZoneProduct, у которых expirationDate >= today.
+     */
     private List<String> collectExpiredProducts(ClientOrder order) {
         LocalDate today = LocalDate.now();
         List<String> result = new ArrayList<>();
         for (OrderedProduct op : order.getOrderedProducts()) {
             Product product = op.getProduct();
-            Optional<LocalDate> expiration = productExpirationService.getExpirationDate(product);
-            if (expiration.isPresent() && expiration.get().isBefore(today)) {
+            int availableFresh = zoneProductRepository.findByProductId(product.getId()).stream()
+                    .filter(zp -> zp.getSupply() != null
+                            && zp.getSupply().getExpirationDate() != null
+                            && !zp.getSupply().getExpirationDate().isBefore(today))
+                    .mapToInt(ZoneProduct::getQuantity)
+                    .sum();
+            if (availableFresh < op.getQuantity()) {
+                Optional<LocalDate> earliest = productExpirationService
+                        .getEarliestUnexpiredExpiration(product, today);
+                String earliestStr = earliest.map(d -> d.format(DISPLAY_DATE_FMT)).orElse("партий нет");
                 result.add(product.getName() + " (" + product.getArticle()
-                        + ", срок до " + expiration.get().format(DISPLAY_DATE_FMT) + ")");
+                        + ", нужно " + op.getQuantity() + ", непросроченных " + availableFresh
+                        + ", ближайший срок: " + earliestStr + ")");
             }
         }
         return result;

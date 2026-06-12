@@ -67,7 +67,7 @@ public class ProductViewController {
         ProductDTO productDTO = ProductMapper.INSTANCE.toDTO(opt.get());
         model.addAttribute("productDTO", productDTO);
         model.addAttribute("orderedProducts", priceAggregateService.getDeliveredOrders(id));
-        model.addAttribute("writeOffActs", writeOffActRepository.findByProductIdOrderByActDateDesc(id));
+        model.addAttribute("writeOffActs", writeOffActRepository.findByProductIdAndStatusOrderByActDateDesc(id, com.mai.siarsp.enumeration.WriteOffActStatus.APPROVED));
         model.addAttribute("purchaseSummary", priceAggregateService.getPurchaseSummary(id));
         model.addAttribute("saleSummary", priceAggregateService.getSaleSummary(id));
         model.addAttribute("productSupplies", priceAggregateService.getProductSupplies(id));
