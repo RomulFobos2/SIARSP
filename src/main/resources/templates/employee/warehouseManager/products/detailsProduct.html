@@ -210,7 +210,7 @@
         </div>
 
         <!-- Акты списания -->
-        <div class="mb-4" th:if="${writeOffActs != null and !writeOffActs.isEmpty()}">
+        <div class="mb-4" th:with="approvedActs=${writeOffActs?.?[status.name() == 'APPROVED']}" th:if="${approvedActs != null and !approvedActs.isEmpty()}">
             <h6 class="form-section-title">Акты списания</h6>
             <div class="table-responsive">
                 <table class="table table-sm table-striped">
@@ -224,9 +224,9 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <tr th:each="wa : ${writeOffActs}">
+                    <tr th:each="wa : ${approvedActs}">
                         <td th:text="${wa.getActNumber()}"></td>
-                        <td th:text="${wa.getActDate()}"></td>
+                        <td th:text="${#temporals.format(wa.getActDate(), 'dd.MM.yyyy')}"></td>
                         <td th:text="${wa.getQuantity()}"></td>
                         <td th:text="${wa.getReason().getDisplayName()}"></td>
                         <td th:text="${wa.getStatus().getDisplayName()}"></td>
