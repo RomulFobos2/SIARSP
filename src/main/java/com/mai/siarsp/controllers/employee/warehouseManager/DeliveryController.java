@@ -93,16 +93,26 @@ public class DeliveryController {
 
         // Подгружаем shelfLifeDays в Map внутри транзакции — чтобы шаблон не дёргал
         // lazy-коллекцию attributeValues после её закрытия (см. LazyInitializationException).
+        // Параллельно считаем минимальную дату производства для каждой позиции:
+        // min = today − shelfLifeDays (партия не должна быть просрочена к моменту приёмки).
+        java.time.LocalDate today = java.time.LocalDate.now();
         java.util.Map<Long, Integer> shelfLifeDaysByProduct = new java.util.HashMap<>();
+        java.util.Map<Long, java.time.LocalDate> minProductionDateByProduct = new java.util.HashMap<>();
         for (var rp : request.getRequestedProducts()) {
-            if (rp.getProduct() != null) {
-                shelfLifeDaysByProduct.put(rp.getProduct().getId(), rp.getProduct().getShelfLifeDays());
+            if (rp.getProduct() == null) continue;
+            Long pid = rp.getProduct().getId();
+            Integer days = rp.getProduct().getShelfLifeDays();
+            shelfLifeDaysByProduct.put(pid, days);
+            if (days != null) {
+                minProductionDateByProduct.put(pid, today.minusDays(days));
             }
         }
         model.addAttribute("request", RequestForDeliveryMapper.INSTANCE.toDTO(request));
         model.addAttribute("requestedProducts", request.getRequestedProducts());
         model.addAttribute("shelfLifeDaysByProduct", shelfLifeDaysByProduct);
-        model.addAttribute("deliveryDate", LocalDate.now());
+        model.addAttribute("minProductionDateByProduct", minProductionDateByProduct);
+        model.addAttribute("maxProductionDate", today);
+        model.addAttribute("deliveryDate", today);
         return "employee/warehouseManager/deliveries/addDeliveryFromRequest";
     }
 

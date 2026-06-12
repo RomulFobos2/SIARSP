@@ -110,6 +110,8 @@
                             <input type="date" name="productionDates"
                                    class="form-control form-control-sm"
                                    th:id="'productionDate_' + ${stat.index}"
+                                   th:max="${maxProductionDate}"
+                                   th:min="${minProductionDateByProduct[rp.getProduct().getId()]}"
                                    required style="width: 150px;"/>
                         </td>
                         <td class="text-center"
