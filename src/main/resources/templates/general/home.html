@@ -16,22 +16,21 @@
 <header th:insert="~{blocks/header :: header}"></header>
 
 <main>
-    <!-- Hero Section -->
     <section class="home-hero">
-        <div class="container py-5">
+        <div class="hero-content container">
             <div class="row">
                 <div class="col-lg-8 mx-auto">
                     <h3 class="mb-3">Автоматизированная информационная система</h3>
                     <h3 class="mb-4">для предприятия малого бизнеса</h3>
-                    <h5 class="lead">Студент: </h5>
-                    <h5 class="lead">МАИ филиал "Восход"</h5>
+                    <h5 class="lead mb-1">Студент: </h5>
+                    <h5 class="lead mb-4">МАИ филиал "Восход"</h5>
+                    <a href="/employee/login" class="btn btn-light btn-lg px-5 rounded-pill fw-semibold">
+                        Войти в систему
+                    </a>
                 </div>
             </div>
         </div>
     </section>
-
-    <!-- Image Section -->
-    <section class="home-image-section"></section>
 </main>
 
 <div th:insert="~{blocks/footer :: footer}"></div>

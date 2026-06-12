@@ -411,46 +411,48 @@
    ======================================== */
 
 .home-hero {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-image: url('/images/main-fon-site.jpg');
+    background-size: cover;
+    background-position: center;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
     color: white;
-    padding: 4rem 0;
     text-align: center;
 }
 
+@media (max-width: 768px) {
+    .home-hero {
+        background-image: url('/images/main-fon-mobile.png');
+        min-height: 100svh;
+    }
+}
+
+.home-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.50);
+}
+
+.home-hero .hero-content {
+    position: relative;
+    z-index: 1;
+}
+
 .home-hero h3 {
-    font-size: 2rem;
+    font-size: 2.2rem;
     font-weight: 700;
-    margin-bottom: 1rem;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
 }
 
 .home-hero h5 {
     font-size: 1.1rem;
     font-weight: 400;
-    opacity: 0.9;
-}
-
-.home-image-section {
-    background-image: url('/images/main-fon-site.jpg');
-    background-size: cover;
-    background-position: center;
-    min-height: 70vh;
-    position: relative;
-}
-
-@media (max-width: 768px) {
-    .home-image-section {
-        background-image: url('/images/main-fon-mobile.png');
-    }
-}
-
-.home-image-section::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.2);
+    opacity: 0.85;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.4);
 }
 
 /* ========================================
