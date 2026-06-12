@@ -58,7 +58,8 @@
                 <div class="col-md-3">
                     <label for="deliveryDate" class="form-label fw-bold">Дата приёмки</label>
                     <input type="date" id="deliveryDate" name="deliveryDate" class="form-control"
-                           th:value="${deliveryDate}" required/>
+                           th:value="${deliveryDate}" th:min="${deliveryDate}" th:max="${deliveryDate}"
+                           readonly required/>
                 </div>
             </div>
 

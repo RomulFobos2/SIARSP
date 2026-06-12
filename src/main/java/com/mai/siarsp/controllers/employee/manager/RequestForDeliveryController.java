@@ -126,7 +126,7 @@ public class RequestForDeliveryController {
             redirectAttributes.addFlashAttribute("requestError", "Ошибка при согласовании заявки.");
             return "redirect:/employee/manager/requestsForDelivery/detailsRequestForDelivery/" + id;
         }
-        redirectAttributes.addFlashAttribute("requestSuccess", "Заявка согласована и передана бухгалтеру.");
+        redirectAttributes.addFlashAttribute("requestSuccess", "Заявка согласована.");
         return "redirect:/employee/manager/requestsForDelivery/detailsRequestForDelivery/" + id;
     }
 
