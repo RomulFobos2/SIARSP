@@ -1,0 +1,15 @@
+{
+  "name": "СИАРСП",
+  "short_name": "СИАРСП",
+  "icons": [
+    {
+      "src": "/images/icon-mobile.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff"
+}

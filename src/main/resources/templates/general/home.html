@@ -8,6 +8,9 @@
     <link href="/css/style.css" rel="stylesheet">
     <script src="/js/bootstrap.bundle.min.js"></script>
     <script src="/js/javascript.js"></script>
+    <link rel="icon" type="image/png" href="/images/icon-site.png">
+    <link rel="apple-touch-icon" href="/images/icon-mobile.png">
+    <link rel="manifest" href="/manifest.json">
 </head>
 <body>
 <header th:insert="~{blocks/header :: header}"></header>
@@ -28,7 +31,7 @@
     </section>
 
     <!-- Image Section -->
-    <section class="home-image-section" style="background-image: url('/images/fon_home.jpg');"></section>
+    <section class="home-image-section"></section>
 </main>
 
 <div th:insert="~{blocks/footer :: footer}"></div>
