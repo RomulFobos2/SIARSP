@@ -27,6 +27,7 @@ public class WarehouseManagementService {
     private final StorageZoneRepository storageZoneRepository;
     private final ZoneProductRepository zoneProductRepository;
     private final ProductRepository productRepository;
+    private final SupplyRepository supplyRepository;
     private final ProductCostService productCostService;
 
     public WarehouseManagementService(
@@ -35,16 +36,44 @@ public class WarehouseManagementService {
             StorageZoneRepository storageZoneRepository,
             ZoneProductRepository zoneProductRepository,
             ProductRepository productRepository,
+            SupplyRepository supplyRepository,
             ProductCostService productCostService) {
         this.placementService = placementService;
         this.warehouseRepository = warehouseRepository;
         this.storageZoneRepository = storageZoneRepository;
         this.zoneProductRepository = zoneProductRepository;
         this.productRepository = productRepository;
+        this.supplyRepository = supplyRepository;
         this.productCostService = productCostService;
     }
 
     // ========== РАЗМЕЩЕНИЕ ==========
+
+    @Transactional
+    public PlacementInfo placeSupplyOptimal(Long supplyId, int quantity) {
+        Optional<Supply> optS = supplyRepository.findById(supplyId);
+        if (optS.isEmpty()) return PlacementInfo.failure("Партия не найдена");
+        Supply supply = optS.get();
+        if (supply.getProduct().getQuantityForStock() < quantity) {
+            return PlacementInfo.failure("Недостаточно товара для размещения (доступно: "
+                    + supply.getProduct().getQuantityForStock() + ")");
+        }
+        return placementService.placeOptimalForSupply(supply, quantity);
+    }
+
+    @Transactional
+    public PlacementInfo placeSupplyInZone(Long supplyId, Long zoneId, int quantity) {
+        Optional<Supply> optS = supplyRepository.findById(supplyId);
+        if (optS.isEmpty()) return PlacementInfo.failure("Партия не найдена");
+        Optional<StorageZone> optZ = storageZoneRepository.findById(zoneId);
+        if (optZ.isEmpty()) return PlacementInfo.failure("Зона хранения не найдена");
+        Supply supply = optS.get();
+        if (supply.getProduct().getQuantityForStock() < quantity) {
+            return PlacementInfo.failure("Недостаточно товара для размещения (доступно: "
+                    + supply.getProduct().getQuantityForStock() + ")");
+        }
+        return placementService.placeInZoneForSupply(supply, optZ.get(), quantity);
+    }
 
     @Transactional
     public PlacementInfo placeProductOptimal(Long productId, int quantity) {

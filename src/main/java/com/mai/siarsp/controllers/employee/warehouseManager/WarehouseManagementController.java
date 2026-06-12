@@ -2,9 +2,11 @@ package com.mai.siarsp.controllers.employee.warehouseManager;
 
 import com.mai.siarsp.dto.*;
 import com.mai.siarsp.models.Product;
+import com.mai.siarsp.models.Supply;
 import com.mai.siarsp.models.Warehouse;
 import com.mai.siarsp.models.ZoneProduct;
 import com.mai.siarsp.repo.ProductRepository;
+import com.mai.siarsp.repo.SupplyRepository;
 import com.mai.siarsp.repo.WarehouseRepository;
 import com.mai.siarsp.repo.ZoneProductRepository;
 import com.mai.siarsp.service.employee.warehouseManager.WarehouseManagementService;
@@ -35,16 +37,19 @@ public class WarehouseManagementController {
     private final WarehouseRepository warehouseRepository;
     private final ProductRepository productRepository;
     private final ZoneProductRepository zoneProductRepository;
+    private final SupplyRepository supplyRepository;
 
     public WarehouseManagementController(
             @Qualifier("warehouseManagementService") WarehouseManagementService managementService,
             WarehouseRepository warehouseRepository,
             ProductRepository productRepository,
-            ZoneProductRepository zoneProductRepository) {
+            ZoneProductRepository zoneProductRepository,
+            SupplyRepository supplyRepository) {
         this.managementService = managementService;
         this.warehouseRepository = warehouseRepository;
         this.productRepository = productRepository;
         this.zoneProductRepository = zoneProductRepository;
+        this.supplyRepository = supplyRepository;
     }
 
     // ========== РАЗМЕЩЕНИЕ ТОВАРА ==========
@@ -104,10 +109,17 @@ public class WarehouseManagementController {
             @RequestParam Long productId,
             @RequestParam int quantity,
             @RequestParam(required = false) Long zoneId,
+            @RequestParam(required = false) Long supplyId,
             RedirectAttributes redirectAttributes) {
 
         PlacementInfo result;
-        if (zoneId == null) {
+        if (supplyId != null) {
+            if (zoneId == null) {
+                result = managementService.placeSupplyOptimal(supplyId, quantity);
+            } else {
+                result = managementService.placeSupplyInZone(supplyId, zoneId, quantity);
+            }
+        } else if (zoneId == null) {
             result = managementService.placeProductOptimal(productId, quantity);
         } else {
             result = managementService.placeProductInZone(productId, zoneId, quantity);
@@ -279,6 +291,26 @@ public class WarehouseManagementController {
     }
 
     // ========== AJAX-ЭНДПОИНТЫ ==========
+
+    @Transactional(readOnly = true)
+    @GetMapping("/employee/warehouseManager/warehouse-management/product-supplies/{productId}")
+    @ResponseBody
+    public List<Map<String, Object>> getProductSupplies(@PathVariable Long productId) {
+        return supplyRepository.findByProductIdOrderByDelivery_DeliveryDateDesc(productId)
+                .stream()
+                .filter(s -> s.getQuantityForStock() > 0)
+                .map(s -> {
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("id", s.getId());
+                    m.put("productionDate", s.getProductionDate() != null ? s.getProductionDate().toString() : null);
+                    m.put("expirationDate", s.getExpirationDate() != null ? s.getExpirationDate().toString() : null);
+                    m.put("deliveryDate", s.getDelivery() != null && s.getDelivery().getDeliveryDate() != null
+                            ? s.getDelivery().getDeliveryDate().toString() : null);
+                    m.put("quantityForStock", s.getQuantityForStock());
+                    return m;
+                })
+                .toList();
+    }
 
     @GetMapping("/employee/warehouseManager/warehouse-management/check-placement")
     @ResponseBody
