@@ -114,13 +114,24 @@
                     return;
                 }
                 warehouseSelect.innerHTML = '<option value="">— Выберите склад —</option>';
+                var anyAvailable = false;
                 warehouses.forEach(function(wh) {
                     var opt = document.createElement('option');
                     opt.value = wh.id;
-                    opt.textContent = wh.name + ' (' + wh.availableQuantity + ' шт.)';
+                    opt.textContent = wh.name + ' (доступно: ' + wh.availableQuantity
+                            + ' из ' + wh.placedOnWarehouse + ' шт.)';
                     opt.dataset.qty = wh.availableQuantity;
+                    if (wh.availableQuantity <= 0) {
+                        opt.disabled = true;
+                    } else {
+                        anyAvailable = true;
+                    }
                     warehouseSelect.appendChild(opt);
                 });
+                if (!anyAvailable) {
+                    warehouseHint.textContent = 'Весь размещённый товар зарезервирован под клиентские заказы. '
+                            + 'Сначала отмените или отгрузите соответствующий заказ.';
+                }
                 warehouseSelect.disabled = false;
             })
             .catch(function() {
