@@ -224,7 +224,7 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <tr th:each="wa : ${writeOffActs}" th:if="${wa.getStatus().name() == 'APPROVED'}">
+                    <tr th:each="wa : ${writeOffActs}">
                         <td th:text="${wa.getActNumber()}"></td>
                         <td th:text="${#temporals.format(wa.getActDate(), 'dd.MM.yyyy')}"></td>
                         <td th:text="${wa.getQuantity()}"></td>
