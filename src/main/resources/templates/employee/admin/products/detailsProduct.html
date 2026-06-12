@@ -129,23 +129,25 @@
                     <thead>
                     <tr>
                         <th>Дата заказа</th>
+                        <th>Дата производства</th>
+                        <th>Срок годности</th>
                         <th>Поставщик</th>
                         <th>Кол-во</th>
                         <th>Ед. изм.</th>
                         <th>Цена за ед.</th>
                         <th>Сумма</th>
-                        <th>Срок годности</th>
                     </tr>
                     </thead>
                     <tbody>
                     <tr th:each="row : ${productSupplies}" class="supplies-row">
                         <td th:text="${row.deliveryDate() != null ? #temporals.format(row.deliveryDate(), 'dd.MM.yyyy') : '—'}"></td>
+                        <td th:text="${row.productionDate() != null ? #temporals.format(row.productionDate(), 'dd.MM.yyyy') : '—'}"></td>
+                        <td th:text="${row.expirationDate() != null ? #temporals.format(row.expirationDate(), 'dd.MM.yyyy') : '—'}"></td>
                         <td th:text="${row.supplierName()}"></td>
                         <td th:text="${row.quantity()}"></td>
                         <td th:text="${row.unit() != null ? row.unit() : '—'}"></td>
                         <td th:text="${row.purchasePrice()}"></td>
                         <td th:text="${row.totalPrice()}"></td>
-                        <td th:text="${row.expirationDate() != null ? #temporals.format(row.expirationDate(), 'dd.MM.yyyy') : '—'}"></td>
                     </tr>
                     </tbody>
                 </table>

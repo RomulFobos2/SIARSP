@@ -3,6 +3,7 @@ package com.mai.siarsp.dto;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Data
 public class SupplyDTO {
@@ -18,4 +19,6 @@ public class SupplyDTO {
     private int deficitQuantity;
     private String deficitReason;
     private int orderedQuantity;
+    private LocalDate productionDate;
+    private LocalDate expirationDate;
 }

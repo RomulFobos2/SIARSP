@@ -59,6 +59,8 @@
                     <th>№</th>
                     <th>Артикул</th>
                     <th>Товар</th>
+                    <th>Дата производства</th>
+                    <th>Срок годности</th>
                     <th>Ед. изм.</th>
                     <th>Заказано</th>
                     <th>Принято</th>
@@ -77,6 +79,8 @@
                         <a th:href="'/employee/admin/products/detailsProduct/' + ${supply.getProductId()}"
                            th:text="${supply.getProductName()}" class="text-decoration-none"></a>
                     </td>
+                    <td th:text="${supply.getProductionDate() != null ? #temporals.format(supply.getProductionDate(), 'dd.MM.yyyy') : '—'}"></td>
+                    <td th:text="${supply.getExpirationDate() != null ? #temporals.format(supply.getExpirationDate(), 'dd.MM.yyyy') : '—'}"></td>
                     <td th:text="${supply.getUnit() != null ? supply.getUnit() : '—'}"></td>
                     <td th:text="${supply.getOrderedQuantity()}"></td>
                     <td th:text="${supply.getQuantity()}"></td>
