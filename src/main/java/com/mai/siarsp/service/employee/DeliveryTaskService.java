@@ -629,18 +629,18 @@ public class DeliveryTaskService {
     // ========== ДОСТАВКА (COURIER) ==========
 
     @Transactional
-    public boolean startDelivery(Long taskId, Integer startMileage) {
+    public String startDelivery(Long taskId, Integer startMileage) {
         try {
             Optional<DeliveryTask> optTask = deliveryTaskRepository.findById(taskId);
             if (optTask.isEmpty()) {
                 log.error("Задача с id={} не найдена", taskId);
-                return false;
+                return "Задача не найдена";
             }
             DeliveryTask task = optTask.get();
 
             if (task.getStatus() != DeliveryTaskStatus.LOADED) {
                 log.error("Задача id={} не в статусе LOADED (текущий: {})", taskId, task.getStatus());
-                return false;
+                return "Задача не готова к доставке (статус: " + task.getStatus().getDisplayName() + ")";
             }
 
             // Валидация: начальный пробег не может быть меньше текущего пробега автомобиля
@@ -648,7 +648,8 @@ public class DeliveryTaskService {
             if (vehicle.getCurrentMileage() != null && startMileage < vehicle.getCurrentMileage()) {
                 log.error("Задача id={}: начальный пробег {} км меньше текущего пробега авто {} км",
                         taskId, startMileage, vehicle.getCurrentMileage());
-                return false;
+                return "Введённый пробег (" + startMileage + " км) не может быть меньше текущего пробега автомобиля ("
+                        + vehicle.getCurrentMileage() + " км)";
             }
 
             task.setStatus(DeliveryTaskStatus.IN_TRANSIT);
@@ -658,12 +659,12 @@ public class DeliveryTaskService {
 
             log.info("Задача id={}: доставка начата, начальный пробег {} км",
                     taskId, startMileage);
-            return true;
+            return null;
 
         } catch (Exception e) {
             log.error("Ошибка при начале доставки: {}", e.getMessage(), e);
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            return false;
+            return "Внутренняя ошибка при начале доставки";
         }
     }
 
