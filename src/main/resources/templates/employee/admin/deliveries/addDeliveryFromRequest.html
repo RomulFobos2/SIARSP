@@ -113,7 +113,7 @@
                                    required style="width: 150px;"/>
                         </td>
                         <td class="text-center"
-                            th:text="${rp.getProduct().getShelfLifeDays() != null ? rp.getProduct().getShelfLifeDays() : '—'}"></td>
+                            th:text="${shelfLifeDaysByProduct[rp.getProduct().getId()] != null ? shelfLifeDaysByProduct[rp.getProduct().getId()] + ' дн.' : '—'}"></td>
                         <td>
                             <span th:text="${rp.getPurchasePrice() != null ? rp.getPurchasePrice() : '—'}"></span>
                         </td>

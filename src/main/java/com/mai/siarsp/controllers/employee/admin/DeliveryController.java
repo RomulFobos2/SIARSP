@@ -76,8 +76,17 @@ public class DeliveryController {
             return "redirect:/employee/admin/deliveries/addDelivery";
         }
 
+        // Подгружаем shelfLifeDays в Map внутри транзакции — чтобы шаблон не дёргал
+        // lazy-коллекцию attributeValues после её закрытия (LazyInitializationException).
+        java.util.Map<Long, Integer> shelfLifeDaysByProduct = new java.util.HashMap<>();
+        for (var rp : request.getRequestedProducts()) {
+            if (rp.getProduct() != null) {
+                shelfLifeDaysByProduct.put(rp.getProduct().getId(), rp.getProduct().getShelfLifeDays());
+            }
+        }
         model.addAttribute("request", RequestForDeliveryMapper.INSTANCE.toDTO(request));
         model.addAttribute("requestedProducts", request.getRequestedProducts());
+        model.addAttribute("shelfLifeDaysByProduct", shelfLifeDaysByProduct);
         model.addAttribute("deliveryDate", LocalDate.now());
         return "employee/admin/deliveries/addDeliveryFromRequest";
     }

@@ -99,9 +99,22 @@ public class Product {
                 .orElse(null);
     }
 
+    /**
+     * Сколько единиц товара физически размещено в зонах (не в буфере «к размещению»).
+     * Производное значение: stockQuantity − quantityForStock.
+     */
+    @Transient
+    public int getPlacedQuantity() {
+        return Math.max(0, stockQuantity - quantityForStock);
+    }
+
+    /**
+     * Сколько единиц доступно для резерва/продажи.
+     * Учитывает: только размещённый в зонах товар (не буфер) минус уже зарезервированный.
+     */
     @Transient
     public int getAvailableQuantity() {
-        return stockQuantity - reservedQuantity;
+        return Math.max(0, stockQuantity - quantityForStock - reservedQuantity);
     }
 
     /**
