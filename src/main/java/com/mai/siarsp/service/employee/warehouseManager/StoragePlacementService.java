@@ -231,6 +231,15 @@ public class StoragePlacementService {
             return PlacementInfo.failure("Партия не задана");
         }
         Product product = supply.getProduct();
+        if (!zone.canStoreProduct(product)) {
+            Warehouse wh = zone.getShelf().getWarehouse();
+            log.error("Несовместимость: товар '{}' (тип {}) и склад '{}' (тип {})",
+                    product.getName(), product.getWarehouseType(),
+                    wh.getName(), wh.getType());
+            return PlacementInfo.failure("Товар '" + product.getName() + "' (" +
+                    product.getWarehouseType().getDisplayName() + ") нельзя разместить в склад '" +
+                    wh.getName() + "' (" + wh.getType().getDisplayName() + ")");
+        }
         Double boxL = product.getPackageLength();
         Double boxW = product.getPackageWidth();
         Double boxH = product.getPackageHeight();

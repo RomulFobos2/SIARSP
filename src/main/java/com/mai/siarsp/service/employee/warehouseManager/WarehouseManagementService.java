@@ -68,11 +68,15 @@ public class WarehouseManagementService {
         Optional<StorageZone> optZ = storageZoneRepository.findById(zoneId);
         if (optZ.isEmpty()) return PlacementInfo.failure("Зона хранения не найдена");
         Supply supply = optS.get();
+        StorageZone zone = optZ.get();
+        if (!zone.canStoreProduct(supply.getProduct())) {
+            return PlacementInfo.failure("Тип склада не совместим с типом хранения товара");
+        }
         if (supply.getProduct().getQuantityForStock() < quantity) {
             return PlacementInfo.failure("Недостаточно товара для размещения (доступно: "
                     + supply.getProduct().getQuantityForStock() + ")");
         }
-        return placementService.placeInZoneForSupply(supply, optZ.get(), quantity);
+        return placementService.placeInZoneForSupply(supply, zone, quantity);
     }
 
     @Transactional
