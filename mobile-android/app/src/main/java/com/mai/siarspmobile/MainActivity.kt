@@ -1104,19 +1104,22 @@ private fun TaskScreen(vm: MainViewModel, paddingValues: PaddingValues) {
                                 value = endMileageText,
                                 onValueChange = { endMileageText = it.filter(Char::isDigit) },
                                 label = { Text("Конечный пробег") },
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                             )
                             OutlinedTextField(
                                 value = representativeText,
                                 onValueChange = { representativeText = it },
                                 label = { Text("Представитель клиента (необязательно)") },
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
                             )
                             OutlinedTextField(
                                 value = commentText,
                                 onValueChange = { commentText = it },
                                 label = { Text("Комментарий к акту (необязательно)") },
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
                             )
                             Button(
                                 onClick = {
