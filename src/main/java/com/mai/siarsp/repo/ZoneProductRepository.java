@@ -74,4 +74,7 @@ public interface ZoneProductRepository extends JpaRepository<ZoneProduct, Long> 
             "AND zp.zone.shelf.warehouse.id = :warehouseId")
     List<ZoneProduct> findBySupplyIdAndWarehouseId(@Param("supplyId") Long supplyId,
                                                     @Param("warehouseId") Long warehouseId);
+
+    @Query("SELECT zp FROM ZoneProduct zp WHERE zp.supply.id = :supplyId AND zp.quantity > 0")
+    List<ZoneProduct> findBySupplyId(@Param("supplyId") Long supplyId);
 }

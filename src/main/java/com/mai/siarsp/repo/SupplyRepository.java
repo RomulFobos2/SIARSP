@@ -38,4 +38,14 @@ public interface SupplyRepository extends JpaRepository<Supply, Long> {
             "AND s.expirationDate < :today " +
             "AND EXISTS (SELECT 1 FROM ZoneProduct zp WHERE zp.supply = s)")
     List<Supply> findExpiredOnStock(@Param("today") LocalDate today);
+
+    /**
+     * Партии товара, годные на referenceDate (expirationDate >= referenceDate)
+     * и имеющие хотя бы один ZoneProduct с положительным остатком.
+     */
+    @Query("SELECT DISTINCT zp.supply FROM ZoneProduct zp WHERE zp.supply.product.id = :productId " +
+            "AND zp.supply.expirationDate >= :referenceDate AND zp.quantity > 0 " +
+            "ORDER BY zp.supply.expirationDate ASC")
+    List<Supply> findEligibleByProductAndDate(@Param("productId") Long productId,
+                                              @Param("referenceDate") LocalDate referenceDate);
 }

@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Позиция в клиентском заказе: какой товар, в каком количестве и по какой цене уходит клиенту.
@@ -77,6 +78,14 @@ public class OrderedProduct {
     @JoinColumn(nullable = false)
     private ClientOrder clientOrder;
 
+    /**
+     * Пик-линии — конкретные (партия, зона, количество), из которых работник собирает эту позицию.
+     * Сумма quantity всех пиков должна равняться {@link #quantity} к моменту завершения сборки.
+     */
+    @ToString.Exclude
+    @OneToMany(mappedBy = "orderedProduct", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderedProductPick> picks = new ArrayList<>();
+
     // ========== КОНСТРУКТОРЫ ==========
 
     public OrderedProduct(Product product, int quantity, BigDecimal price) {
@@ -110,5 +119,16 @@ public class OrderedProduct {
 
     public void recalculateTotalPrice() {
         this.totalPrice = price.multiply(BigDecimal.valueOf(quantity));
+    }
+
+    @Transient
+    public int getPickedQuantity() {
+        if (picks == null) return 0;
+        return picks.stream().mapToInt(OrderedProductPick::getQuantity).sum();
+    }
+
+    @Transient
+    public boolean isFullyPicked() {
+        return getPickedQuantity() == quantity;
     }
 }

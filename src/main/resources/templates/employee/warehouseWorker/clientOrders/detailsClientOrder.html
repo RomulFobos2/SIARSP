@@ -78,41 +78,117 @@
 
             <!-- Позиции поставки -->
             <h5 class="fw-bold mb-3">Позиции поставки</h5>
-            <div class="table-responsive mb-4">
-                <table class="table table-modern">
-                    <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Товар</th>
-                        <th>Артикул</th>
-                        <th>Количество</th>
-                        <th>Местоположение на складе</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr th:each="op, idx : ${order.orderedProducts}">
-                        <td th:text="${idx.index + 1}"></td>
-                        <td th:text="${op.product.name}"></td>
-                        <td th:text="${op.product.article}"></td>
-                        <td th:text="${op.quantity}"></td>
-                        <td>
+            <div class="alert alert-info py-2 small mb-3" th:if="${order.status.name() == 'IN_PROGRESS'}">
+                <i class="bi bi-info-circle"></i>
+                Для каждой позиции подберите партии и зоны. Партии с истёкшим до даты доставки
+                (<span th:text="${#temporals.format(order.deliveryDate, 'dd.MM.yyyy')}"></span>) сроком
+                не предлагаются.
+            </div>
+            <div class="mb-4">
+                <div th:each="op, idx : ${order.orderedProducts}" class="card border mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong th:text="${(idx.index + 1) + '. ' + op.product.name}"></strong>
+                            <small class="text-muted" th:text="'(' + ${op.product.article} + ')'"></small>
+                        </div>
+                        <div>
+                            <span class="badge"
+                                  th:classappend="${op.fullyPicked ? 'bg-success' : 'bg-warning text-dark'}"
+                                  th:text="'Собрано: ' + ${op.pickedQuantity} + ' / ' + ${op.quantity}"></span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- Существующие пики -->
+                        <div th:if="${not #lists.isEmpty(op.picks)}" class="mb-3">
+                            <table class="table table-sm mb-0">
+                                <thead class="table-light">
+                                <tr>
+                                    <th>Партия</th>
+                                    <th>Срок годности</th>
+                                    <th>Склад / Полка / Зона</th>
+                                    <th class="text-end">Кол-во</th>
+                                    <th th:if="${order.status.name() == 'IN_PROGRESS'}"></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="pick : ${op.picks}">
+                                    <td th:text="'#' + ${pick.supply.id}"></td>
+                                    <td th:text="${pick.supply.expirationDate != null ? #temporals.format(pick.supply.expirationDate, 'dd.MM.yyyy') : '—'}"></td>
+                                    <td>
+                                        <span th:text="${pick.zone.shelf.warehouse.name}"></span>
+                                        &rarr; <span th:text="${pick.zone.shelf.code}"></span>
+                                        &rarr; <span th:text="${pick.zone.label}"></span>
+                                    </td>
+                                    <td class="text-end" th:text="${pick.quantity} + ' шт.'"></td>
+                                    <td th:if="${order.status.name() == 'IN_PROGRESS'}">
+                                        <form method="post"
+                                              th:action="@{/employee/warehouseWorker/clientOrders/removePick}"
+                                              class="d-inline">
+                                            <input type="hidden" name="orderId" th:value="${order.id}">
+                                            <input type="hidden" name="pickId" th:value="${pick.id}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Удалить пик">
+                                                &times;
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Форма добавления пика -->
+                        <form th:if="${order.status.name() == 'IN_PROGRESS' and !op.fullyPicked}"
+                              method="post"
+                              th:action="@{/employee/warehouseWorker/clientOrders/addPick}"
+                              class="row g-2 align-items-end">
+                            <input type="hidden" name="orderId" th:value="${order.id}">
+                            <input type="hidden" name="orderedProductId" th:value="${op.id}">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Партия</label>
+                                <select name="supplyId" required class="form-select form-select-sm"
+                                        th:id="'supplySelect_' + ${op.id}"
+                                        th:onchange="'onSupplyChange(' + ${op.id} + ')'">
+                                    <option value="">— Загрузка партий... —</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Зона</label>
+                                <select name="zoneId" required disabled class="form-select form-select-sm"
+                                        th:id="'zoneSelect_' + ${op.id}"
+                                        th:onchange="'onZoneChange(' + ${op.id} + ')'">
+                                    <option value="">— Сначала выберите партию —</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-semibold">Кол-во</label>
+                                <input type="number" name="quantity" required min="1" disabled
+                                       class="form-control form-control-sm"
+                                       th:id="'qtyInput_' + ${op.id}">
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary btn-sm w-100">
+                                    Добавить пик
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Подсказка о размещении (если нет пиков ещё) -->
+                        <div th:if="${(order.status.name() == 'RESERVED' or order.status.name() == 'READY')
+                                      and #lists.isEmpty(op.picks)}"
+                             class="text-muted small">
                             <th:block th:with="locations=${productLocations.get(op.product.id)}">
                                 <div th:if="${locations != null and !locations.isEmpty()}">
-                                    <div th:each="zp : ${locations}" class="mb-1">
-                                        <small>
-                                            <span th:text="${zp.zone.shelf.warehouse.name}" class="fw-semibold"></span>
-                                            &rarr; <span th:text="${zp.zone.shelf.code}"></span>
-                                            &rarr; <span th:text="${zp.zone.label}"></span>:
-                                            <span th:text="${zp.quantity}" class="fw-bold"></span> шт.
-                                        </small>
-                                    </div>
+                                    <strong>Размещён:</strong>
+                                    <span th:each="zp, st : ${locations}">
+                                        <span th:text="${zp.zone.shelf.warehouse.name + '→' + zp.zone.shelf.code + '→' + zp.zone.label + ' (' + zp.quantity + ')'}"></span>
+                                        <span th:if="${!st.last}">; </span>
+                                    </span>
                                 </div>
-                                <span th:if="${locations == null or locations.isEmpty()}" class="text-muted">&mdash;</span>
+                                <span th:if="${locations == null or locations.isEmpty()}">Товар нигде не размещён</span>
                             </th:block>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Комментарий -->
@@ -134,7 +210,13 @@
                 <form th:if="${order.status.name() == 'IN_PROGRESS'}"
                       th:action="'/employee/warehouseWorker/clientOrders/completeAssembly/' + ${order.id}"
                       method="post" class="d-inline">
-                    <button type="submit" class="btn btn-success">Сборка завершена</button>
+                    <button type="submit" class="btn btn-success"
+                            th:disabled="${#lists.isEmpty(order.orderedProducts) or
+                                          order.orderedProducts.?[!fullyPicked].size() > 0}"
+                            th:title="${order.orderedProducts.?[!fullyPicked].size() > 0
+                                       ? 'Соберите все позиции полностью' : ''}">
+                        Сборка завершена
+                    </button>
                 </form>
 
                 <!-- READY: информация -->
@@ -173,5 +255,93 @@
     </div>
 </div>
 <div th:insert="~{blocks/footer :: footer}"></div>
+
+<script th:if="${order.status.name() == 'IN_PROGRESS'}" th:inline="javascript">
+    // Для каждой ещё не собранной полностью позиции — подгружаем партии при загрузке страницы.
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('select[id^="supplySelect_"]').forEach(function (sel) {
+            var opId = sel.id.replace('supplySelect_', '');
+            loadSupplies(opId);
+        });
+    });
+
+    function loadSupplies(opId) {
+        var sel = document.getElementById('supplySelect_' + opId);
+        if (!sel) return;
+        fetch('/employee/warehouseWorker/clientOrders/eligible-supplies/' + opId)
+            .then(function (r) { return r.json(); })
+            .then(function (supplies) {
+                if (!supplies || supplies.length === 0) {
+                    sel.innerHTML = '<option value="">— Нет годных партий —</option>';
+                    sel.disabled = true;
+                    return;
+                }
+                sel.innerHTML = '<option value="">— Выберите партию —</option>';
+                supplies.forEach(function (s) {
+                    var opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = '#' + s.id + ' / Пр-во: ' + (s.productionDate || '—')
+                            + ' / Годен до: ' + (s.expirationDate || '—')
+                            + ' (на складе: ' + s.availableTotal + ' шт.)';
+                    sel.appendChild(opt);
+                });
+                sel.disabled = false;
+            })
+            .catch(function () {
+                sel.innerHTML = '<option value="">Ошибка загрузки</option>';
+            });
+    }
+
+    function onSupplyChange(opId) {
+        var supplyId = document.getElementById('supplySelect_' + opId).value;
+        var zoneSel = document.getElementById('zoneSelect_' + opId);
+        var qtyInput = document.getElementById('qtyInput_' + opId);
+        qtyInput.value = '';
+        qtyInput.disabled = true;
+        qtyInput.removeAttribute('max');
+        if (!supplyId) {
+            zoneSel.innerHTML = '<option value="">— Сначала выберите партию —</option>';
+            zoneSel.disabled = true;
+            return;
+        }
+        zoneSel.innerHTML = '<option value="">— Загрузка зон... —</option>';
+        fetch('/employee/warehouseWorker/clientOrders/supply-zones-with-quantity/' + supplyId)
+            .then(function (r) { return r.json(); })
+            .then(function (zones) {
+                if (!zones || zones.length === 0) {
+                    zoneSel.innerHTML = '<option value="">— Нет зон —</option>';
+                    zoneSel.disabled = true;
+                    return;
+                }
+                zoneSel.innerHTML = '<option value="">— Выберите зону —</option>';
+                zones.forEach(function (z) {
+                    var opt = document.createElement('option');
+                    opt.value = z.zoneId;
+                    opt.textContent = z.warehouseName + ' / Полка ' + z.shelfCode
+                            + ' / Зона ' + z.label + ' (' + z.quantity + ' шт.)';
+                    opt.dataset.qty = z.quantity;
+                    zoneSel.appendChild(opt);
+                });
+                zoneSel.disabled = false;
+            })
+            .catch(function () {
+                zoneSel.innerHTML = '<option value="">Ошибка загрузки</option>';
+            });
+    }
+
+    function onZoneChange(opId) {
+        var zoneSel = document.getElementById('zoneSelect_' + opId);
+        var qtyInput = document.getElementById('qtyInput_' + opId);
+        var selected = zoneSel.options[zoneSel.selectedIndex];
+        if (selected && selected.dataset.qty) {
+            qtyInput.max = parseInt(selected.dataset.qty);
+            qtyInput.disabled = false;
+            qtyInput.value = '';
+        } else {
+            qtyInput.disabled = true;
+            qtyInput.value = '';
+        }
+    }
+</script>
 </body>
 </html>
