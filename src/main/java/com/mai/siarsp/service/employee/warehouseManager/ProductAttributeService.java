@@ -29,7 +29,8 @@ import java.util.*;
 public class ProductAttributeService {
 
     private static final Set<String> PROTECTED_GABARITES = Set.of(
-            "Длина упаковки:см", "Ширина упаковки:см", "Высота упаковки:см"
+            "Длина упаковки:см", "Ширина упаковки:см", "Высота упаковки:см",
+            "Срок годности:дн.", "Единица измерения:"
     );
 
     private final ProductAttributeRepository productAttributeRepository;

@@ -34,7 +34,7 @@ import java.util.Optional;
 public class ProductCategoryService {
 
     public static final List<String> MANDATORY_ATTRIBUTE_NAMES = List.of(
-            "Длина упаковки", "Ширина упаковки", "Высота упаковки", "Срок годности"
+            "Длина упаковки", "Ширина упаковки", "Высота упаковки", "Срок годности", "Единица измерения"
     );
 
     private final ProductCategoryRepository productCategoryRepository;
