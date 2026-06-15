@@ -24,4 +24,9 @@ public class ProductDTO {
      * Реальная дата годности живёт в Supply.expirationDate каждой партии.
      */
     private Integer shelfLifeDays;
+    /**
+     * Единица измерения товара (атрибут «Единица измерения»).
+     * Используется на форме создания заявки для автоподстановки в поле «Ед. изм.».
+     */
+    private String unitOfMeasure;
 }

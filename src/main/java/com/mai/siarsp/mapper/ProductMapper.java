@@ -17,6 +17,7 @@ public interface ProductMapper {
     @Mapping(source = "category.name", target = "categoryName")
     @Mapping(source = "product", target = "availableQuantity", qualifiedByName = "availableQuantity")
     @Mapping(source = "product", target = "shelfLifeDays", qualifiedByName = "shelfLifeDays")
+    @Mapping(source = "product", target = "unitOfMeasure", qualifiedByName = "unitOfMeasure")
     ProductDTO toDTO(Product product);
 
     List<ProductDTO> toDTOList(List<Product> products);
@@ -29,5 +30,10 @@ public interface ProductMapper {
     @Named("shelfLifeDays")
     default Integer getShelfLifeDays(Product product) {
         return product.getShelfLifeDays();
+    }
+
+    @Named("unitOfMeasure")
+    default String getUnitOfMeasure(Product product) {
+        return product.getUnitOfMeasure();
     }
 }
