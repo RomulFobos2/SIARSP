@@ -113,7 +113,8 @@
                                         th:attr="data-pid=${product.getId()},
                                                  data-name=${product.getName()},
                                                  data-qty=${product.getQuantityForStock()},
-                                                 data-has-dims=${hasPackageDims[product.id]}"
+                                                 data-has-dims=${hasPackageDims[product.id]},
+                                                 data-warehouse-type=${product.getWarehouseType().name()}"
                                         onclick="selectProductFromBtn(this)"
                                         th:disabled="${!hasPackageDims[product.id]}">
                                     <i class="bi bi-box-arrow-in-down"></i> Разместить
@@ -207,7 +208,8 @@
                             <option value="">— Выберите склад —</option>
                             <option th:each="wh : ${warehouses}"
                                     th:value="${wh.getId()}"
-                                    th:text="${wh.getName()}"></option>
+                                    th:attr="data-warehouse-type=${wh.getType().name()}"
+                                    th:text="${wh.getName() + ' (' + wh.getType().getDisplayName() + ')'}"></option>
                         </select>
                     </div>
 
@@ -254,9 +256,10 @@
     var selectedMaxQty = 0;
     var debounceTimer = null;
 
-    function selectProduct(id, name, maxQty, hasDims) {
+    function selectProduct(id, name, maxQty, hasDims, warehouseType) {
         selectedProductId = id;
         selectedMaxQty = maxQty;
+        filterWarehousesByType(warehouseType);
 
         document.getElementById('selectedProductName').textContent = name;
         document.getElementById('quantityInput').max = maxQty;
@@ -464,7 +467,30 @@
         const name = btn.dataset.name;
         const qty  = parseInt(btn.dataset.qty, 10);
         const has  = btn.dataset.hasDims === 'true';
-        selectProduct(id, name, qty, has);
+        const wt   = btn.dataset.warehouseType;
+        selectProduct(id, name, qty, has, wt);
+    }
+
+    // Фильтрует список складов по типу хранения выбранного товара.
+    // Несовместимые скрываются; если был выбран несовместимый — сбрасываем выбор и список зон.
+    function filterWarehousesByType(requiredType) {
+        var whSelect = document.getElementById('warehouseSelect');
+        if (!whSelect) return;
+        var resetNeeded = false;
+        whSelect.querySelectorAll('option').forEach(function (opt) {
+            if (!opt.value) return;
+            var type = opt.getAttribute('data-warehouse-type');
+            var compatible = !requiredType || type === requiredType;
+            opt.disabled = !compatible;
+            opt.style.display = compatible ? '' : 'none';
+            if (!compatible && whSelect.value === opt.value) resetNeeded = true;
+        });
+        if (resetNeeded) {
+            whSelect.value = '';
+            document.getElementById('zoneSelect').innerHTML =
+                    '<option value="">— Сначала выберите склад —</option>';
+            document.getElementById('zoneInfoBlock').classList.add('d-none');
+        }
     }
 </script>
 </body>
