@@ -1,5 +1,6 @@
 <!DOCTYPE HTML>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <title>Главная страница | СИАРСП</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
@@ -24,7 +25,8 @@
                     <h3 class="mb-4">для предприятия малого бизнеса</h3>
                     <h5 class="lead">Студент: Левчук Е.А.</h5>
                     <h5 class="lead mb-4">Филиал "Восход" МАИ</h5>
-                    <a href="/employee/login" class="btn btn-light btn-lg px-5 rounded-pill fw-semibold">
+                    <a href="/employee/login" class="btn btn-light btn-lg px-5 rounded-pill fw-semibold"
+                       sec:authorize="!isAuthenticated()">
                         Войти в систему
                     </a>
                 </div>

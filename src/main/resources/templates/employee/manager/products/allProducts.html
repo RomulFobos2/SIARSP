@@ -65,7 +65,6 @@
                     <th>Тип склада</th>
                     <th>Остаток</th>
                     <th>Доступно</th>
-                    <th>Срок хранения, дн.</th>
                     <th>Атрибуты</th>
                 </tr>
                 </thead>
@@ -89,7 +88,6 @@
                     <td th:text="${product.getWarehouseType().getDisplayName()}"></td>
                     <td th:text="${product.getStockQuantity()}"></td>
                     <td th:text="${product.getAvailableQuantity()}"></td>
-                    <td th:text="${product.getShelfLifeDays() != null ? product.getShelfLifeDays() : '—'}"></td>
                     <td>
                         <button class="btn btn-sm btn-outline-primary"
                                 th:data-productid="${product.getId()}"
