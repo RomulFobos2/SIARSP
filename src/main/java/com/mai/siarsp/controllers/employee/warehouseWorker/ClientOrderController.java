@@ -127,6 +127,11 @@ public class ClientOrderController {
         for (OrderedProduct op : order.getOrderedProducts()) {
             List<ZoneProduct> locations = zoneProductRepository.findByProduct(op.getProduct());
             productLocations.put(op.getProduct().getId(), locations);
+            // Принудительная инициализация LAZY-связей для рендера в Thymeleaf
+            op.getPicks().forEach(p -> {
+                p.getSupply().getExpirationDate();
+                p.getZone().getShelf().getWarehouse().getName();
+            });
         }
         model.addAttribute("productLocations", productLocations);
 
