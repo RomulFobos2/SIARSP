@@ -515,7 +515,7 @@ public class ClientOrderService {
             if (quantity > availableForPick) {
                 return "В связке зона '" + zone.getLabel() + "' + партия #" + supplyId
                         + " доступно к подбору только " + availableForPick + " шт. "
-                        + "(на складе: " + onStock + ", уже зарезервировано пиками: " + alreadyPicked + ")";
+                        + "(на складе: " + onStock + ", уже зарезервировано: " + alreadyPicked + ")";
             }
 
             int remainingForPosition = op.getQuantity() - op.getPickedQuantity();
@@ -541,7 +541,7 @@ public class ClientOrderService {
     public String removePick(Long pickId) {
         try {
             Optional<OrderedProductPick> optPick = orderedProductPickRepository.findById(pickId);
-            if (optPick.isEmpty()) return "Пик не найден";
+            if (optPick.isEmpty()) return "Не найден";
             OrderedProductPick pick = optPick.get();
             ClientOrder order = pick.getOrderedProduct().getClientOrder();
             if (order.getStatus() != ClientOrderStatus.IN_PROGRESS) {

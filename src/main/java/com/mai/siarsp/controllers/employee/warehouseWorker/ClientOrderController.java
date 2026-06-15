@@ -171,7 +171,7 @@ public class ClientOrderController {
         if (error != null) {
             redirectAttributes.addFlashAttribute("errorMessage", error);
         } else {
-            redirectAttributes.addFlashAttribute("successMessage", "Пик добавлен");
+            redirectAttributes.addFlashAttribute("successMessage", "Добавлен");
         }
         return "redirect:/employee/warehouseWorker/clientOrders/detailsClientOrder/" + orderId;
     }
@@ -184,7 +184,7 @@ public class ClientOrderController {
         if (error != null) {
             redirectAttributes.addFlashAttribute("errorMessage", error);
         } else {
-            redirectAttributes.addFlashAttribute("successMessage", "Пик удалён");
+            redirectAttributes.addFlashAttribute("successMessage", "Удалён");
         }
         return "redirect:/employee/warehouseWorker/clientOrders/detailsClientOrder/" + orderId;
     }
