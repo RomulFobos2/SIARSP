@@ -48,7 +48,8 @@ public class ProductAttributeService {
     }
 
     public boolean isProtectedGabarite(ProductAttribute attribute) {
-        String key = attribute.getName().trim() + ":" + attribute.getUnit().trim();
+        String unit = attribute.getUnit() != null ? attribute.getUnit().trim() : "";
+        String key = attribute.getName().trim() + ":" + unit;
         return PROTECTED_GABARITES.contains(key);
     }
 
