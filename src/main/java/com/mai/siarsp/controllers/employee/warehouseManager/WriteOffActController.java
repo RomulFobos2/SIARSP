@@ -69,22 +69,68 @@ public class WriteOffActController {
 
     @PostMapping("/createWriteOffAct")
     public String createWriteOffAct(@RequestParam Long productId,
+                                    @RequestParam Long supplyId,
+                                    @RequestParam Long zoneId,
                                     @RequestParam int quantity,
                                     @RequestParam WriteOffReason reason,
                                     @RequestParam(required = false) String comment,
                                     @RequestParam Long warehouseId,
                                     @AuthenticationPrincipal Employee currentEmployee,
                                     RedirectAttributes redirectAttributes) {
-        boolean success = writeOffActService.createAct(productId, quantity, reason, comment, currentEmployee, warehouseId);
+        boolean success = writeOffActService.createAct(productId, supplyId, zoneId, quantity,
+                reason, comment, currentEmployee, warehouseId);
 
         if (success) {
             redirectAttributes.addFlashAttribute("successMessage",
                     "Акт списания успешно создан и отправлен на подпись директору.");
         } else {
             redirectAttributes.addFlashAttribute("errorMessage",
-                    "Ошибка при создании акта списания. Проверьте доступное количество товара на выбранном складе.");
+                    "Ошибка при создании акта списания. Проверьте доступное количество товара в выбранной зоне.");
         }
         return "redirect:/employee/warehouseManager/writeOffActs/allWriteOffActs";
+    }
+
+    @Transactional(readOnly = true)
+    @GetMapping("/product-supplies-in-warehouse/{productId}/{warehouseId}")
+    @ResponseBody
+    public List<Map<String, Object>> getSuppliesInWarehouse(@PathVariable Long productId,
+                                                            @PathVariable Long warehouseId) {
+        Product product = productRepository.getReferenceById(productId);
+        List<ZoneProduct> zps = zoneProductRepository.findByProductAndWarehouseId(product, warehouseId);
+        Map<Long, Map<String, Object>> grouped = new LinkedHashMap<>();
+        for (ZoneProduct zp : zps) {
+            if (zp.getSupply() == null) continue;
+            Long sid = zp.getSupply().getId();
+            Map<String, Object> entry = grouped.computeIfAbsent(sid, k -> {
+                Map<String, Object> m = new HashMap<>();
+                m.put("id", sid);
+                m.put("productionDate", zp.getSupply().getProductionDate());
+                m.put("expirationDate", zp.getSupply().getExpirationDate());
+                m.put("quantityInWarehouse", 0);
+                return m;
+            });
+            entry.put("quantityInWarehouse", (int) entry.get("quantityInWarehouse") + zp.getQuantity());
+        }
+        return new ArrayList<>(grouped.values());
+    }
+
+    @Transactional(readOnly = true)
+    @GetMapping("/supply-zones-in-warehouse/{supplyId}/{warehouseId}")
+    @ResponseBody
+    public List<Map<String, Object>> getZonesForSupplyInWarehouse(@PathVariable Long supplyId,
+                                                                   @PathVariable Long warehouseId) {
+        return zoneProductRepository
+                .findBySupplyIdAndWarehouseId(supplyId, warehouseId)
+                .stream()
+                .map(zp -> {
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("zoneId", zp.getZone().getId());
+                    m.put("label", zp.getZone().getLabel());
+                    m.put("shelfCode", zp.getZone().getShelf().getCode());
+                    m.put("quantity", zp.getQuantity());
+                    return m;
+                })
+                .toList();
     }
 
     @Transactional(readOnly = true)

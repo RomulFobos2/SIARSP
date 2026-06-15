@@ -82,6 +82,16 @@ public class WriteOffAct {
     @JoinColumn(name = "supply_id")
     private Supply supply;
 
+    /**
+     * Зона хранения для адресного списания: списывается ровно одна запись ZoneProduct(zone, supply).
+     * Nullable: автосписание просрочки оставляет zone=null и распределяет списание по всем зонам партии
+     * на складе. Для ручных актов с июня 2026 задаётся всегда.
+     */
+    @ToString.Exclude
+    @ManyToOne
+    @JoinColumn(name = "zone_id")
+    private StorageZone zone;
+
     // ========== КОНСТРУКТОРЫ ==========
 
     public WriteOffAct(String actNumber, Product product, int quantity,

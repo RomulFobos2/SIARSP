@@ -6,11 +6,13 @@ import com.mai.siarsp.enumeration.WriteOffReason;
 import com.mai.siarsp.mapper.WriteOffActMapper;
 import com.mai.siarsp.models.Employee;
 import com.mai.siarsp.models.Product;
+import com.mai.siarsp.models.StorageZone;
 import com.mai.siarsp.models.Warehouse;
 import com.mai.siarsp.models.WriteOffAct;
 import com.mai.siarsp.models.ZoneProduct;
 import com.mai.siarsp.models.Supply;
 import com.mai.siarsp.repo.ProductRepository;
+import com.mai.siarsp.repo.StorageZoneRepository;
 import com.mai.siarsp.repo.SupplyRepository;
 import com.mai.siarsp.repo.WarehouseRepository;
 import com.mai.siarsp.repo.WriteOffActRepository;
@@ -44,19 +46,22 @@ public class WriteOffActService {
     private final WarehouseRepository warehouseRepository;
     private final NotificationService notificationService;
     private final SupplyRepository supplyRepository;
+    private final StorageZoneRepository storageZoneRepository;
 
     public WriteOffActService(WriteOffActRepository writeOffActRepository,
                               ProductRepository productRepository,
                               ZoneProductRepository zoneProductRepository,
                               WarehouseRepository warehouseRepository,
                               NotificationService notificationService,
-                              SupplyRepository supplyRepository) {
+                              SupplyRepository supplyRepository,
+                              StorageZoneRepository storageZoneRepository) {
         this.writeOffActRepository = writeOffActRepository;
         this.productRepository = productRepository;
         this.zoneProductRepository = zoneProductRepository;
         this.warehouseRepository = warehouseRepository;
         this.notificationService = notificationService;
         this.supplyRepository = supplyRepository;
+        this.storageZoneRepository = storageZoneRepository;
     }
 
     /**
@@ -91,8 +96,9 @@ public class WriteOffActService {
     }
 
     @Transactional
-    public boolean createAct(Long productId, int quantity, WriteOffReason reason,
-                             String comment, Employee responsible, Long warehouseId) {
+    public boolean createAct(Long productId, Long supplyId, Long zoneId, int quantity,
+                             WriteOffReason reason, String comment, Employee responsible,
+                             Long warehouseId) {
         try {
             Optional<Product> optProduct = productRepository.findById(productId);
             if (optProduct.isEmpty()) {
@@ -115,16 +121,41 @@ public class WriteOffActService {
 
             Warehouse warehouse = optWarehouse.get();
 
-            int availableInWarehouse = zoneProductRepository
-                    .sumQuantityByProductIdAndWarehouseId(productId, warehouseId);
-            if (availableInWarehouse <= 0) {
-                log.error("Товар '{}' не размещён на складе '{}'", product.getName(), warehouse.getName());
+            Optional<Supply> optSupply = supplyRepository.findById(supplyId);
+            if (optSupply.isEmpty()) {
+                log.error("Партия с id={} не найдена", supplyId);
+                return false;
+            }
+            Supply supply = optSupply.get();
+            if (!supply.getProduct().getId().equals(productId)) {
+                log.error("Партия #{} принадлежит товару '{}', а не выбранному '{}'",
+                        supplyId, supply.getProduct().getName(), product.getName());
                 return false;
             }
 
-            if (quantity > availableInWarehouse) {
-                log.error("Количество списания ({}) превышает остаток ({}) в складе '{}' для товара '{}'",
-                        quantity, availableInWarehouse, warehouse.getName(), product.getName());
+            Optional<StorageZone> optZone = storageZoneRepository.findById(zoneId);
+            if (optZone.isEmpty()) {
+                log.error("Зона хранения с id={} не найдена", zoneId);
+                return false;
+            }
+            StorageZone zone = optZone.get();
+            if (!zone.getShelf().getWarehouse().getId().equals(warehouseId)) {
+                log.error("Зона '{}' не принадлежит складу '{}'",
+                        zone.getLabel(), warehouse.getName());
+                return false;
+            }
+
+            Optional<ZoneProduct> optZp = zoneProductRepository.findByZoneAndSupply(zone, supply);
+            if (optZp.isEmpty()) {
+                log.error("В зоне '{}' нет партии #{} товара '{}'",
+                        zone.getLabel(), supplyId, product.getName());
+                return false;
+            }
+            int availableInZone = optZp.get().getQuantity();
+            if (quantity > availableInZone) {
+                log.error("Количество списания ({}) превышает остаток в зоне '{}' (доступно: {}) " +
+                                "для партии #{} товара '{}'",
+                        quantity, zone.getLabel(), availableInZone, supplyId, product.getName());
                 return false;
             }
 
@@ -144,16 +175,19 @@ public class WriteOffActService {
             act.setStatus(WriteOffActStatus.PENDING_DIRECTOR);
             act.setComment(comment);
             act.setWarehouse(warehouse);
+            act.setSupply(supply);
+            act.setZone(zone);
             act.setTotalCost(calculateWriteOffCost(productId, quantity));
 
             writeOffActRepository.save(act);
 
             notificationService.notifyByRole("ROLE_EMPLOYEE_MANAGER",
                     "Акт списания №" + actNumber + " на подпись. Товар: " + product.getName()
-                            + ", кол-во: " + quantity + " шт., склад: " + warehouse.getName());
+                            + ", кол-во: " + quantity + " шт., склад: " + warehouse.getName()
+                            + ", зона: " + zone.getLabel() + ", партия #" + supplyId);
 
-            log.info("Создан акт списания №{}: товар '{}', кол-во {}, причина {}, склад '{}'",
-                    actNumber, product.getName(), quantity, reason, warehouse.getName());
+            log.info("Создан акт списания №{}: товар '{}', партия #{}, зона '{}', кол-во {}, причина {}, склад '{}'",
+                    actNumber, product.getName(), supplyId, zone.getLabel(), quantity, reason, warehouse.getName());
             return true;
 
         } catch (Exception e) {
@@ -196,14 +230,25 @@ public class WriteOffActService {
             // Списываем физически из зон склада (если склад указан)
             if (act.getWarehouse() != null) {
                 int remaining = act.getQuantity();
-                List<ZoneProduct> zoneProducts = zoneProductRepository
-                        .findByProductAndWarehouseId(product, act.getWarehouse().getId());
-                // Если у акта указана партия — списываем только ZoneProduct'ы этой партии
-                if (act.getSupply() != null) {
-                    zoneProducts = zoneProducts.stream()
-                            .filter(zp -> zp.getSupply() != null
-                                    && zp.getSupply().equals(act.getSupply()))
-                            .toList();
+                List<ZoneProduct> zoneProducts;
+                if (act.getZone() != null && act.getSupply() != null) {
+                    // Адресное списание: ровно одна запись ZoneProduct(zone, supply)
+                    zoneProducts = zoneProductRepository
+                            .findByZoneAndSupply(act.getZone(), act.getSupply())
+                            .map(List::of)
+                            .orElse(List.of());
+                    log.info("Адресное списание акта №{}: зона '{}', партия #{}",
+                            act.getActNumber(), act.getZone().getLabel(), act.getSupply().getId());
+                } else if (act.getSupply() != null) {
+                    // Без зоны: все ZoneProduct'ы партии на складе (автосписание просрочки)
+                    zoneProducts = zoneProductRepository
+                            .findBySupplyAndWarehouseId(act.getSupply(), act.getWarehouse().getId());
+                    log.info("Списание акта №{} по партии #{}: затронуто зон — {}",
+                            act.getActNumber(), act.getSupply().getId(), zoneProducts.size());
+                } else {
+                    // Legacy: акты без партии — все ZoneProduct'ы товара на складе
+                    zoneProducts = zoneProductRepository
+                            .findByProductAndWarehouseId(product, act.getWarehouse().getId());
                 }
                 for (ZoneProduct zp : zoneProducts) {
                     if (remaining <= 0) break;

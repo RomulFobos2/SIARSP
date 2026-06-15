@@ -47,12 +47,30 @@
                 <div class="form-text" id="warehouseHint"></div>
             </div>
 
+            <!-- Выбор партии -->
+            <div class="mb-3">
+                <label for="supplyId" class="form-label fw-semibold">Партия <span class="text-danger">*</span></label>
+                <select id="supplyId" name="supplyId" class="form-select" required disabled onchange="onSupplyChange()">
+                    <option value="">— Сначала выберите склад —</option>
+                </select>
+                <div class="form-text" id="supplyHint"></div>
+            </div>
+
+            <!-- Выбор зоны -->
+            <div class="mb-3">
+                <label for="zoneId" class="form-label fw-semibold">Зона хранения <span class="text-danger">*</span></label>
+                <select id="zoneId" name="zoneId" class="form-select" required disabled onchange="onZoneChange()">
+                    <option value="">— Сначала выберите партию —</option>
+                </select>
+                <div class="form-text" id="zoneHint"></div>
+            </div>
+
             <!-- Количество -->
             <div class="mb-3">
                 <label for="quantity" class="form-label fw-semibold">Количество <span class="text-danger">*</span></label>
                 <input type="number" id="quantity" name="quantity" class="form-control"
-                       min="1" required disabled placeholder="Сначала выберите товар и склад">
-                <div class="form-text" id="quantityHint">Выберите товар и склад для отображения доступного количества</div>
+                       min="1" required disabled placeholder="Сначала выберите партию и зону">
+                <div class="form-text" id="quantityHint">Выберите партию и зону для отображения доступного количества</div>
             </div>
 
             <!-- Причина -->
@@ -85,25 +103,41 @@
 <div th:insert="~{blocks/footer :: footer}"></div>
 
 <script>
+    function resetFrom(level) {
+        // level: 'warehouse' | 'supply' | 'zone' | 'quantity'
+        var supplySelect = document.getElementById('supplyId');
+        var zoneSelect = document.getElementById('zoneId');
+        var quantityInput = document.getElementById('quantity');
+        if (level === 'warehouse') {
+            supplySelect.innerHTML = '<option value="">— Сначала выберите склад —</option>';
+            supplySelect.disabled = true;
+            document.getElementById('supplyHint').textContent = '';
+        }
+        if (level === 'warehouse' || level === 'supply') {
+            zoneSelect.innerHTML = '<option value="">— Сначала выберите партию —</option>';
+            zoneSelect.disabled = true;
+            document.getElementById('zoneHint').textContent = '';
+        }
+        quantityInput.value = '';
+        quantityInput.removeAttribute('max');
+        quantityInput.disabled = true;
+        quantityInput.placeholder = 'Сначала выберите партию и зону';
+        document.getElementById('quantityHint').textContent =
+                'Выберите партию и зону для отображения доступного количества';
+    }
+
     function onProductChange() {
         var productId = document.getElementById('productId').value;
         var warehouseSelect = document.getElementById('warehouseId');
-        var quantityInput = document.getElementById('quantity');
-        var quantityHint = document.getElementById('quantityHint');
         var warehouseHint = document.getElementById('warehouseHint');
 
-        // Сбрасываем склад и количество
         warehouseSelect.innerHTML = '<option value="">— Выберите склад —</option>';
         warehouseSelect.disabled = true;
-        quantityInput.disabled = true;
-        quantityInput.removeAttribute('max');
-        quantityInput.value = '';
-        quantityHint.textContent = 'Выберите товар и склад для отображения доступного количества';
         warehouseHint.textContent = '';
+        resetFrom('warehouse');
 
         if (!productId) return;
 
-        // Загружаем склады, на которых есть этот товар
         warehouseHint.textContent = 'Загрузка складов...';
         fetch('/employee/warehouseManager/writeOffActs/warehouses-by-product/' + productId)
             .then(function(r) { return r.json(); })
@@ -120,7 +154,6 @@
                     opt.value = wh.id;
                     opt.textContent = wh.name + ' (доступно: ' + wh.availableQuantity
                             + ' из ' + wh.placedOnWarehouse + ' шт.)';
-                    opt.dataset.qty = wh.availableQuantity;
                     if (wh.availableQuantity <= 0) {
                         opt.disabled = true;
                     } else {
@@ -140,10 +173,84 @@
     }
 
     function onWarehouseChange() {
-        var warehouseSelect = document.getElementById('warehouseId');
+        var productId = document.getElementById('productId').value;
+        var warehouseId = document.getElementById('warehouseId').value;
+        var supplySelect = document.getElementById('supplyId');
+        var supplyHint = document.getElementById('supplyHint');
+
+        resetFrom('warehouse');
+        if (!warehouseId) return;
+
+        supplySelect.innerHTML = '<option value="">— Загрузка партий... —</option>';
+        supplyHint.textContent = '';
+
+        fetch('/employee/warehouseManager/writeOffActs/product-supplies-in-warehouse/'
+                + productId + '/' + warehouseId)
+            .then(function(r) { return r.json(); })
+            .then(function(supplies) {
+                if (!supplies || supplies.length === 0) {
+                    supplySelect.innerHTML = '<option value="">— Нет партий с остатком на складе —</option>';
+                    supplySelect.disabled = true;
+                    return;
+                }
+                supplySelect.innerHTML = '<option value="">— Выберите партию —</option>';
+                supplies.forEach(function(s) {
+                    var opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = 'Пр-во: ' + (s.productionDate || '—')
+                            + ' / Годен до: ' + (s.expirationDate || '—')
+                            + ' (на складе: ' + s.quantityInWarehouse + ' шт.)';
+                    supplySelect.appendChild(opt);
+                });
+                supplySelect.disabled = false;
+            })
+            .catch(function() {
+                supplyHint.textContent = 'Ошибка загрузки партий';
+            });
+    }
+
+    function onSupplyChange() {
+        var supplyId = document.getElementById('supplyId').value;
+        var warehouseId = document.getElementById('warehouseId').value;
+        var zoneSelect = document.getElementById('zoneId');
+        var zoneHint = document.getElementById('zoneHint');
+
+        resetFrom('supply');
+        if (!supplyId) return;
+
+        zoneSelect.innerHTML = '<option value="">— Загрузка зон... —</option>';
+        zoneHint.textContent = '';
+
+        fetch('/employee/warehouseManager/writeOffActs/supply-zones-in-warehouse/'
+                + supplyId + '/' + warehouseId)
+            .then(function(r) { return r.json(); })
+            .then(function(zones) {
+                if (!zones || zones.length === 0) {
+                    zoneSelect.innerHTML = '<option value="">— Нет зон —</option>';
+                    zoneSelect.disabled = true;
+                    return;
+                }
+                zoneSelect.innerHTML = '<option value="">— Выберите зону —</option>';
+                zones.forEach(function(z) {
+                    var opt = document.createElement('option');
+                    opt.value = z.zoneId;
+                    opt.textContent = 'Полка ' + z.shelfCode + ' / Зона ' + z.label
+                            + ' (' + z.quantity + ' шт.)';
+                    opt.dataset.qty = z.quantity;
+                    zoneSelect.appendChild(opt);
+                });
+                zoneSelect.disabled = false;
+            })
+            .catch(function() {
+                zoneHint.textContent = 'Ошибка загрузки зон';
+            });
+    }
+
+    function onZoneChange() {
+        var zoneSelect = document.getElementById('zoneId');
+        var selected = zoneSelect.options[zoneSelect.selectedIndex];
         var quantityInput = document.getElementById('quantity');
         var quantityHint = document.getElementById('quantityHint');
-        var selected = warehouseSelect.options[warehouseSelect.selectedIndex];
 
         quantityInput.value = '';
         if (selected && selected.dataset.qty) {
@@ -151,12 +258,12 @@
             quantityInput.max = available;
             quantityInput.disabled = false;
             quantityInput.placeholder = 'Укажите количество для списания';
-            quantityHint.textContent = 'Доступно на выбранном складе: ' + available + ' шт.';
+            quantityHint.textContent = 'Доступно в выбранной зоне (партия + зона): ' + available + ' шт.';
         } else {
             quantityInput.removeAttribute('max');
             quantityInput.disabled = true;
-            quantityInput.placeholder = 'Сначала выберите товар и склад';
-            quantityHint.textContent = 'Выберите склад для отображения доступного количества';
+            quantityInput.placeholder = 'Сначала выберите партию и зону';
+            quantityHint.textContent = 'Выберите зону для отображения доступного количества';
         }
     }
 </script>
