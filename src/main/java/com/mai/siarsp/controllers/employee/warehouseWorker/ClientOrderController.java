@@ -4,7 +4,10 @@ import com.mai.siarsp.dto.ClientOrderDTO;
 import com.mai.siarsp.enumeration.ClientOrderStatus;
 import com.mai.siarsp.models.ClientOrder;
 import com.mai.siarsp.models.OrderedProduct;
+import com.mai.siarsp.models.Supply;
 import com.mai.siarsp.models.ZoneProduct;
+import com.mai.siarsp.repo.OrderedProductRepository;
+import com.mai.siarsp.repo.SupplyRepository;
 import com.mai.siarsp.repo.ZoneProductRepository;
 import com.mai.siarsp.service.employee.ClientOrderService;
 import com.mai.siarsp.service.general.ContractService;
@@ -45,11 +48,17 @@ public class ClientOrderController {
 
     private final ClientOrderService clientOrderService;
     private final ZoneProductRepository zoneProductRepository;
+    private final OrderedProductRepository orderedProductRepository;
+    private final SupplyRepository supplyRepository;
 
     public ClientOrderController(ClientOrderService clientOrderService,
-                                 ZoneProductRepository zoneProductRepository) {
+                                 ZoneProductRepository zoneProductRepository,
+                                 OrderedProductRepository orderedProductRepository,
+                                 SupplyRepository supplyRepository) {
         this.clientOrderService = clientOrderService;
         this.zoneProductRepository = zoneProductRepository;
+        this.orderedProductRepository = orderedProductRepository;
+        this.supplyRepository = supplyRepository;
     }
 
     @GetMapping("/allClientOrders")
@@ -118,6 +127,11 @@ public class ClientOrderController {
         for (OrderedProduct op : order.getOrderedProducts()) {
             List<ZoneProduct> locations = zoneProductRepository.findByProduct(op.getProduct());
             productLocations.put(op.getProduct().getId(), locations);
+            // Принудительная инициализация LAZY-связей для рендера в Thymeleaf
+            op.getPicks().forEach(p -> {
+                p.getSupply().getExpirationDate();
+                p.getZone().getShelf().getWarehouse().getName();
+            });
         }
         model.addAttribute("productLocations", productLocations);
 
@@ -142,6 +156,78 @@ public class ClientOrderController {
             redirectAttributes.addFlashAttribute("successMessage", "Сборка завершена. Заказ готов к отгрузке.");
         }
         return "redirect:/employee/warehouseWorker/clientOrders/detailsClientOrder/" + id;
+    }
+
+    // ========== ПИК-ЛИНИИ ==========
+
+    @PostMapping("/addPick")
+    public String addPick(@RequestParam Long orderId,
+                          @RequestParam Long orderedProductId,
+                          @RequestParam Long supplyId,
+                          @RequestParam Long zoneId,
+                          @RequestParam int quantity,
+                          RedirectAttributes redirectAttributes) {
+        String error = clientOrderService.addPick(orderedProductId, supplyId, zoneId, quantity);
+        if (error != null) {
+            redirectAttributes.addFlashAttribute("errorMessage", error);
+        } else {
+            redirectAttributes.addFlashAttribute("successMessage", "Добавлен");
+        }
+        return "redirect:/employee/warehouseWorker/clientOrders/detailsClientOrder/" + orderId;
+    }
+
+    @PostMapping("/removePick")
+    public String removePick(@RequestParam Long orderId,
+                             @RequestParam Long pickId,
+                             RedirectAttributes redirectAttributes) {
+        String error = clientOrderService.removePick(pickId);
+        if (error != null) {
+            redirectAttributes.addFlashAttribute("errorMessage", error);
+        } else {
+            redirectAttributes.addFlashAttribute("successMessage", "Удалён");
+        }
+        return "redirect:/employee/warehouseWorker/clientOrders/detailsClientOrder/" + orderId;
+    }
+
+    @Transactional(readOnly = true)
+    @GetMapping("/eligible-supplies/{orderedProductId}")
+    @ResponseBody
+    public List<Map<String, Object>> eligibleSupplies(@PathVariable Long orderedProductId) {
+        Optional<OrderedProduct> optOp = orderedProductRepository.findById(orderedProductId);
+        if (optOp.isEmpty()) return List.of();
+        OrderedProduct op = optOp.get();
+        LocalDate deliveryDate = op.getClientOrder().getDeliveryDate();
+        LocalDate referenceDate = deliveryDate != null ? deliveryDate : LocalDate.now();
+        return supplyRepository.findEligibleByProductAndDate(op.getProduct().getId(), referenceDate)
+                .stream()
+                .map(s -> {
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("id", s.getId());
+                    m.put("productionDate", s.getProductionDate());
+                    m.put("expirationDate", s.getExpirationDate());
+                    int total = zoneProductRepository.findBySupplyId(s.getId())
+                            .stream().mapToInt(ZoneProduct::getQuantity).sum();
+                    m.put("availableTotal", total);
+                    return m;
+                })
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    @GetMapping("/supply-zones-with-quantity/{supplyId}")
+    @ResponseBody
+    public List<Map<String, Object>> supplyZones(@PathVariable Long supplyId) {
+        return zoneProductRepository.findBySupplyId(supplyId).stream()
+                .map(zp -> {
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("zoneId", zp.getZone().getId());
+                    m.put("label", zp.getZone().getLabel());
+                    m.put("shelfCode", zp.getZone().getShelf().getCode());
+                    m.put("warehouseName", zp.getZone().getShelf().getWarehouse().getName());
+                    m.put("quantity", zp.getQuantity());
+                    return m;
+                })
+                .toList();
     }
 
     // ========== СКАЧИВАНИЕ КОНТРАКТА ==========

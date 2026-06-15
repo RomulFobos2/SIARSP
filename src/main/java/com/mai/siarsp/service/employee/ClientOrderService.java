@@ -7,10 +7,19 @@ import com.mai.siarsp.models.Client;
 import com.mai.siarsp.models.ClientOrder;
 import com.mai.siarsp.models.Employee;
 import com.mai.siarsp.models.OrderedProduct;
+import com.mai.siarsp.models.OrderedProductPick;
 import com.mai.siarsp.models.Product;
+import com.mai.siarsp.models.StorageZone;
+import com.mai.siarsp.models.Supply;
+import com.mai.siarsp.models.ZoneProduct;
 import com.mai.siarsp.repo.ClientOrderRepository;
 import com.mai.siarsp.repo.ClientRepository;
+import com.mai.siarsp.repo.OrderedProductPickRepository;
+import com.mai.siarsp.repo.OrderedProductRepository;
 import com.mai.siarsp.repo.ProductRepository;
+import com.mai.siarsp.repo.StorageZoneRepository;
+import com.mai.siarsp.repo.SupplyRepository;
+import com.mai.siarsp.repo.ZoneProductRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,17 +51,32 @@ public class ClientOrderService {
     private final ProductRepository productRepository;
     private final NotificationService notificationService;
     private final ProductExpirationService productExpirationService;
+    private final OrderedProductRepository orderedProductRepository;
+    private final OrderedProductPickRepository orderedProductPickRepository;
+    private final SupplyRepository supplyRepository;
+    private final StorageZoneRepository storageZoneRepository;
+    private final ZoneProductRepository zoneProductRepository;
 
     public ClientOrderService(ClientOrderRepository clientOrderRepository,
                               ClientRepository clientRepository,
                               ProductRepository productRepository,
                               NotificationService notificationService,
-                              ProductExpirationService productExpirationService) {
+                              ProductExpirationService productExpirationService,
+                              OrderedProductRepository orderedProductRepository,
+                              OrderedProductPickRepository orderedProductPickRepository,
+                              SupplyRepository supplyRepository,
+                              StorageZoneRepository storageZoneRepository,
+                              ZoneProductRepository zoneProductRepository) {
         this.clientOrderRepository = clientOrderRepository;
         this.clientRepository = clientRepository;
         this.productRepository = productRepository;
         this.notificationService = notificationService;
         this.productExpirationService = productExpirationService;
+        this.orderedProductRepository = orderedProductRepository;
+        this.orderedProductPickRepository = orderedProductPickRepository;
+        this.supplyRepository = supplyRepository;
+        this.storageZoneRepository = storageZoneRepository;
+        this.zoneProductRepository = zoneProductRepository;
     }
 
     // ========== ЗАПРОСЫ ==========
@@ -422,6 +446,15 @@ public class ClientOrderService {
                 return false;
             }
 
+            for (OrderedProduct op : order.getOrderedProducts()) {
+                if (!op.isFullyPicked()) {
+                    log.error("Заказ №{}: позиция '{}' собрана не полностью ({}/{})",
+                            order.getOrderNumber(), op.getProduct().getName(),
+                            op.getPickedQuantity(), op.getQuantity());
+                    return false;
+                }
+            }
+
             order.setStatus(ClientOrderStatus.READY);
             clientOrderRepository.save(order);
 
@@ -437,6 +470,93 @@ public class ClientOrderService {
             log.error("Ошибка при завершении сборки заказа: {}", e.getMessage(), e);
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             return false;
+        }
+    }
+
+    // ========== ПИК-ЛИНИИ СБОРКИ ==========
+
+    @Transactional
+    public String addPick(Long orderedProductId, Long supplyId, Long zoneId, int quantity) {
+        try {
+            if (quantity <= 0) return "Количество должно быть больше нуля";
+
+            Optional<OrderedProduct> optOp = orderedProductRepository.findById(orderedProductId);
+            if (optOp.isEmpty()) return "Позиция заказа не найдена";
+            OrderedProduct op = optOp.get();
+
+            ClientOrder order = op.getClientOrder();
+            if (order.getStatus() != ClientOrderStatus.IN_PROGRESS) {
+                return "Подбор возможен только в статусе «Сборка» (текущий: "
+                        + order.getStatus().getDisplayName() + ")";
+            }
+
+            Optional<Supply> optSupply = supplyRepository.findById(supplyId);
+            if (optSupply.isEmpty()) return "Партия не найдена";
+            Supply supply = optSupply.get();
+            if (!supply.getProduct().getId().equals(op.getProduct().getId())) {
+                return "Партия не принадлежит товару позиции";
+            }
+            LocalDate deliveryDate = order.getDeliveryDate();
+            if (supply.getExpirationDate() == null
+                    || (deliveryDate != null && supply.getExpirationDate().isBefore(deliveryDate))) {
+                return "Партия #" + supplyId + " истекает до даты доставки";
+            }
+
+            Optional<StorageZone> optZone = storageZoneRepository.findById(zoneId);
+            if (optZone.isEmpty()) return "Зона не найдена";
+            StorageZone zone = optZone.get();
+
+            Optional<ZoneProduct> optZp = zoneProductRepository.findByZoneAndSupply(zone, supply);
+            if (optZp.isEmpty()) return "Партия #" + supplyId + " не размещена в зоне '" + zone.getLabel() + "'";
+
+            int onStock = optZp.get().getQuantity();
+            int alreadyPicked = orderedProductPickRepository.sumQuantityByZoneAndSupply(zoneId, supplyId);
+            int availableForPick = onStock - alreadyPicked;
+            if (quantity > availableForPick) {
+                return "В связке зона '" + zone.getLabel() + "' + партия #" + supplyId
+                        + " доступно к подбору только " + availableForPick + " шт. "
+                        + "(на складе: " + onStock + ", уже зарезервировано: " + alreadyPicked + ")";
+            }
+
+            int remainingForPosition = op.getQuantity() - op.getPickedQuantity();
+            if (quantity > remainingForPosition) {
+                return "Превышение количества по позиции: ещё нужно " + remainingForPosition + " шт.";
+            }
+
+            OrderedProductPick pick = new OrderedProductPick(op, supply, zone, quantity);
+            op.getPicks().add(pick);
+            orderedProductPickRepository.save(pick);
+
+            log.info("Заказ №{}: добавлен пик товара '{}', партия #{}, зона '{}', кол-во {}",
+                    order.getOrderNumber(), op.getProduct().getName(), supplyId, zone.getLabel(), quantity);
+            return null;
+        } catch (Exception e) {
+            log.error("Ошибка при добавлении пика: {}", e.getMessage(), e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return "Внутренняя ошибка при добавлении пика";
+        }
+    }
+
+    @Transactional
+    public String removePick(Long pickId) {
+        try {
+            Optional<OrderedProductPick> optPick = orderedProductPickRepository.findById(pickId);
+            if (optPick.isEmpty()) return "Не найден";
+            OrderedProductPick pick = optPick.get();
+            ClientOrder order = pick.getOrderedProduct().getClientOrder();
+            if (order.getStatus() != ClientOrderStatus.IN_PROGRESS) {
+                return "Удаление пика возможно только в статусе «Сборка»";
+            }
+            pick.getOrderedProduct().getPicks().remove(pick);
+            orderedProductPickRepository.delete(pick);
+            log.info("Заказ №{}: удалён пик #{} (партия #{}, зона '{}', {} шт.)",
+                    order.getOrderNumber(), pickId,
+                    pick.getSupply().getId(), pick.getZone().getLabel(), pick.getQuantity());
+            return null;
+        } catch (Exception e) {
+            log.error("Ошибка при удалении пика: {}", e.getMessage(), e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return "Внутренняя ошибка при удалении пика";
         }
     }
 

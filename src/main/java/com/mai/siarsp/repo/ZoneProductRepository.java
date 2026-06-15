@@ -2,6 +2,7 @@ package com.mai.siarsp.repo;
 
 import com.mai.siarsp.models.Product;
 import com.mai.siarsp.models.StorageZone;
+import com.mai.siarsp.models.Supply;
 import com.mai.siarsp.models.ZoneProduct;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -61,4 +62,19 @@ public interface ZoneProductRepository extends JpaRepository<ZoneProduct, Long> 
     @Query("SELECT zp FROM ZoneProduct zp WHERE zp.supply.product.id = :productId " +
             "ORDER BY zp.supply.expirationDate ASC NULLS LAST")
     List<ZoneProduct> findByProductIdOrderByExpirationAsc(@Param("productId") Long productId);
+
+    Optional<ZoneProduct> findByZoneAndSupply(StorageZone zone, Supply supply);
+
+    @Query("SELECT zp FROM ZoneProduct zp WHERE zp.supply = :supply " +
+            "AND zp.zone.shelf.warehouse.id = :warehouseId")
+    List<ZoneProduct> findBySupplyAndWarehouseId(@Param("supply") Supply supply,
+                                                  @Param("warehouseId") Long warehouseId);
+
+    @Query("SELECT zp FROM ZoneProduct zp WHERE zp.supply.id = :supplyId " +
+            "AND zp.zone.shelf.warehouse.id = :warehouseId")
+    List<ZoneProduct> findBySupplyIdAndWarehouseId(@Param("supplyId") Long supplyId,
+                                                    @Param("warehouseId") Long warehouseId);
+
+    @Query("SELECT zp FROM ZoneProduct zp WHERE zp.supply.id = :supplyId AND zp.quantity > 0")
+    List<ZoneProduct> findBySupplyId(@Param("supplyId") Long supplyId);
 }

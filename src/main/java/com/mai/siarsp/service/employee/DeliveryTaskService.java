@@ -312,19 +312,42 @@ public class DeliveryTaskService {
                 product.setReservedQuantity(Math.max(0, product.getReservedQuantity() - op.getQuantity()));
                 productRepository.save(product);
 
-                // FEFO-списание из зон хранения: сначала партии с ближайшим сроком годности
-                List<ZoneProduct> zoneProducts = zoneProductRepository
-                        .findByProductIdOrderByExpirationAsc(product.getId());
-                int remaining = op.getQuantity();
-                for (ZoneProduct zp : zoneProducts) {
-                    if (remaining <= 0) break;
-                    if (zp.getQuantity() <= remaining) {
-                        remaining -= zp.getQuantity();
-                        zoneProductRepository.delete(zp);
-                    } else {
-                        zp.setQuantity(zp.getQuantity() - remaining);
-                        zoneProductRepository.save(zp);
-                        remaining = 0;
+                if (!op.getPicks().isEmpty() && op.isFullyPicked()) {
+                    // Адресное списание строго по пик-линиям, зафиксированным работником.
+                    for (var pick : op.getPicks()) {
+                        var optZp = zoneProductRepository.findByZoneAndSupply(pick.getZone(), pick.getSupply());
+                        if (optZp.isEmpty()) {
+                            log.error("Пик-линия #{} ссылается на отсутствующий ZoneProduct (зона '{}', партия #{})",
+                                    pick.getId(), pick.getZone().getLabel(), pick.getSupply().getId());
+                            continue;
+                        }
+                        ZoneProduct zp = optZp.get();
+                        int qty = pick.getQuantity();
+                        if (zp.getQuantity() <= qty) {
+                            zoneProductRepository.delete(zp);
+                        } else {
+                            zp.setQuantity(zp.getQuantity() - qty);
+                            zoneProductRepository.save(zp);
+                        }
+                        log.info("Заказ №{}: списано {} ед. '{}' по пику — зона '{}', партия #{}",
+                                order.getOrderNumber(), qty, product.getName(),
+                                pick.getZone().getLabel(), pick.getSupply().getId());
+                    }
+                } else {
+                    // Legacy FEFO-списание для заказов без пик-линий
+                    List<ZoneProduct> zoneProducts = zoneProductRepository
+                            .findByProductIdOrderByExpirationAsc(product.getId());
+                    int remaining = op.getQuantity();
+                    for (ZoneProduct zp : zoneProducts) {
+                        if (remaining <= 0) break;
+                        if (zp.getQuantity() <= remaining) {
+                            remaining -= zp.getQuantity();
+                            zoneProductRepository.delete(zp);
+                        } else {
+                            zp.setQuantity(zp.getQuantity() - remaining);
+                            zoneProductRepository.save(zp);
+                            remaining = 0;
+                        }
                     }
                 }
             }
