@@ -105,11 +105,12 @@
                             <option th:each="product : ${allProducts}"
                                     th:value="${product.getId()}"
                                     th:data-warehouse-type="${product.getWarehouseType().name()}"
+                                    th:data-unit-of-measure="${product.getUnitOfMeasure() != null ? product.getUnitOfMeasure() : ''}"
                                     th:text="${product.getName() + ' (' + product.getArticle() + ')'}"></option>
                         </select>
                     </div>
                     <div class="col-md-2">
-                        <input type="text" name="units" class="form-control" placeholder="Ед. изм." maxlength="100">
+                        <input type="text" name="units" class="form-control" placeholder="Ед. изм." maxlength="100" required readonly>
                     </div>
                     <div class="col-md-2">
                         <input type="number" name="quantities" class="form-control" placeholder="Кол-во" min="1" value="1" required>
@@ -151,8 +152,23 @@
             allowClear: false,
             width: '100%'
         }).on('change', function() {
+            applyUnitFromProduct(this);
             updateProductOptions();
         });
+    }
+
+    function applyUnitFromProduct(selectEl) {
+        var row = selectEl.closest('.product-row');
+        if (!row) return;
+        var unitInput = row.querySelector('input[name="units"]');
+        if (!unitInput) return;
+        var val = selectEl.value;
+        if (!val) {
+            unitInput.value = '';
+            return;
+        }
+        var opt = selectEl.querySelector('option[value="' + val + '"]');
+        unitInput.value = opt ? (opt.getAttribute('data-unit-of-measure') || '') : '';
     }
 
     function addProductRow(productId, quantity, price, unit) {

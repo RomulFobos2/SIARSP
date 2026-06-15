@@ -91,6 +91,22 @@ public class Product {
         return getAttributeValueByName("Высота упаковки");
     }
 
+    /**
+     * Единица измерения товара (атрибут «Единица измерения», тип TEXT).
+     * Используется при создании заявки на поставку для автоподстановки в поле «Ед. изм.».
+     */
+    @Transient
+    public String getUnitOfMeasure() {
+        return attributeValues.stream()
+                .filter(av -> av.getAttribute() != null
+                        && "Единица измерения".equalsIgnoreCase(av.getAttribute().getName())
+                        && av.getValue() != null
+                        && !av.getValue().isBlank())
+                .findFirst()
+                .map(av -> av.getValue().trim())
+                .orElse(null);
+    }
+
     private Double getAttributeValueByName(String attributeName) {
         return attributeValues.stream()
                 .filter(av -> av.getAttribute().getName().equals(attributeName))
